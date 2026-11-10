@@ -28,7 +28,7 @@ plugins/nlb/library/
     Seo.php                # порт nlb_seo.php (229 строк)
     Security/Headers.php   # порт nlb_security.php (77 строк)
     Media.php              # nlb_picture(), nlb_minify_css() (268 строк)
-    Booking.php            # слоты: генерация, занятость, транзакция
+    BookingService.php     # слоты: генерация, занятость, транзакция
     Push.php               # порт nlb_push.php (769 строк)
   components/              # Header, Footer, Menu, Breadcrumbs, Picture, Form, Search, Chat
   console/                 # nlb:import, nlb:search-index, nlb:slots-generate

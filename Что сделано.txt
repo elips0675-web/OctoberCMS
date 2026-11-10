@@ -6,6 +6,75 @@
 
 ---
 
+(Stage 3 — 10.11.2026) — **Eloquent-слой заявок и броней: 5 таблиц, гонка слота
+закрыта `UNIQUE` + транзакцией, генератор слотов, 29 тестов плагина.**
+
+Повод: P1-20 (гонка слота), P1-9 (слоты), P0-4/P0-5 (заявки и подписка), M11 (тесты).
+Схема и модели — `docs/db.md` разделы 2, 5, 9.
+
+**Миграции** (`plugins/nlb/library/updates/`, версия `1.0.2` в `version.yaml`):
+`create_nlb_requests_table.php`, `create_nlb_bookings_table.php`,
+`create_nlb_orders_table.php`, `create_nlb_slots_table.php`,
+`create_nlb_subscribers_table.php`. Создаются `php artisan october:migrate`
+(не `tailor:migrate` — это Eloquent, а не Tailor). Ключевое:
+`plugins/nlb/library/updates/create_nlb_slots_table.php:22` —
+`$table->unique(['service_code', 'date', 'time'], 'nlb_slots_unique')`;
+`nlb_subscribers` — `UNIQUE(email)` и `UNIQUE(token)`; у заявок/броней/заказов
+индексы `(status, …)`, `(service_code, date)`, `email`.
+
+**Модели** (`plugins/nlb/library/models/`): `Request`, `Booking`, `Order`, `Slot`,
+`Subscriber`. У каждой `$rules` (трейт `October\Rain\Database\Traits\Validation`),
+русские `$customMessages`; статусы — константы и белый список `in:…`, диапазоны
+проверяются до записи. `Subscriber` — double opt-in: `subscribe()` (33),
+`confirm()` (74), `unsubscribe()` (86), `confirmByToken()` (96),
+`unsubscribeByToken()` (106); повторная подписка обновляет токен, а не создаёт строку.
+`Request::markProcessed()` (43) ставит `done` и `date_processed`;
+`Order::total()` (49) считает `price × qty`.
+
+**Гонка слота.** `plugins/nlb/library/classes/BookingService.php`: `book()` (24) —
+`DB::transaction` + `lockForUpdate` + условный
+`UPDATE … WHERE taken < capacity`; `lockSlot()` (136) ловит дубликат `INSERT`
+(`isDuplicate()` (179), SQLSTATE `23000`/`1062`/`UNIQUE constraint failed`) и
+бросает `SlotUnavailableException` (класс в `classes/SlotUnavailableException.php`).
+`cancel()` (83) освобождает слот и идемпотентен, `confirm()` (64) меняет статус,
+`availableTimes()` (120) отдаёт свободные часы.
+
+**Генератор слотов.** `plugins/nlb/library/console/SlotsGenerate.php` —
+`nlb:slots-generate {--days=30} {--from=} {--service=*} {--times=}`. Часы по
+умолчанию 10:00–21:00, как `nlb_form_time_options()` источника
+(`local/php_interface/include/nlb_forms.php:543-550`); услуги — включённые
+`Nlb\Service`, ключ идемпотентности — `firstOrCreate` по `UNIQUE`.
+
+**Чем проверено.**
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` → **29 тестов,
+  116 утверждений, 0 упавших**: `BookingTest` (10 — создание, вторая попытка,
+  `UNIQUE`, ленивый слот, capacity 2, отмена, идемпотентная отмена, подтверждение,
+  неверное время, `9:00` → `09:00`), `ModelsTest` (5 — заявка, телефон без e-mail,
+  заказ, double opt-in, отписка/повторная подписка), `SlotsGenerateTest` (6 —
+  сетка, идемпотентность, свои часы, нет услуг, неверная дата, неверные часы),
+  `ImportTest` (8).
+- `testUniqueIndexBlocksDuplicateSlotRows` фиксирует именно схему: повторный
+  `Slot::create` даёт `QueryException` с кодом `23000`; при удалении `UNIQUE`
+  тест красный.
+- Живая MySQL: `october:migrate` → `v1.0.1 -> v1.0.2`; `nlb:slots-generate
+  --days=14` → **1 344 создано** (8 услуг × 14 дней × 12 часов), второй прогон →
+  **0 создано, 1 344 уже было**; `SHOW INDEX` подтверждает `nlb_slots_unique`
+  (3 колонки, `Non_unique=0`).
+
+**Что не проверено.**
+
+- HTTP-код `409` ещё не отдаётся: публичного маршрута брони нет (этап 7, P1-16);
+  сейчас исключение готово к переводу в `409`, но контракт не задействован.
+- Реальной параллельности двух процессов нет: SQLite в тестах не держит
+  `lockForUpdate`; тест на гонку проверяет схему и последовательную вторую попытку.
+  Живой параллельный прогон — на MySQL в этапе 7.
+- Письма брони/заявки и двойное подтверждение подписки не отправляются:
+  `Mail`-задачи и формы — этап 5 (P0-4, P0-5, P1-9, P1-12).
+- Админ-списки заявок/броней/заказов и смена статуса кнопкой не сделаны (этап 5).
+
+---
+
 (Stage 2 — 10.11.2026) — **Плагин `nlb/library`, 9 блюпринтов, импорт 91 элемента
 и 12 разделов, тесты идемпотентности.**
 

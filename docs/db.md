@@ -53,6 +53,12 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 | `nlb_push_subscriptions` | Eloquent | `nlb_push.php` (JSON-файл) | 0 |
 | `nlb_search_documents`, `nlb_search_terms` | Eloquent | `db/search/index.json` | 99 / 1 340 |
 
+Модели — `plugins/nlb/library/models/{Request,Booking,Order,Slot,Subscriber}.php`.
+Таблицы создаёт версия плагина **1.0.2** (`plugins/nlb/library/updates/create_nlb_*.php`),
+применяется `php artisan october:migrate` (не `tailor:migrate`, это не Tailor).
+Валидация полей — `$rules` моделей (трейт `October\Rain\Database\Traits\Validation`):
+ограничение схемы отбивается до записи, а не `QueryException` из MySQL.
+
 ## 3. Общие колонки контентных таблиц
 
 Колонки-«шапку» добавляет сам Tailor (`HasCommonColumns`); из них импорт пишет только
@@ -202,6 +208,13 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 Запись — только в `DB::transaction(...)` с `lockForUpdate()` и перехватом `QueryException`
 на дубликат → `409`. Проверка «прочитал-записал» без уникального индекса — дефект,
 а не реализация.
+
+Реализация: `plugins/nlb/library/classes/BookingService.php` (`book`, `confirm`, `cancel`,
+`availableTimes`), исключение `classes/SlotUnavailableException.php`. Условный
+`UPDATE … WHERE taken < capacity` плюс блокировка строки не дают двум запросам занять
+одно место; дубликат `INSERT` слота ловится как `QueryException` с SQLSTATE `23000`.
+Слоты на 14 дней: `php artisan nlb:slots-generate --days=14` (часы 10:00–21:00,
+как `nlb_form_time_options()` источника; повторный прогон дублей не создаёт).
 
 ### 5.5. `nlb_subscribers` (P0-5)
 

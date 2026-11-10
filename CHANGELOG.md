@@ -11,8 +11,34 @@
 
 ### Планируется
 
-- Этап 3: заявки, слоты, `UNIQUE(service_code, date, time)` + тест гонки.
 - Этап 4: тема `nlb`, 110 URL, удаление демо-темы и демо-плагина.
+
+## [0.3.0] — 10.11.2026
+
+Eloquent-слой заявок и броней, слоты услуг. Гонка слота закрыта `UNIQUE` и
+транзакцией; публичных форм и маршрутов ещё нет.
+
+### Добавлено
+
+- Миграции плагина `1.0.2`: `nlb_requests`, `nlb_bookings`, `nlb_orders`,
+  `nlb_slots` (`UNIQUE(service_code, date, time)`), `nlb_subscribers`
+  (`UNIQUE(email)`, `UNIQUE(token)`).
+- Модели `Nlb\Library\Models\{Request,Booking,Order,Slot,Subscriber}` с русской
+  валидацией; double opt-in в `Subscriber`.
+- `classes/BookingService.php`: создание брони в `DB::transaction` +
+  `lockForUpdate`, условный `UPDATE … WHERE taken < capacity`, перехват
+  `QueryException` на дубликат → `SlotUnavailableException`; подтверждение,
+  отмена с освобождением слота, свободные часы.
+- Команда `php artisan nlb:slots-generate [--days=30] [--from=] [--service=*]
+  [--times=]` — идемпотентная генерация слотов 10:00–21:00.
+- Тесты: `BookingTest`, `ModelsTest`, `SlotsGenerateTest` (всего в плагине
+  29 тестов, 116 утверждений).
+
+### Изменено
+
+- `docs/db.md` (разделы 2, 5.4, 9), `docs/architecture.md` (`BookingService.php`),
+  `docs/installation.md` — факты схемы, команда слотов, тесты.
+- Живая БД `nlb_october`: 100 таблиц, слотов на 14 дней — 1 344.
 
 ## [0.2.0] — 10.11.2026
 

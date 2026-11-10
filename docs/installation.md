@@ -117,6 +117,12 @@ php artisan serve --host=127.0.0.1 --port=8080
 `storage/` → 0 ошибок; PHPUnit → 1 171 тест, 3 896 утверждений, 8 пропущено,
 0 упавших, 2:46.
 
+Версия плагина **1.0.2** добавляет Eloquent-таблицы `nlb_requests`, `nlb_bookings`,
+`nlb_orders`, `nlb_slots` (с `UNIQUE(service_code, date, time)`), `nlb_subscribers`;
+ставится `php artisan october:migrate`. Слоты услуг генерируются командой
+`php artisan nlb:slots-generate --days=14` (идемпотентно, часы 10:00–21:00).
+Тесты плагина — `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml`.
+
 ## 7. Администратор
 
 Создан 10.11.2026 командой `october:admin` (без интерактива):
