@@ -116,7 +116,47 @@ php artisan serve --host=127.0.0.1 --port=8080
 `storage/` → 0 ошибок; PHPUnit → 1 171 тест, 3 896 утверждений, 8 пропущено,
 0 упавших, 2:46.
 
-## 7. Типовые сбои
+## 7. Администратор
+
+Создан 10.11.2026 командой `october:admin` (без интерактива):
+
+```powershell
+php artisan october:admin `
+  --first-name="Администратор" --last-name="Библиотека" `
+  --email="admin@nlb.local" --login="admin" `
+  --password="<пароль>" --password-confirmation="<пароль>" `
+  --default --no-interaction
+```
+
+| Параметр | Значение |
+|---|---|
+| URL | `http://127.0.0.1:8080/admin` |
+| Логин | `admin` |
+| Email | `admin@nlb.local` |
+| Роль | superuser (`--default`) |
+
+**Пароль в git не попадает.** Он записан открытым текстом только в
+`.local/admin-credentials.md` — каталог исключён правилом `/.local` в
+`.gitignore`. В документации, `README.md` и `CHANGELOG.md` его нет; при
+передаче доступа файл передаётся отдельно.
+
+Проверено не «на слово», а двумя способами:
+
+- `Hash::check($password, $user->password)` → `true`, неверный пароль → `false`,
+  `is_superuser` → `true`, `is_activated` → `true`, в `backend_users` одна запись;
+- реальный HTTP-вход: `POST /admin/backend/auth/signin` с `_token` из
+  `csrf-token` → редирект на `/admin/dashboard`, `200`, 144 155 байт, в ответе
+  нет формы входа. До входа на `/admin` форма присутствует (12 628 байт).
+
+Смена пароля:
+
+```powershell
+php artisan october:passwd admin
+```
+
+Восстановление забытого пароля — та же команда, старый пароль не нужен.
+
+## 8. Типовые сбои
 
 | Симптом | Причина | Что делать |
 |---|---|---|
@@ -127,7 +167,7 @@ php artisan serve --host=127.0.0.1 --port=8080
 | композер падает на `ext-zip` | `;extension=zip` | раскомментировать, `php -m | findstr zip` |
 | 404 на всех страницах | нет rewrite | `php artisan serve` либо vhost на корень проекта |
 
-## 8. Удаление
+## 9. Удаление
 
 Каталог — целиком, база — `DROP DATABASE nlb_october`. Источник
 `D:\nlbbootstrap-main` не затрагивается.

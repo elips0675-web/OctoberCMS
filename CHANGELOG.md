@@ -32,6 +32,10 @@
   `ext-zip`), требования хостинга.
 - Каркас документации: `AGENTS.md`, `project-context.md`, `README.md`,
   `Что сделано.txt`, `Что доделать.txt` (41 открытый пункт), `docs/` — 9 документов.
+- Администратор `admin` (`admin@nlb.local`, superuser) создан `october:admin`
+  10.11.2026; вход проверен реальным `POST /admin/backend/auth/signin` →
+  `/admin/dashboard` (200). Пароль — в `.local/admin-credentials.md`, каталог
+  в `.gitignore`, в репозиторий не попадает.
 
 ### Изменено
 

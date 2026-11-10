@@ -42,6 +42,13 @@ php artisan serve --host=127.0.0.1 --port=8080
 Подробно — `docs/installation.md` (там же три грабли 4.x: PATH, `theme:seed`,
 `october:about` вместо `october:version`).
 
+## Админка
+
+`http://127.0.0.1:8080/admin`, логин `admin`, email `admin@nlb.local`
+(создан 10.11.2026, superuser). **Пароль в репозитории не хранится** — он
+записан в `.local/admin-credentials.md`, каталог исключён в `.gitignore`.
+Сброс: `php artisan october:passwd admin`. Подробности — `docs/installation.md` §7.
+
 ## Команды
 
 | Команда | Что делает |

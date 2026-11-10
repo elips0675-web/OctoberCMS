@@ -9,6 +9,7 @@
 composer.phar
 
 # Окружение и секреты
+/.local
 .env
 .env.*.php
 .env.php

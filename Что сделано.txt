@@ -51,10 +51,28 @@ v3.7.13 — релиз 21.01.2026, `php ^8.0.2`, `laravel ^9.0`. Для ново
 локально и в git не попадает; `.env.example` и `.gitignore` переписаны под
 проект (демо-правила October + наши: `vendor`, `storage`, секреты).
 
+**Администратор — создан и вход проверен (10.11.2026, дополнение к Stage 1).**
+
+`php artisan october:admin --first-name=… --email=admin@nlb.local --login=admin
+--default --no-interaction` → `[OK] Administrator created successfully`.
+Логин `admin`, superuser, активирован; в `backend_users` одна запись.
+
+Проверено двумя способами, а не по выводу команды:
+
+- `Hash::check($password, $user->password)` → `true`; пароль с лишним символом
+  → `false`; `is_superuser` → `true`; `is_activated` → `true`.
+- Реальный HTTP-вход: `GET /admin` (12 628 байт, форма входа, `csrf-token`) →
+  `POST /admin/backend/auth/signin` с `_token`, `login`, `password`, `postback`
+  → редирект на `/admin/dashboard`, `200`, 144 155 байт, формы входа в ответе
+  нет, кнопка выхода есть.
+
+Пароль записан только в `.local/admin-credentials.md`; каталог исключён
+правилом `/.local` в `.gitignore` (проверено `git check-ignore -v`), в git,
+`README.md` и документацию не попадает. Сброс — `php artisan october:passwd admin`.
+Факт зафиксирован в `docs/installation.md` §7, `project-context.md` §8.
+
 **Что не проверено.**
 
-- Админ-пользователь не создан и вход не проверялся: первый вход на `/admin`
-  создаёт учётную запись через форму — это следующий шаг, а не факт.
 - Своего кода нет: `plugins/nlb/library` и `themes/nlb` не существуют,
   `ACTIVE_THEME=demo`.
 - Демо-тема и демо-плагин October на месте — удаляются на этапе 4 (пункт M16);
