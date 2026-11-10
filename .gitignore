@@ -1,0 +1,51 @@
+# Зависимости
+/vendor
+/node_modules
+/bootstrap/cache/*.php
+/bootstrap/cache
+
+# Окружение и секреты
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+.auth/
+
+# Хранилище October: логи, кеш, сессии, загруженные файлы
+/storage/app/*
+!/storage/app/public
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+/storage/logs/*
+/storage/temp/*
+/storage/debugbar/*
+
+# Собранные и сгенерированные файлы
+/public/storage
+/public/vendor
+/public/modules
+/plugins/*/*/vendor
+*.min.css
+!public/**/*.min.css
+
+# Бэкапы и дампы
+*.sql
+*.sql.gz
+*.bundle
+/backup
+
+# Инструменты и отчёты
+/.idea
+/.vscode
+.DS_Store
+Thumbs.db
+*.log
+/playwright-report
+/test-results
+/coverage
+/.phpunit.result.cache
+.phpunit.cache
