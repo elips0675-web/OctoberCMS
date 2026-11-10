@@ -6,7 +6,78 @@
 
 ---
 
-(Stage 1 — 10.11.2026) — **October 4.4.13 установлен и проверен на живой БД.**
+(Stage 2 — 10.11.2026) — **Плагин `nlb/library`, 9 блюпринтов, импорт 91 элемента
+и 12 разделов, тесты идемпотентности.**
+
+Повод: пункты M4 (импорт) и M5 (blueprints) бэклога — без контента в БД нельзя
+строить ни один из 110 URL.
+
+**Плагин.** `plugins/nlb/library/Plugin.php` (`pluginDetails()`, `register()` →
+`discoverConsoleCommands()`), `composer.json` (`type: october-plugin`),
+`updates/version.yaml` (`1.0.1`). Без `version.yaml` плагин не виден
+`php artisan plugin:list` — проверено: файл есть → `Nlb.Library 1.0.1 Yes`.
+
+**9 блюпринтов** (`plugins/nlb/library/blueprints/`): `news/{section,item}`,
+`events/{section,item}`, `books/{section,item}`, `collections/item`,
+`services/item`, `printing/item`. Русские `label`/`commentAbove`, `drafts: false`.
+Таблицы созданы **`php artisan tailor:migrate`** (не `october:migrate` — он Tailor
+не трогает): 9 контентных + 3 таблицы разделов + парные `<таблица>r` для
+репитеров; всего в `nlb_october` 95 таблиц.
+
+**Факты, которые пришлось выяснить по коду ядра, а не по документации:**
+
+| Вопрос | Факт | Источник |
+|---|---|---|
+| Имя таблицы | `xc_<uuid без дефисов>c`, не `nlb_news` | `EntryBlueprint::makeBlueprintTableName` |
+| Раздел элемента | поле `entries` с `maxItems: 1` → колонка `section_id integer`, не join-таблица | `modules/tailor/contentfields/EntriesField.php:171-181` |
+| `UNIQUE(xml_id)` | невозможен: колонка `text`; идемпотентность держит код импортёра | схема `xc_ffcc9263…c` |
+| Репитер | `hasMany` в таблицу `<таблица>r`; `$record->features = [...]` → `Nested arrays may not be passed to whereIn method` | `modules/tailor/contentfields/RepeaterField.php:95-124` |
+| Типы колонок | Tailor делает `text`/`mediumtext`/`timestamp`, а не `varchar(191)` | `information_schema.columns` |
+| Разделы | три отдельные таблицы `type: structure`, не `tailor_structure` | `xc_7d052fe5…c`, `xc_5c9f95ad…c`, `xc_16285221…c` |
+
+**Импорт.** `plugins/nlb/library/console/Import.php` — команда
+`nlb:import {--source=} {--dry-run}`. Разделы → элементы; `properties` → колонки;
+`FEATURES`/`TARIFFS` разбираются по `|` и `;` (как
+`components/bitrix/news.detail/nlb_service/template.php:48-86`); репитеры
+переписываются целиком с `sort_order` = порядок выгрузки; дата — `Y-m-d H:i:s`
+без сдвига.
+
+**Чем проверено.**
+
+- `php artisan nlb:import --dry-run` → 91 элемент, 12 разделов, ничего не пишет.
+- Боевой прогон → `91 создано, 12 разделов`; второй прогон → **0 создано,
+  91 обновлено**.
+- `SELECT COUNT(*)` по шести таблицам: 10 / 6 / 24 / 6 / 8 / 37 = **91**;
+  по разделам 2 + 4 + 6 = **12**; дублей `xml_id` — 0; записей без `section_id` — 0.
+- Чтение через модели: `$news->section->code === 'library'`,
+  `$news->tags === ['digital','library']`, `$service->features` 6 строк с
+  `sort_order` 1..6, `$service->tariffs` — 3 строки, `popular` только у второй,
+  `$event->event_date->format('Y-m-d H:i') === '2026-11-29 12:00'`.
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` → **8 тестов,
+  42 утверждения, 0 упавших** (`plugins/nlb/library/tests/ImportTest.php`,
+  фикстуры — `plugins/nlb/library/tests/fixtures/db/config`): создание,
+  раздел, репитеры, даты и скаляры, второй прогон без дублей, ручная запись
+  не удаляется, правка в админке перезаписывается выгрузкой, нет каталога → код 1.
+
+**Документация исправлена под факты.** `docs/db.md` разделы 2–4, 7–9:
+убраны несуществующие `nlb_news`/`parent_id`/`UNIQUE(xml_id)`/`json`-колонки,
+добавлены uuid → таблица, `section_id`, парная репитер-таблица, фактические
+`text`/`mediumtext`, ключи `xml_id` (`nlb-news-001`, `nlb-evt-001`,
+`nlb-book-001`, `nlb-col-001`, `nlb-srv-001`, `nlb-prn-001`,
+`nlb-sec-<iblock>-<code>`) и `--dry-run`.
+
+**Что не проверено.**
+
+- В админке записи не открывались руками (только чтение моделями): форма
+  Tailor с репитером — этап 3, вместе с M18/M19.
+- `news.source_url` и `books.age_limit` в выгрузке отсутствуют — колонки есть,
+  значения пустые; заполнять нечем (нет данных у источника).
+- Импорт не переносит фото (`image` = `null` у всех 91) — картинки источник
+  отдаёт отдельными файлами, P0-7/P1-11 не решены.
+- Права на `books`-разделы («Одежда», «Канцелярия») остались как в источнике —
+  переименование не делалось (P2-13).
+
+---
 
 Повод: этап 1 — установка платформы. Ветка пересмотрена по ходу: сначала
 владелец выбрал 3.x LTS, затем — 4.x, и это подтвердилось фактами.

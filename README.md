@@ -12,7 +12,7 @@
 |---|---|
 | 0. Разведка | **сделана**: числа сверены, карта переноса собрана |
 | 1. Установка October | **сделана 10.11.2026**: v4.4.13, Laravel 12.71.0, БД `nlb_october`, 1 171 тест зелёный |
-| 2. Плагин `nlb/library` и импорт контента | не начат |
+| 2. Плагин `nlb/library` и импорт контента | **сделана 10.11.2026**: 9 blueprints, 91 элемент, 12 разделов, 8 тестов плагина |
 | 3. Заявки, слоты, гонка слота (P1-20) | не начат |
 | 4. Вёрстка и 110 URL | не начата |
 | 5. Формы | не начат |
@@ -34,10 +34,13 @@ $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
 Set-Location 'D:\October CMS'
 php artisan october:migrate
-php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data"   # этап 2
+php artisan tailor:migrate            # таблицы контента Tailor
+php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data"
 php artisan nlb:search-index                                           # этап 6
 php artisan serve --host=127.0.0.1 --port=8080
 ```
+
+Тесты плагина: `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml`.
 
 Подробно — `docs/installation.md` (там же три грабли 4.x: PATH, `theme:seed`,
 `october:about` вместо `october:version`).
@@ -53,7 +56,8 @@ php artisan serve --host=127.0.0.1 --port=8080
 
 | Команда | Что делает |
 |---|---|
-| `php vendor/phpunit/phpunit/phpunit` | PHPUnit на реальной БД (`artisan test` в 4.x нет) |
+| `php vendor/phpunit/phpunit/phpunit` | PHPUnit ядра на реальной БД (`artisan test` в 4.x нет) |
+| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на sqlite `:memory:` |
 | `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
 | `php artisan october:fresh` | убирает демо-тему и демо-плагин |
 | `php artisan migrate:fresh` | схема с нуля |
