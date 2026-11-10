@@ -14,7 +14,7 @@
 
 | Слой | Технология | Где |
 |---|---|---|
-| CMS | October CMS, ветка — фиксируется на этапе 1 | `composer.lock` в git |
+| CMS | October CMS **3.x LTS**, точная версия — в `composer.lock` | `composer.lock` в git |
 | Язык | PHP 8.3.30 (Laragon, ZTS) | `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe` |
 | Фреймворк | Laravel (внутри October): Eloquent, миграции, очереди, планировщик | `vendor/laravel` |
 | Контент | Tailor blueprints (6 сущностей) | `plugins/nlb/library/blueprints/` |

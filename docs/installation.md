@@ -19,18 +19,22 @@ $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $composer = 'C:\laragon\bin\composer\composer.phar'
 
 Set-Location 'D:\October CMS'
-& $php $composer create-project october/october . "^<ветка>"
+& $php $composer create-project october/october . "3.7.*"
 & $php artisan october:install
 & $php artisan october:migrate
 & $php artisan october:version
 ```
 
-1. Ветка фиксируется **до** установки по официальной документации именно этой ветки:
-   синтаксис Tailor и команды `artisan` между 3.x и 4.x отличаются. Версия записывается
-   в `README.md`, `composer.lock` — в git.
+1. Ветка выбрана владельцем 10.11.2026 — **3.x LTS**. Последняя в ветке —
+   **3.7.13** (Packagist, проверено 10.11.2026), поэтому ограничение версии
+   `3.7.*`. Страница `/docs/4.x/setup/installation.html` отдавала 404, поэтому
+   4.x без документации не берём. Фактическая версия — в `composer.lock`.
 2. Если установщик требует ключ/аккаунт — **остановиться и спросить владельца**.
    Лицензии не покупать, аккаунты от его имени не регистрировать.
 3. Если установка падает — показать вывод, не обходить костылями.
+4. `MAIL_MAILER=log` — решение владельца 10.11.2026: реального SMTP пока нет,
+   письма проверяются в `storage/logs/laravel.log` и тестами `Mail::fake`.
+   Код обязан работать с SMTP без правок.
 
 ## 3. База
 
