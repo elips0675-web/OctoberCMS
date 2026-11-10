@@ -6,15 +6,73 @@
 
 ---
 
+(Stage 1 — 10.11.2026) — **October 4.4.13 установлен и проверен на живой БД.**
+
+Повод: этап 1 — установка платформы. Ветка пересмотрена по ходу: сначала
+владелец выбрал 3.x LTS, затем — 4.x, и это подтвердилось фактами.
+
+**Почему 4.x, а не 3.x.** Мой первый вывод «4.x без документации» был основан
+на битом адресе: `octobercms.com/docs/4.x/setup/installation.html` отдаёт 404,
+а документация 4.x живёт на **`docs.octobercms.com/4.x/`** и открывается (200).
+Packagist: v4.4.13 — релиз 01.11.2026, `php ^8.2`, `laravel/framework ^12.0`;
+v3.7.13 — релиз 21.01.2026, `php ^8.0.2`, `laravel ^9.0`. Для нового проекта
+4.x выгоднее: активная поддержка, Laravel 12, Tailor на месте.
+
+**Что пришлось починить до установки.**
+
+| Проблема | Факт | Решение |
+|---|---|---|
+| MySQL не запущен | `ERROR 2003 (HY000) ... 10061` на `127.0.0.1:3306` | `Start-Process mysqld.exe --defaults-file=…\my.ini` |
+| `ext-zip` выключен | `php.ini:832` = `;extension=zip`, `ZipArchive MISSING` | включён; требование 4.x (`docs.octobercms.com/4.x/setup/installation.html`) |
+| PHP не в PATH | `october:install` вызывает `php` дочерним процессом → `'php' is not recognized`, установка падает на `october:migrate` | `$env:PATH` с каталогом PHP + повторный `october:migrate` |
+| Каталог занят документацией | `create-project` требует пустой каталог | установка в `._october`, затем перенос в корень (README/CHANGELOG/`.gitignore`/`.env.example` оставлены проектными) |
+| `500` на `/` после установки | в логе `Table 'nlb_october.xc_edcd102e…' doesn't exist` — blueprints демо-темы не засеяны | `php artisan theme:seed demo` |
+
+**Чем проверено (все числа — с этой машины, 10.11.2026).**
+
+- `php artisan october:about`: October **v4.4.13**, Laravel **12.71.0**,
+  PHP **8.3.30**, URL `localhost:8080`, locale `ru`.
+- `php vendor/phpunit/phpunit/phpunit` (PHPUnit 9.6.38): **1 171 тест**,
+  3 896 утверждений, 8 пропущено, **0 упавших**, 2:46.06.
+- `GET /` → **200**, 27 830 байт (демо-тема, не наш шаблон);
+  `GET /admin` → **200**, 10 914 байт (страница входа).
+- `php -l` по `app, config, database, plugins, themes, tests, bootstrap`,
+  `index.php`, `artisan` — **28 файлов, 0 ошибок**.
+- MySQL: 44 таблицы в `nlb_october`.
+
+**Команды, которых в 4.x нет** (записано в `docs/installation.md`, §5):
+`october:version` → `october:about`; `artisan test` → `vendor/phpunit/phpunit/phpunit`;
+`october:install` без PHP в PATH не работает.
+
+**Файлы.** `composer.json`, `composer.lock` (378,8 КБ, версия зафиксирована),
+`app/`, `bootstrap/`, `config/`, `database/`, `modules/` (ядро), `plugins/october/demo`,
+`themes/demo`, `tests/`, `vendor/` (в git не идёт), `index.php`, `.htaccess`,
+`phpunit.xml`, `phpcs.xml`, `.editorconfig`, `.gitattributes`. `.env` создан
+локально и в git не попадает; `.env.example` и `.gitignore` переписаны под
+проект (демо-правила October + наши: `vendor`, `storage`, секреты).
+
+**Что не проверено.**
+
+- Админ-пользователь не создан и вход не проверялся: первый вход на `/admin`
+  создаёт учётную запись через форму — это следующий шаг, а не факт.
+- Своего кода нет: `plugins/nlb/library` и `themes/nlb` не существуют,
+  `ACTIVE_THEME=demo`.
+- Демо-тема и демо-плагин October на месте — удаляются на этапе 4 (пункт M16);
+  поведение `october:fresh` (что именно сносит) ещё не проверено.
+- Очереди (`queue:work`) и планировщик не запускались; SMTP нет (M14).
+- Хостинг, домен, HTTPS не выбраны (M17); 110 URL и Lighthouse — этапы 4 и 8.
+
+---
+
 (Решения владельца — 10.11.2026) — **Ветка October, почта, публикация.**
 
 | Вопрос | Решение | Куда записано |
 |---|---|---|
-| Версия October | **3.x LTS**, ограничение `3.7.*` (последняя 3.7.13 по Packagist, проверено 10.11.2026) | `README.md`, `project-context.md:10`, `docs/installation.md:22` |
-| Push в GitHub | **да**, `origin main` | `Что доделать.txt`, M1 (хостинг остаётся открытым) |
+| Версия October | сначала 3.x LTS, затем **пересмотрено на 4.4.13** (см. Stage 1) | `README.md`, `project-context.md` (решение 9), `docs/installation.md` |
+| Push в GitHub | **да**, `origin main` | `Что доделать.txt`, M17 (хостинг открыт) |
 | Почта | **`MAIL_MAILER=log`**, реальный SMTP — позже | `docs/installation.md`, `Что доделать.txt` (M14) |
 
-Что **не** решено: хостинг и HTTPS-домен (M1), реальные контакты и реквизиты
+Что **не** решено: хостинг и HTTPS-домен (M17), реальные контакты и реквизиты
 (P0-6), права на фото (P0-7, P1-11), имя и аватар помощника (P1-15), канал
 оператора (P1-17), адрес электронного каталога (P2-9), тон промо-подсказок
 (P2-8).

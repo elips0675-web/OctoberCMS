@@ -14,9 +14,9 @@
 
 | Слой | Технология | Где |
 |---|---|---|
-| CMS | October CMS **3.x LTS**, точная версия — в `composer.lock` | `composer.lock` в git |
+| CMS | October CMS **4.4.13**, Laravel 12.71.0 | `composer.lock` в git |
 | Язык | PHP 8.3.30 (Laragon, ZTS) | `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe` |
-| Фреймворк | Laravel (внутри October): Eloquent, миграции, очереди, планировщик | `vendor/laravel` |
+| Фреймворк | Laravel 12.71.0 (внутри October): Eloquent, миграции, очереди, планировщик | `vendor/laravel` |
 | Контент | Tailor blueprints (6 сущностей) | `plugins/nlb/library/blueprints/` |
 | Заявки | Eloquent-модели + миграции (3 сущности) | `plugins/nlb/library/models/`, `updates/` |
 | CSS-фреймворк | Bootstrap 5.3.3, урезанный `tools/purge-css.mjs`, инлайн | layout темы |
@@ -25,7 +25,7 @@
 | Поиск | свой Okapi BM25, индекс в БД, команда переиндексации | `plugins/nlb/library/classes/Search` |
 | БД | MySQL 8.4.3, `127.0.0.1:3306`, БД `nlb_october` | `.env` |
 | Письма | `Mail` + `ShouldQueue`; SMTP у владельца нет → `MAIL_MAILER=log` | `.env` |
-| PWA | `manifest.webmanifest`, `sw.js`, `offline.html` | `public/` |
+| PWA | `manifest.webmanifest`, `sw.js`, `offline.html` | корень веб-корня (не `public/`) |
 | Сборка | `tools/*` (purge-css, build-image-variants, гейты) | `tools/` |
 | Тесты | PHPUnit + `RefreshDatabase` | `plugins/nlb/library/tests/` |
 
@@ -45,6 +45,12 @@
 7. **Секреты только в `.env`**, в репозитории `.env.example`.
 8. **Лицензия October — self-host.** Если установщик требует ключ/аккаунт — остановиться
    и спросить владельца, не покупать.
+9. **Ветка October — 4.x (4.4.13), не 3.x LTS.** Решение владельца 10.11.2026:
+   у 3.x только security-фиксы и Laravel 9, у 4.x активная поддержка и Laravel 12,
+   Tailor на месте. Документация 4.x — `docs.octobercms.com/4.x/`.
+10. **PHP 8.3.30**, не 8.5.12: Laravel 12 официально тестируется на 8.2–8.4,
+    на 8.5 больше deprecation-шума; 8.4 нет в Laragon, её ставим отдельно при
+    выборе хостинга. `ext-zip` включён в `php.ini` — требование 4.x.
 
 ## 4. Структура каталога (цель)
 
@@ -64,7 +70,9 @@ themes/nlb/
   layouts/default.htm    # инлайн CSS, спрайт, мета
   pages/                 # CMS-страницы: index, about, contacts, 404, ...
   partials/              # списки, карточки, крошки
-public/                  # robots.txt, sw.js, manifest.webmanifest, offline.html, ассеты
+  assets/                # картинки, шрифты, js темы
+index.php, .htaccess     # корень проекта = веб-корень (public/ в 4.x нет)
+robots.txt, sw.js, manifest.webmanifest, offline.html  # в корне веб-корня
 tools/                   # purge-css.mjs, build-image-variants.php, гейты
 docs/                    # документация (карта — docs/README.md)
 ```
@@ -116,9 +124,11 @@ docs/                    # документация (карта — docs/README.
 
 ## 8. Ограничения и что ещё не проверено
 
-- **October не установлен.** Ни одна команда `artisan` в этом каталоге ещё не выполнялась;
-  версия ветки фиксируется на этапе 1 в `README.md` и `composer.lock`.
-- **Живой SMTP отсутствует** — письма проверяются через `MAIL_MAILER=log`/Mailpit; код
+- **October установлен, но сайта ещё нет.** v4.4.13, Laravel 12.71.0, БД `nlb_october`,
+  44 таблицы. Работает демо-тема (`themes/demo`, `plugins/october/demo`) — временно,
+  до этапа 4; удаляется `october:fresh` (пункт M16 в `Что доделать.txt`).
+  Ни одного файла плагина `nlb/library` и темы `nlb` пока нет.
+- **Живой SMTP отсутствует** — письма проверяются через `MAIL_MAILER=log`; код
   обязан быть готов к реальному SMTP без правок.
 - **Демо-контент.** Все тексты, контакты, цены, события, фото — заглушки.
 - **Только светлая тема.** Решение владельца, `prefers-color-scheme` не подключается.
@@ -126,6 +136,8 @@ docs/                    # документация (карта — docs/README.
   нечего — проверено в бэклоге источника.
 - **Числа, которые в промте разошлись с фактом**: `header.php` 269 (не 251),
   `footer.php` 323 (не 305), правил чата 11 (не 10). Замер — Этап 0, запись в `Что сделано.txt`.
+- **Админ-пользователь не создан**: первый вход на `/admin` создаёт его через форму;
+  это ещё не проверено. `adminAuth` в October штатный, dev-логина нет.
 
 ## 9. Соглашения
 

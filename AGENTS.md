@@ -86,14 +86,16 @@
 
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
-& $php artisan test                       # PHPUnit, 0 упавших
-& $php artisan migrate:fresh --seed       # схема поднимается с нуля
-Get-ChildItem -Recurse -Filter *.php -File |
-  Where-Object { $_.FullName -notmatch '\\(vendor|storage)\\' } |
+$env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
+& $php vendor/phpunit/phpunit/phpunit    # PHPUnit 9.6, 0 упавших (artisan test в 4.x нет)
+& $php artisan october:migrate           # схема поднимается, 0 ошибок
+Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.php -File |
   ForEach-Object { & $php -l $_.FullName }  # 0 ошибок синтаксиса
 node tools/purge-css.mjs --check          # CSS на месте после правок разметки
 node tools/check-css-budget.mjs           # бюджет CSS
 ```
+
+Проверка версии — `php artisan october:about` (`october:version` в 4.x нет).
 
 Бюджет: встроенный CSS после минификации ≤ 56,4 КБ (как в источнике), документ главной
 ≤ 190 412 знаков, initial JS — без роста относительно источника. Превышение — не «готово».
@@ -102,8 +104,8 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 100/100/100/100, замер через сервер с gzip. Перед замером прогреть страницу — иначе первый
 прогон даёт ложные 88. «Ускорять» за счёт удаления слайдов, дизайна или контента запрещено.
 
-Гейт не заменяет живую установку: `php artisan test` на моке БД не доказывает, что колонка
-существует. Схема проверяется `migrate:fresh --seed` и живым запросом.
+Гейт не заменяет живую установку: PHPUnit на моке БД не доказывает, что колонка
+существует. Схема проверяется `october:migrate` на чистой БД и живым запросом.
 
 ## 6. Конец этапа
 

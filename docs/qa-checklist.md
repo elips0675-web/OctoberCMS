@@ -6,14 +6,14 @@
 
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
-& $php artisan test
-& $php artisan migrate:fresh --seed
+$env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
+& $php vendor/phpunit/phpunit/phpunit
 node tools/purge-css.mjs --check
 node tools/check-css-budget.mjs
 ```
 
-- [ ] `artisan test` — 0 упавших, число тестов записано в журнал.
-- [ ] `migrate:fresh --seed` поднимает сайт с нуля (не «на моей базе работает»).
+- [ ] PHPUnit — 0 упавших, число тестов записано в журнал.
+- [ ] `october:migrate` на чистой БД поднимает схему (не «на моей базе работает»).
 - [ ] `php -l` по всем PHP-файлам вне `vendor/` и `storage/` — 0 ошибок.
 - [ ] `git status` чистый, коммит поимённый, запись в журнале есть.
 

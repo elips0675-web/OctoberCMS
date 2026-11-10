@@ -1,16 +1,25 @@
 # Зависимости
 /vendor
+/vendor_drm
 /node_modules
-/bootstrap/cache/*.php
+/modules/system/node_modules
 /bootstrap/cache
+/bootstrap/compiled.php
+/bootstrap/cache/*.php
+composer.phar
 
 # Окружение и секреты
 .env
-.env.*
+.env.*.php
+.env.php
+auth.json
 !.env.example
 *.key
 *.pem
 .auth/
+sftp-config.json
+.ftpconfig
+selenium.php
 
 # Хранилище October: логи, кеш, сессии, загруженные файлы
 /storage/app/*
@@ -23,6 +32,7 @@
 /storage/logs/*
 /storage/temp/*
 /storage/debugbar/*
+!/storage/**/.gitignore
 
 # Собранные и сгенерированные файлы
 /public/storage
@@ -31,6 +41,9 @@
 /plugins/*/*/vendor
 *.min.css
 !public/**/*.min.css
+/database/database.sqlite
+_ide_helper.php
+.phpstorm.meta.php
 
 # Бэкапы и дампы
 *.sql
@@ -41,11 +54,27 @@
 # Инструменты и отчёты
 /.idea
 /.vscode
+/.claude
+/.vite
+nbproject
 .DS_Store
 Thumbs.db
 *.log
+php_errors.log
+php-errors.log
+nginx-error.log
+nginx-access.log
+nginx-ssl.access.log
+nginx-ssl.error.log
+package-lock.json
 /playwright-report
 /test-results
 /coverage
 /.phpunit.result.cache
 .phpunit.cache
+/modules
+
+# Демо-тема и демо-плагин October: скелет ставит их для примера,
+# проект их не использует и удаляет на этапе 4 (пункт M16).
+/themes/demo
+/plugins/october/demo

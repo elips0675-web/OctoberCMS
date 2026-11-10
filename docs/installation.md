@@ -1,51 +1,82 @@
 # Установка
 
-## 1. Что нужно до начала
+Проверено 10.11.2026 на этой машине: October **v4.4.13**, Laravel **12.71.0**,
+PHP **8.3.30**, MySQL **8.4.3**, БД `nlb_october`, 44 таблицы.
+
+## 1. Что нужно
 
 | Требование | Факт на машине |
 |---|---|
-| PHP 8.3 (не 8.5) | `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe` |
-| Composer 2 | `C:\laragon\bin\composer\composer.phar` |
-| MySQL 8.4.3 | Laragon, `127.0.0.1:3306`, `root`, пароль пустой |
-| Расширения PHP | pdo_mysql, mbstring, openssl, curl, gd, zip, simplexml, fileinfo |
-| Git | есть, remote `https://github.com/elips0675-web/OctoberCMS` |
+| PHP ≥ 8.2 | `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe` (8.3.30) |
+| Composer 2 | `C:\laragon\bin\composer\composer.phar` (2.9.4) |
+| MySQL | Laragon, `127.0.0.1:3306`, `root`, пароль пустой |
+| `ext-zip` | **включён вручную**: `php.ini:832`, было `;extension=zip` |
+| Прочие расширения | pdo_mysql, mysqli, mbstring, openssl, curl, gd, exif, intl, fileinfo, simplexml |
+| Git | remote `https://github.com/elips0675-web/OctoberCMS` |
 
-PHP **не в PATH**: во всех командах ниже используется переменная `$php`.
+Документация 4.x живёт на **`docs.octobercms.com/4.x/`**, а не на
+`octobercms.com/docs/4.x/` — второй адрес отдаёт 404 (проверено 10.11.2026).
 
-## 2. Порядок
+PHP не в PATH. `october:install` внутри вызывает `php` дочерним процессом,
+поэтому **без PATH установка падает** с `'php' is not recognized`. В начале
+сессии:
 
 ```powershell
-$php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
-$composer = 'C:\laragon\bin\composer\composer.phar'
-
-Set-Location 'D:\October CMS'
-& $php $composer create-project october/october . "3.7.*"
-& $php artisan october:install
-& $php artisan october:migrate
-& $php artisan october:version
+$env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
 ```
 
-1. Ветка выбрана владельцем 10.11.2026 — **3.x LTS**. Последняя в ветке —
-   **3.7.13** (Packagist, проверено 10.11.2026), поэтому ограничение версии
-   `3.7.*`. Страница `/docs/4.x/setup/installation.html` отдавала 404, поэтому
-   4.x без документации не берём. Фактическая версия — в `composer.lock`.
-2. Если установщик требует ключ/аккаунт — **остановиться и спросить владельца**.
-   Лицензии не покупать, аккаунты от его имени не регистрировать.
-3. Если установка падает — показать вывод, не обходить костылями.
-4. `MAIL_MAILER=log` — решение владельца 10.11.2026: реального SMTP пока нет,
-   письма проверяются в `storage/logs/laravel.log` и тестами `Mail::fake`.
-   Код обязан работать с SMTP без правок.
+## 2. MySQL
 
-## 3. База
+Служба Laragon может быть не запущена (`ERROR 2003 (HY000) ... 10061`).
+Поднимается напрямую, без GUI:
+
+```powershell
+Start-Process 'C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqld.exe' `
+  -ArgumentList '--defaults-file=C:\laragon\bin\mysql\mysql-8.4.3-winx64\my.ini' `
+  -WindowStyle Hidden
+```
 
 ```sql
 CREATE DATABASE nlb_october CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-`.env` (не коммитится):
+## 3. Порядок установки
+
+Каталог `D:\October CMS` **не пустой** (в нём `docs/`, `AGENTS.md`, `.git`),
+а `create-project` требует пустой каталог. Поэтому — установка во временный
+подкаталог и перенос:
+
+```powershell
+$php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
+$composer = 'C:\laragon\bin\composer\composer.phar'
+Set-Location 'D:\October CMS'
+
+& $php $composer create-project october/october ._october "4.4.*" --no-interaction --prefer-dist
+# перенести всё из ._october в корень, кроме README/CHANGELOG/CONTRIBUTING/.gitignore/.env.example —
+# они остаются проектными; затем Remove-Item ._october -Recurse -Force
+
+php artisan october:install --no-interaction
+php artisan october:migrate          # второй прогон, если плагин ставился после миграций
+php artisan theme:seed demo          # создать Tailor-таблицы темы (иначе 500 на /)
+php artisan october:about            # версия
+```
+
+`october:install` без PATH падает **после** «Installing October CMS», уже
+на шаге `october:migrate`; база при этом остаётся пустой. Лечение — PATH и
+повторный `october:migrate`.
+
+`theme:seed demo` нужен потому, что blueprints темы создают Tailor-таблицы
+(`xc_<md5>`) только при сидинге. Без него главная отдаёт `500`:
+`Base table or view not found: 1146 Table 'nlb_october.xc_…' doesn't exist`.
+
+## 4. `.env`
+
+`create-project` генерирует `.env` и `APP_KEY` сам. Правки под проект:
 
 ```
+APP_NAME="NLB"
 APP_URL=http://localhost:8080
+APP_LOCALE=ru
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -54,55 +85,49 @@ DB_USERNAME=root
 DB_PASSWORD=
 QUEUE_CONNECTION=database
 MAIL_MAILER=log
+ACTIVE_THEME=demo
 ```
 
-`.env.example` в репозитории повторяет ключи с пустыми значениями. Секреты VAPID,
-Stripe, SMTP, API-токен бота добавляются на этапах 5–7, не раньше.
+`ACTIVE_THEME=demo` — временно, до появления `themes/nlb` (этап 4). `.env` в git
+не попадает; шаблон — `.env.example`.
 
-## 4. Проверка после установки
+## 5. Команды, которых нет в 4.x
+
+| Ожидание из 3.x | В 4.4.13 |
+|---|---|
+| `php artisan october:version` | **нет**; версия — `php artisan october:about` |
+| `php artisan test` | **нет**; тесты — `php vendor/phpunit/phpunit/phpunit` (PHPUnit 9.6.38) |
+| `php artisan migrate:fresh --seed` | есть, но для October чище `october:fresh` + `theme:seed` |
+| `october:install` без PATH | падает: вызывает `php` |
+
+Демо-тема и демо-плагин ставятся скелетом (`themes/demo`, `plugins/october/demo`).
+Удаляются командой `october:fresh` (её точное поведение проверяется на этапе 4).
+
+## 6. Проверка после установки
 
 ```powershell
-& $php artisan october:version          # версия зафиксирована
-& $php artisan test                     # пусто, но зелёно
-& $php artisan migrate:fresh --seed     # схема поднимается с нуля
-Get-ChildItem -Recurse -Filter *.php -File |
-  Where-Object { $_.FullName -notmatch '\\(vendor|storage)\\' } |
-  ForEach-Object { & $php -l $_.FullName }
+php artisan october:about            # v4.4.13, Laravel 12.71.0, PHP 8.3.30
+php vendor/phpunit/phpunit/phpunit   # 0 упавших
+php artisan serve --host=127.0.0.1 --port=8080
 ```
 
-Сайт открывается, админка входит, `git status` чистый (кроме сгенерированных
-`storage/`, `vendor/`, `.env`).
-
-## 5. Локальный запуск
-
-```powershell
-& $php artisan serve --host=127.0.0.1 --port=8080
-```
-
-Продакшн-профиль страницы проверяется через сервер с gzip (Apache/Nginx Laragon или
-middleware): без gzip замеры Lighthouse занижены, а «100» на `php -S` не воспроизводится.
-
-## 6. Очереди и планировщик
-
-```powershell
-& $php artisan queue:work --tries=3      # либо cron: queue:work --once
-& $php artisan schedule:run              # каждую минуту, как в cron
-```
-
-Без `queue:work` письма и уведомления остаются в таблице `jobs` — «письмо отправлено»
-без обработчика не считается проверенным.
+Замеры 10.11.2026: `GET /` → `200`, 27 830 байт (демо-тема); `GET /admin` →
+`200`, 10 914 байт (страница входа); `php -l` по 28 PHP-файлам вне `vendor/` и
+`storage/` → 0 ошибок; PHPUnit → 1 171 тест, 3 896 утверждений, 8 пропущено,
+0 упавших, 2:46.
 
 ## 7. Типовые сбои
 
 | Симптом | Причина | Что делать |
 |---|---|---|
-| `could not find driver` | PHP без `pdo_mysql` | включить расширение в `php.ini` Laragon |
-| 404 на всех страницах | не включён rewrite | включить mod_rewrite / проверить `public/` |
-| 500 на `/backend` | нет таблиц | `artisan october:migrate` |
-| пустой CSS | не собран purge/minify | `node tools/purge-css.mjs`, проверить `mtime`-кеш |
-| письма не уходят | `MAIL_MAILER=log` | смотреть `storage/logs/laravel.log` |
+| `'php' is not recognized` при install | PHP нет в PATH | добавить каталог PHP в `PATH` сессии |
+| `ERROR 2003 (HY000) ... 10061` | mysqld не запущен | `Start-Process mysqld.exe --defaults-file=…my.ini` |
+| `500` на `/`, в логе `xc_…` not found | blueprints темы не засеяны | `php artisan theme:seed demo` |
+| `could not find driver` | нет `pdo_mysql` | включить расширение в `php.ini` |
+| композер падает на `ext-zip` | `;extension=zip` | раскомментировать, `php -m | findstr zip` |
+| 404 на всех страницах | нет rewrite | `php artisan serve` либо vhost на корень проекта |
 
 ## 8. Удаление
 
-Каталог удаляется целиком; база — `DROP DATABASE nlb_october`. Источник
-`D:\nlbbootstrap-main` при этом не затрагивается.
+Каталог — целиком, база — `DROP DATABASE nlb_october`. Источник
+`D:\nlbbootstrap-main` не затрагивается.

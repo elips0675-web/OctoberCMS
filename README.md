@@ -11,7 +11,7 @@
 | Этап | Состояние |
 |---|---|
 | 0. Разведка | **сделана**: числа сверены, карта переноса собрана |
-| 1. Установка October | не начата |
+| 1. Установка October | **сделана 10.11.2026**: v4.4.13, Laravel 12.71.0, БД `nlb_october`, 1 171 тест зелёный |
 | 2. Плагин `nlb/library` и импорт контента | не начат |
 | 3. Заявки, слоты, гонка слота (P1-20) | не начат |
 | 4. Вёрстка и 110 URL | не начата |
@@ -21,29 +21,35 @@
 | 8. Производительность (Lighthouse 100) | не начата |
 | 9. Документация и бэклог | ведётся постоянно |
 
-Версия October: **3.x LTS** (решение владельца 10.11.2026). Последняя в ветке —
-**3.7.13** (Packagist, проверено 10.11.2026); фактическая версия фиксируется
-`composer.lock` на этапе 1. Хостинг ещё не выбран — пункт M1 в `Что доделать.txt`.
+Версия October: **4.4.13** (Packagist, релиз 01.11.2026), Laravel **12.71.0**,
+PHP **8.3.30**. Ветка 4.x выбрана владельцем 10.11.2026 вместо 3.x LTS:
+у 3.x поддержка только security-фиксы и Laravel 9, у 4.x — активная поддержка
+и Laravel 12. Версия зафиксирована в `composer.lock`.
+Хостинг ещё не выбран — пункт M1 в `Что доделать.txt`.
 
-## Быстрый старт (после этапа 1)
+## Быстрый старт
 
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
+$env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
 Set-Location 'D:\October CMS'
-& $php artisan october:migrate
-& $php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data"
-& $php artisan nlb:search-index
-& $php artisan serve --host=127.0.0.1 --port=8080
+php artisan october:migrate
+php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data"   # этап 2
+php artisan nlb:search-index                                           # этап 6
+php artisan serve --host=127.0.0.1 --port=8080
 ```
 
-Подробно — `docs/installation.md`.
+Подробно — `docs/installation.md` (там же три грабли 4.x: PATH, `theme:seed`,
+`october:about` вместо `october:version`).
 
 ## Команды
 
 | Команда | Что делает |
 |---|---|
-| `php artisan test` | PHPUnit на реальной БД (`RefreshDatabase`) |
-| `php artisan migrate:fresh --seed` | схема и демо-данные с нуля |
+| `php vendor/phpunit/phpunit/phpunit` | PHPUnit на реальной БД (`artisan test` в 4.x нет) |
+| `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
+| `php artisan october:fresh` | убирает демо-тему и демо-плагин |
+| `php artisan migrate:fresh` | схема с нуля |
 | `php artisan nlb:import` | идемпотентный импорт 91 элемента и 12 разделов |
 | `php artisan nlb:search-index` | переиндексация BM25 |
 | `php artisan nlb:slots-generate` | генерация слотов услуг |

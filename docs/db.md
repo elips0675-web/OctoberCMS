@@ -227,7 +227,7 @@ php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data" [--dry-run
 ## 9. Ограничения
 
 - Мок БД не доказывает существование колонки. Проверка схемы — только
-  `php artisan migrate:fresh --seed` + живой запрос.
+  `php artisan october:migrate` на чистой БД + живой запрос.
 - Массовое удаление (`delete_bulk`) пишется в аудит: удаление заявки без следа —
   дефект, а не оптимизация.
 - Апсерт без `UNIQUE`-ключа молча вырождается в `INSERT` — поэтому `xml_id` и

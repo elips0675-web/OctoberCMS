@@ -5,7 +5,7 @@
 Сайт — обычное Laravel-приложение October CMS. Поток запроса:
 
 ```
-nginx/apache → public/index.php → October bootstrap → plugin routes / CMS page
+nginx/apache → index.php (корень проекта) → October bootstrap → plugin routes / CMS page
   → компонент (Header, Menu, Breadcrumbs, List, Detail, Form, Search)
   → Eloquent / Tailor-запись
   → Blade-шаблон темы nlb → HTML (инлайн CSS)

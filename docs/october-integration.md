@@ -9,7 +9,7 @@
 | `<!doctype>`, `lang`, meta | `header.php:18-23` | `themes/nlb/layouts/default.htm` |
 | meta/robots/keywords/description/canonical | `header.php:30-38` | компонент `Header` + `Seo::head()` |
 | OG, Twitter, JSON-LD | `header.php:41-42` (`nlb_seo_head()`, `nlb_seo_jsonld()`) | `Seo` |
-| manifest, иконки, apple-meta | `header.php:44-51` | layout, `public/` |
+| manifest, иконки, apple-meta | `header.php:44-51` | layout + файлы в корне веб-корня |
 | инлайн CSS | `header.php:70` (`<style data-nlb-css>`) | layout + `Media::minifyCss()` с кешем по `mtime` |
 | спрайт SVG | `header.php:79` | `partials/sprite.htm` (как есть) |
 | topbar (адрес, часы, телефон) | `header.php:130-152` | компонент `Header` (данные — конфиг сайта) |
@@ -105,8 +105,8 @@
 | JSON-LD | `nlb_seo.php` | `Seo::jsonld()` |
 | `/sitemap.xml` | `sitemap.php` | контроллер: 110 URL + `lastmod` из `updated_at` |
 | `/sitemap/` (HTML) | страница | CMS-страница |
-| `robots.txt` | корень | `public/robots.txt` (пути не менять) |
-| `manifest.webmanifest`, `sw.js`, `offline.html` | корень | `public/` (пути не менять) |
+| `robots.txt` | корень | `robots.txt` в корне веб-корня (пути не менять) |
+| `manifest.webmanifest`, `sw.js`, `offline.html` | корень | корень веб-корня (пути не менять) |
 | версия SW | `sw.js` | поднимается при изменении ассетов |
 
 ## 9. Безопасность
@@ -127,5 +127,5 @@
 - `db/tests/stub/bitrix.php` (31 750 байт) — выбрасывается.
 - `api/telegram_booking.php` (2 926 байт) — непригоден (секрет-заглушка, `Authorize(1)`,
   чужие коды свойств), пишется заново как `POST /api/bookings`.
-- `db/check.php`, `db/lint.php`, `db/run.php` — заменяются `php artisan test` и миграциями.
+- `db/check.php`, `db/lint.php`, `db/run.php` — заменяются PHPUnit и миграциями.
 - Любые вызовы `bitrix:*` — запрещены в новом коде.
