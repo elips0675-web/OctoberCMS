@@ -1,0 +1,12 @@
+<div class="col-sm-6 col-lg-4" data-nlb-item="{{ item.section ? item.section.code : '' }}">
+    <article class="nlb-card h-100"><a class="d-block h-100" href="/news/{{ item.slug }}/">
+        <div class="nlb-card__media">
+            {{ nlb_picture(item.image ?: 'assets/images/news-1.jpg', item.title, {sizes: '(max-width: 575px) 100vw, (max-width: 991px) 50vw, 33vw'})|raw }}
+        </div>
+        <div class="nlb-card__body">
+            <p class="news-date">{{ item.published_at|nlb_date('d.m.Y') }}</p>
+            <h2 class="news-title">{{ item.title }}</h2>
+            <p class="news-text clamp-2">{{ item.excerpt }}</p>
+        </div>
+    </a></article>
+</div>

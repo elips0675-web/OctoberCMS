@@ -1,0 +1,16 @@
+name: Библиотека
+code: nlb
+description: 'Тема сайта библиотеки: Bootstrap 5, инлайн CSS, контент из Tailor-записей.'
+author: NLB
+homepage: 'https://github.com/elips0675-web/OctoberCMS'
+form:
+    fields:
+        meta_title:
+            label: 'Заголовок для поисковиков'
+            commentAbove: 'Подставляется в <title>. Пусто — берётся заголовок страницы.'
+            type: text
+            span: left
+        meta_description:
+            label: 'Описание для поисковиков'
+            type: textarea
+            size: small

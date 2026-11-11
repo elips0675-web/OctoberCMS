@@ -59,13 +59,15 @@ php artisan serve --host=127.0.0.1 --port=8080
 | `php vendor/phpunit/phpunit/phpunit` | PHPUnit ядра на реальной БД (`artisan test` в 4.x нет) |
 | `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на sqlite `:memory:` |
 | `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
-| `php artisan october:fresh` | убирает демо-тему и демо-плагин |
+| `php artisan october:fresh` | **сносит контент**: схема + демо с нуля; для этапа 4 не использовался |
 | `php artisan migrate:fresh` | схема с нуля |
 | `php artisan nlb:import` | идемпотентный импорт 91 элемента и 12 разделов |
 | `php artisan nlb:search-index` | переиндексация BM25 |
 | `php artisan nlb:slots-generate` | генерация слотов услуг |
 | `node tools/purge-css.mjs` | урезание `bootstrap.min.css` |
-| `node tools/check-css-budget.mjs` | бюджет встроенного CSS |
+| `node tools/check-css-budget.mjs` | бюджет встроенного CSS и отсутствие внешних таблиц |
+| `node tools/check-urls.mjs` | 110 адресов на живом `serve`: 109×200 + 404 |
+| `node tools/check-dom-parity.mjs` | сверка title/h1/h2/карточек/текста с `preview/` |
 | `php tools/build-image-variants.php` | WebP/AVIF, 480/960/1280 |
 | `php tools/gen-vapid.php` | ключи Web Push |
 

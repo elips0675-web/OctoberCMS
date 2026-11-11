@@ -1,0 +1,47 @@
+title = "Поиск по сайту — Библиотека 2026"
+url = "/search/"
+layout = "default"
+seo_description = "Поиск по книгам, событиям, новостям, услугам и печатному каталогу библиотеки."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--green">Поиск</span>
+        <h1 class="page-title">Поиск по сайту</h1>
+
+        <form class="row g-2 align-items-center mb-3" action="/search/" method="get" role="search" style="max-width: 640px">
+            <div class="col">
+                <label class="visually-hidden" for="nlbSearchPageInput">Поисковый запрос</label>
+                <div class="search-field">
+                    <svg class="i i-24" aria-hidden="true"><use href="#i-search"/></svg>
+                    <input class="form-control" id="nlbSearchPageInput" type="search" name="q"
+                           value=""
+                           placeholder="Книги, авторы, события, услуги…" autocomplete="off">
+                </div>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-nlb btn-icon" type="submit">
+                    Найти
+                    <svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+                </button>
+            </div>
+        </form>
+
+        <div class="d-flex flex-wrap gap-2" aria-label="Популярные запросы">
+            <a class="search-chip" href="/search/?q=каталог">Каталог книг</a>
+            <a class="search-chip" href="/search/?q=афиша">Афиша</a>
+            <a class="search-chip" href="/search/?q=печать">Печать</a>
+            <a class="search-chip" href="/search/?q=коворкинг">Коворкинг</a>
+        </div>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="empty-state">
+            Введите запрос — на стенде здесь появятся книги, события, новости и услуги.
+            Выдачу собирает компонент <code>bitrix:search.page</code>: в статическом
+            превью без ядра её нет, форма и популярные запросы — как на сайте.
+        </div>
+    </div>
+</section></main>

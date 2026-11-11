@@ -10,11 +10,15 @@ $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
 & $php vendor/phpunit/phpunit/phpunit
 node tools/purge-css.mjs --check
 node tools/check-css-budget.mjs
+node tools/check-urls.mjs
+node tools/check-dom-parity.mjs
 ```
 
 - [ ] PHPUnit — 0 упавших, число тестов записано в журнал.
 - [ ] `october:migrate` на чистой БД поднимает схему (не «на моей базе работает»).
 - [ ] `php -l` по всем PHP-файлам вне `vendor/` и `storage/` — 0 ошибок.
+- [ ] `check-urls` — 109 страниц `200`, 404 со страницей, внешнего CSS нет.
+- [ ] `check-dom-parity` — 0 расхождений с эталоном (title, h1, h2, карточки, текст).
 - [ ] `git status` чистый, коммит поимённый, запись в журнале есть.
 
 ## B. 110 адресов (этап 4)

@@ -49,4 +49,62 @@ class Slot extends Model
     {
         return $query->whereDate('date', $date);
     }
+
+    public function scopeAvailable($query)
+    {
+        return $query->whereColumn('taken', '<', 'capacity');
+    }
+
+    /**
+     * occupiedMap возвращает занятые часы по датам для формы брони.
+     *
+     * Формат совпадает с данными формы: {"2026-11-11": ["10:00", "11:00"]}.
+     * В карту попадают только часы без свободных мест, чтобы скрипт формы
+     * блокировал их, а остальные оставлял доступными.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function occupiedMap(string $serviceCode, ?string $from = null, int $days = 60): array
+    {
+        $start = $from ?: date('Y-m-d');
+        $until = date('Y-m-d', strtotime($start . ' +' . max(1, $days) . ' days'));
+
+        $rows = static::query()
+            ->forService($serviceCode)
+            ->whereDate('date', '>=', $start)
+            ->whereDate('date', '<=', $until)
+            ->orderBy('date')
+            ->orderBy('time')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            if ($row->isAvailable()) {
+                continue;
+            }
+
+            $day = substr((string) $row->date, 0, 10);
+            $time = substr((string) $row->time, 0, 5);
+            if ($day === '' || $time === '') {
+                continue;
+            }
+
+            $map[$day][] = $time;
+        }
+
+        return $map;
+    }
+
+    /**
+     * jsonOccupiedMap отдаёт карту занятых часов строкой для атрибута формы.
+     */
+    public static function jsonOccupiedMap(string $serviceCode, int $days = 60): string
+    {
+        $map = static::occupiedMap($serviceCode, null, $days);
+        if ($map === []) {
+            return '{}';
+        }
+
+        return (string) json_encode($map, JSON_UNESCAPED_UNICODE);
+    }
 }

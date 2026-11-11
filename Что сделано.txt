@@ -6,6 +6,82 @@
 
 ---
 
+(Stage 4 — 11.11.2026) — **Тема `nlb`, 110 адресов, DOM и текст 1:1 с `preview/`,
+демо-тема и демо-плагин удалены, инлайн CSS в бюджете.**
+
+Повод: M6 (110 URL), M7 (инлайн-CSS и бюджет), M12 (тема), M16 (демо-снятие),
+M11 (тесты). Эталон — `preview/**` источника, правило «разметка и тексты 1:1».
+
+**Тема.** `themes/nlb/`: `theme.yaml`, `layouts/default.htm` (56 строк; инлайн
+CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %}` — `:49`),
+25 CMS-страниц в `themes/nlb/pages/` (12 корневых, 6 списков, 6 шаблонов
+детальных + 404), 11 partials (`header`, `footer`, `sprite`, `not-found`,
+`filter-script` и 6 карточек `partials/cards/*`). Ассеты перенесены как есть:
+`styles.css` 81 179 байт, варианты 480/960 в JPG/WebP/AVIF, иконки, PWA-иконки,
+`bootstrap.min.css` 51 758 и `bootstrap.bundle.min.js` 80 721. `script.js`
+**побайтово равен источнику** (75 359 байт): правка «дата не в прошлом» откачена,
+потому что бюджет JS запрещает рост, а правило — «script.js как есть».
+
+**Хелперы плагина** (версия `1.1.0`, `updates/version.yaml:9`):
+`classes/Content.php:24` — выборка Tailor-записей и разделов по коду;
+`classes/Labels.php:90` — подписи тегов, категорий, форматов, наличия и возраста;
+`classes/Media.php:89` — `<picture>` с AVIF/WebP и JPG-фолбэком, `:236` —
+минификация CSS, `:306` — инлайн CSS с кешем по `mtime`; регистрация тегов —
+`Plugin.php:25`. Карта занятых часов для формы брони —
+`models/Slot.php:67` (`occupiedMap`) и `:101` (`jsonOccupiedMap`), в разметке —
+`themes/nlb/pages/services-detail.htm:150`.
+
+**Личный кабинет 1:1.** `/personal/` в эталоне — страница-редирект
+(`meta refresh` на `/auth/`, `noindex`), а не раздел сайта. Тема повторяет это
+(`themes/nlb/pages/personal.htm`), поэтому в DOM-сверке у неё нет `<main>`.
+
+**Демо-снятие (M16).** Каталоги `themes/demo` и `plugins/october/demo` убраны;
+`october:fresh` **не запускался** — он снёс бы и контент сайта. Вместо него:
+удалены 24 таблицы `xc_*` демо-блюпринтов (UUID сверены с YAML темы),
+8 строк `tailor_content_schema` и запись `October.Demo` в
+`system_plugin_versions`. Итог: `theme:list` — только `nlb`, `plugin:list` —
+только `Nlb.Library`, БД — 76 таблиц (было 100).
+
+**Гейты.** Новые скрипты: `tools/check-urls.mjs` (инвентарь из
+`docs/content.md`, 109 адресов + `/non-existent/`) и `tools/check-dom-parity.mjs`
+(title, h1, h2 без модалок, число `<article>`, текст `<main>` против `preview/`).
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` → **61 тест,
+  218 утверждений, 0 упавших**: добавлены `MediaTest` (19), `LabelsTest` (7),
+  `SlotMapTest` (6). Тест `testImagePathDecodesMediafinderValues` нашёл дефект:
+  пустое значение mediafinder `[]` возвращалось строкой `'[]'` и попадало в
+  `src`; исправлено в `Media.php:69-82`.
+- `node tools/check-urls.mjs` → **109 страниц 200**, `/non-existent/` — `404`
+  со страницей, query-строка (`/services/cafe/?utm_source=test`) не теряется,
+  внешних CSS и Google Fonts нет. Главная — 185 676 знаков (бюджет 190 412).
+- `node tools/check-dom-parity.mjs` → **110/110 без расхождений** (title, h1,
+  h2, карточки, текст). Расхождение было одно: в `services-detail.htm` потерялась
+  демо-подсказка о занятых слотах — возвращена дословно, пункт P1-9 уточнён.
+- `node tools/check-css-budget.mjs` → `styles.css` 81 179 → **57 795 байт**
+  (бюджет 56,4 КБ), `bootstrap.min.css` 51 758 → 51 508; `purge-css.mjs --check`
+  — сборка совпадает.
+- `october:migrate` → `Nlb.Library v1.0.2 -> v1.1.0`, 0 ошибок.
+- `php -l` по `app,config,database,plugins,themes,tests` → **0 ошибок синтаксиса**.
+- `.gitignore`: добавлено исключение `!/themes/*/assets/vendor/*.min.css` —
+  иначе `bootstrap.min.css` и `bootstrap.source.min.css` не попадали в git
+  и тема ломалась на свежем клоне.
+
+**Что не проверено.**
+
+- Lighthouse и axe на живом October не прогонялись — это этап 8 (P1-5, §C).
+- Геометрия на всех 110 адресах после purge-CSS не сверялась (P2-12):
+  сверены текст и структура, не пиксели.
+- Формы (`/feedback/`, бронь, заказ, подписка) пока только разметкой: маршруты,
+  очереди писем и админ-списки — этап 5 (P0-4, P0-5, P1-9, P1-12).
+- Поиск (M8), чат (P1-15/P1-17), Push (M9) и PWA (M10) — JS и модалки на месте,
+  серверных эндпоинтов нет.
+- Права на демо-фото не зафиксированы (P0-7); контакты и реквизиты — заглушки
+  (P0-6).
+- Локальный `.local/removed-demo/` с удалёнными демо-каталогами не в git;
+  удалять его или хранить — решение владельца.
+
+---
+
 (Stage 3 — 10.11.2026) — **Eloquent-слой заявок и броней: 5 таблиц, гонка слота
 закрыта `UNIQUE` + транзакцией, генератор слотов, 29 тестов плагина.**
 

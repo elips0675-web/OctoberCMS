@@ -93,7 +93,14 @@ Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.
   ForEach-Object { & $php -l $_.FullName }  # 0 ошибок синтаксиса
 node tools/purge-css.mjs --check          # CSS на месте после правок разметки
 node tools/check-css-budget.mjs           # бюджет CSS
+node tools/check-urls.mjs                 # 110 адресов на живом сервере (нужен serve)
+node tools/check-dom-parity.mjs           # DOM и текст против preview/ источника
 ```
+
+`check-urls` и `check-dom-parity` работают по запущенному `php artisan serve`
+(`--base=http://127.0.0.1:8080`); второй требует эталон `D:\nlbbootstrap-main\preview`
+(`--source=`), без него падает — сверять не с чем. Менять тексты можно только
+вместе с эталоном, иначе гейт красный и это правильный сигнал.
 
 Проверка версии — `php artisan october:about` (`october:version` в 4.x нет).
 

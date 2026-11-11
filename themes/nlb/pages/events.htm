@@ -1,0 +1,51 @@
+title = "События — Библиотека 2026"
+url = "/events/"
+layout = "default"
+seo_description = "Афиша библиотеки: лекции, мастер-классы, встречи с авторами и детские занятия."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--red">Афиша</span>
+        <h1 class="page-title">События</h1>
+        <p class="page-lead">
+            Лекции, мастер-классы и встречи с авторами. Вход свободный или по записи —
+            смотрите условия в карточке события.
+        </p>
+
+        <ul class="section-chips" aria-label="Рубрики событий" data-nlb-filter>
+            <li><button class="section-chip is-active" type="button" data-filter="all">Все рубрики</button></li>
+            {% for code, label in nlb_event_categories() %}
+                <li><button class="section-chip" type="button" data-filter="{{ code }}">{{ label }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4">
+            {% for item in nlb_records('Nlb\\Event') %}
+                {% partial 'cards/event' item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section--soft">
+    <div class="container">
+        <div class="cta-banner" data-reveal>
+            <h2>Хотите провести своё событие?</h2>
+            <p class="text-white-75 mb-4">
+                Расскажите о формате и дате — подберём зал и поможем с организацией.
+            </p>
+            <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                <a class="btn btn-nlb-white btn-lg-nlb" href="/feedback/">Написать нам</a>
+                <a class="btn btn-nlb-outline btn-lg-nlb" href="/services/">Услуги и залы</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% partial 'filter-script' %}
+</main>

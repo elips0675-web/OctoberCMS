@@ -42,6 +42,7 @@ selenium.php
 /plugins/*/*/vendor
 *.min.css
 !public/**/*.min.css
+!/themes/*/assets/vendor/*.min.css
 /database/database.sqlite
 _ide_helper.php
 .phpstorm.meta.php

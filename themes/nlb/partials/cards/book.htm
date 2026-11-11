@@ -1,0 +1,16 @@
+{% set status = nlb_availability(item.available ?: 'available') %}
+<div class="col-sm-6 col-lg-4 col-xl-3" data-nlb-item="{{ item.section ? item.section.code : '' }}">
+    <article class="book-card h-100">
+        <a class="book-cover book-cover--{{ nlb_cover_color(item.title) }}" href="/books/{{ item.slug }}/" aria-hidden="true" tabindex="-1">
+            <svg class="i" aria-hidden="true"><use href="#i-package"/></svg>
+            <span>{{ item.title|slice(0, 28) }}</span>
+        </a>
+        <div class="book-body">
+            <span class="book-status {{ status.class }}">{{ status.label }}</span>
+            <h2 class="book-title"><a class="text-reset" href="/books/{{ item.slug }}/">{{ item.title }}</a></h2>
+            <p class="book-author">{{ item.author }}{% if item.year %}, {{ item.year }}{% endif %}</p>
+            {% if item.price > 0 %}<p class="book-price">{{ item.price|nlb_num }} ₽</p>{% endif %}
+            <p class="book-text clamp-2">{{ item.excerpt }}</p>
+        </div>
+    </article>
+</div>

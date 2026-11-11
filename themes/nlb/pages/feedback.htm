@@ -1,0 +1,95 @@
+title = "Обратная связь — Библиотека 2026"
+url = "/feedback/"
+layout = "default"
+seo_description = "Напишите в библиотеку: вопрос о фондах, услугах, событиях или сотрудничестве."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--green">Написать</span>
+        <h1 class="page-title">Обратная связь</h1>
+        <p class="page-lead">
+            Задайте вопрос, предложите сувенир или расскажите о проблеме.
+            Отвечаем в течение рабочего дня.
+        </p>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4 g-lg-5">
+            <div class="col-lg-7" data-reveal>
+                <div class="info-card">
+                    <h2 class="h4 mb-3">Форма сообщения</h2>
+                    <form class="needs-validation" action="/" method="post" data-nlb-form="request">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="nlbFbName">Имя *</label>
+                                <input class="form-control" id="nlbFbName" type="text" name="NAME" autocomplete="name" required>
+                                <div class="invalid-feedback">Укажите имя.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="nlbFbEmail">E-mail *</label>
+                                <input class="form-control" id="nlbFbEmail" type="email" name="PROPERTY[EMAIL][0]" autocomplete="email" required>
+                                <div class="invalid-feedback">Укажите корректный e-mail.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="nlbFbPhone">Телефон</label>
+                                <input class="form-control" id="nlbFbPhone" type="tel" name="PROPERTY[PHONE][0]" autocomplete="tel" placeholder="+375 (__) ___-__-__">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="nlbFbSubject">Тема</label>
+                                <input class="form-control" id="nlbFbSubject" type="text" name="PROPERTY[SUBJECT][0]" placeholder="Вопрос, предложение, отзыв">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="nlbFbMessage">Сообщение *</label>
+                                <textarea class="form-control" id="nlbFbMessage" name="PROPERTY[MESSAGE][0]" rows="5" required></textarea>
+                                <div class="invalid-feedback">Напишите сообщение.</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" id="nlbFbConsent" type="checkbox" name="CONSENT" value="Y" required>
+                                    <label class="form-check-label" for="nlbFbConsent">Согласен с
+                                        <a href="/privacy/">политикой конфиденциальности</a></label>
+                                    <div class="invalid-feedback">Нужно согласие.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-nlb mt-3" type="submit" name="iblock_submit" value="Y">Отправить</button>
+                        <p class="form-hint mt-3 mb-0">
+                            Обращение сохраняется в инфоблоке <code>requests</code> (компонент
+                            <code>bitrix:iblock.element.add.form</code>) и дублируется письмом администратору.
+                        </p>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-5" data-reveal>
+                <div class="info-card mb-4">
+                    <h2 class="h5">Быстрее по телефону</h2>
+                    <div class="contact-line">
+                        <svg class="i" aria-hidden="true"><use href="#i-phone"/></svg>
+                        <span><a href="tel:+375173000000">+375 (17) 300-00-00</a></span>
+                    </div>
+                    <div class="contact-line">
+                        <svg class="i" aria-hidden="true"><use href="#i-mail"/></svg>
+                        <span><a href="mailto:info@example.by">info@example.by</a></span>
+                    </div>
+                    <div class="contact-line">
+                        <svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>
+                        <span>Ежедневно 10:00–22:00</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h2 class="h5">Частые вопросы</h2>
+                    <ul class="mb-0">
+                        <li>Как записаться в библиотеку — <a href="/services/">услуги</a>.</li>
+                        <li>Где посмотреть сувениры — <a href="/books/">каталог продукции</a>.</li>
+                        <li>Как заказать печать — <a href="/printing/">каталог печати</a>.</li>
+                        <li>Куда прийти — <a href="/contacts/">контакты</a>.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section></main>

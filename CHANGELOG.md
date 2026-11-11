@@ -11,7 +11,36 @@
 
 ### Планируется
 
-- Этап 4: тема `nlb`, 110 URL, удаление демо-темы и демо-плагина.
+- Этап 5: формы обратной связи, брони, заказа и подписки (маршруты, `Mail::queue`,
+  админ-списки), тесты трёх форм.
+
+## [0.4.0] — 11.11.2026
+
+Тема `nlb` и 110 адресов. Разметка и тексты совпадают с эталоном `preview/`,
+демо-тема и демо-плагин удалены, инлайн CSS в бюджете.
+
+### Добавлено
+
+- Тема `themes/nlb`: layout с инлайн-CSS и спрайтом, 25 CMS-страниц, 11 partials,
+  ассеты 1:1 из источника (`styles.css`, варианты 480/960, иконки, Bootstrap).
+- Хелперы плагина `1.1.0`: `classes/{Content,Labels,Media}.php`,
+  `Slot::occupiedMap()` / `jsonOccupiedMap()`, теги `nlb_*` в `Plugin.php`.
+- Гейты `tools/check-urls.mjs` (109×200 + 404) и `tools/check-dom-parity.mjs`
+  (title, h1, h2, карточки, текст против `preview/`).
+- Тесты `MediaTest` (19), `LabelsTest` (7), `SlotMapTest` (6) — в плагине 61 тест.
+
+### Изменено
+
+- `script.js` побайтово равен источнику; правка «дата не в прошлом» откачена.
+- `/personal/` совпадает с эталоном: страница-редирект `meta refresh` на `/auth/`.
+- `Media::imagePath()` больше не отдаёт `[]` (пустой mediafinder) как путь картинки.
+- `.gitignore`: `themes/*/assets/vendor/*.min.css` попадает в git.
+
+### Удалено
+
+- `themes/demo`, `plugins/october/demo`, 24 таблицы `xc_*` демо-блюпринтов,
+  8 строк `tailor_content_schema` и запись `October.Demo`; `october:fresh`
+  не запускался (он снёс бы контент).
 
 ## [0.3.0] — 10.11.2026
 

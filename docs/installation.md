@@ -86,11 +86,12 @@ DB_USERNAME=root
 DB_PASSWORD=
 QUEUE_CONNECTION=database
 MAIL_MAILER=log
-ACTIVE_THEME=demo
+ACTIVE_THEME=nlb
 ```
 
-`ACTIVE_THEME=demo` — временно, до появления `themes/nlb` (этап 4). `.env` в git
-не попадает; шаблон — `.env.example`.
+`ACTIVE_THEME=nlb` — рабочая тема (этап 4). Демо-тема и демо-плагин удалены,
+`theme:list` показывает только `nlb`. `.env` в git не попадает; шаблон —
+`.env.example`.
 
 ## 5. Команды, которых нет в 4.x
 
@@ -101,8 +102,10 @@ ACTIVE_THEME=demo
 | `php artisan migrate:fresh --seed` | есть, но для October чище `october:fresh` + `theme:seed` |
 | `october:install` без PATH | падает: вызывает `php` |
 
-Демо-тема и демо-плагин ставятся скелетом (`themes/demo`, `plugins/october/demo`).
-Удаляются командой `october:fresh` (её точное поведение проверяется на этапе 4).
+Демо-тема и демо-плагин ставились скелетом (`themes/demo`, `plugins/october/demo`).
+На этапе 4 они удалены: каталоги убраны, таблицы `xc_*` демо-блюпринтов и запись
+`October.Demo` в `system_plugin_versions` вычищены, `october:fresh` не требовался
+(он снёс бы и контент сайта).
 
 ## 6. Проверка после установки
 
@@ -112,16 +115,17 @@ php vendor/phpunit/phpunit/phpunit   # 0 упавших
 php artisan serve --host=127.0.0.1 --port=8080
 ```
 
-Замеры 10.11.2026: `GET /` → `200`, 27 830 байт (демо-тема); `GET /admin` →
-`200`, 10 914 байт (страница входа); `php -l` по 28 PHP-файлам вне `vendor/` и
-`storage/` → 0 ошибок; PHPUnit → 1 171 тест, 3 896 утверждений, 8 пропущено,
-0 упавших, 2:46.
+Замеры 11.11.2026 (тема `nlb`): `GET /` → `200`, 185 676 знаков; `GET /admin` →
+`200`; `php -l` по `app,config,database,plugins,themes,tests` → 0 ошибок;
+PHPUnit ядра → 1 171 тест, 3 896 утверждений, 8 пропущено, 0 упавших; тесты
+плагина — 61, 218 утверждений, 0 упавших.
 
-Версия плагина **1.0.2** добавляет Eloquent-таблицы `nlb_requests`, `nlb_bookings`,
-`nlb_orders`, `nlb_slots` (с `UNIQUE(service_code, date, time)`), `nlb_subscribers`;
-ставится `php artisan october:migrate`. Слоты услуг генерируются командой
-`php artisan nlb:slots-generate --days=14` (идемпотентно, часы 10:00–21:00).
-Тесты плагина — `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml`.
+Версия плагина **1.1.0** добавляет хелперы темы (`Media`, `Labels`, `Content`,
+карта занятых слотов). Версия **1.0.2** добавила Eloquent-таблицы `nlb_requests`,
+`nlb_bookings`, `nlb_orders`, `nlb_slots` (с `UNIQUE(service_code, date, time)`),
+`nlb_subscribers`; ставится `php artisan october:migrate`. Слоты услуг
+генерируются командой `php artisan nlb:slots-generate --days=14` (идемпотентно,
+часы 10:00–21:00). Тесты плагина — `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml`.
 
 ## 7. Администратор
 
