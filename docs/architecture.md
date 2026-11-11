@@ -161,6 +161,11 @@ plugins/nlb/library/
 Правила источника — `urlrewrite.php:14`: семь правил, `CODE=$1&$2` (query-строка
 пробрасывается без потери: `/services/{slug}/?utm_source=...`).
 
+110 адресов инвентаря не значат 110 `<loc>`: в карту сайта входят 106
+адресов — 15 статических страниц и 91 детальная. `/404` адресом не является, а
+`/auth/`, `/personal/`, `/search/` закрыты в `robots.txt`: `Disallow` и `<loc>`
+в карте противоречат друг другу.
+
 ### 6.2. Служебные
 
 | Маршрут | Назначение | Контракт |
@@ -181,6 +186,11 @@ plugins/nlb/library/
 Поля источника `PROPERTY[EMAIL][0]` разбирает `classes/FormFields.php` в плоские
 `EMAIL`, `DATE`, … Возврат — на страницу формы из `Referer` того же хоста,
 иначе на `fallbackPath()`: чужой `Referer` не превращается в открытый редирект.
+
+`GET /sitemap.xml` и `GET /robots.txt` — `classes/Http/SeoController.php`:
+файлы генерируются, а не лежат в `public/`, потому что домен появится только на
+M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поисковиков на чужой сайт.
+Адрес берётся из запроса (`url('/')`), как в источнике (`sitemap.php`).
 
 ### 6.3. Админка
 
@@ -210,7 +220,28 @@ plugins/nlb/library/
 Демо-подсказка «часть слотов занята» и массовые действия (удаление, экспорт)
 не делались: их нет в приёмке.
 
+### 6.4. SEO и старые адреса
 
+| Что | Где | Как работает |
+|---|---|---|
+| Мета страницы | `themes/nlb/layouts/default.htm:10-18` | `seo_title`/`seo_description` страницы → `<title>`, description, OG, Twitter, canonical |
+| JSON-LD | `classes/Seo.php:44` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction`; на всех страницах через `nlb_jsonld()` |
+| `robots.txt` | `classes/Seo.php:122` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
+| `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
+| 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
+
+Карта сайта собирается из тех же записей, что показывает тема: отключённая или
+удалённая запись в карту не попадает, а новая страница темы без строки в
+`Sitemap::PAGES` роняет `tests/SeoTest.php`, а не выпадает из индекса молча.
+
+`LegacyRedirect` читает сырой `REQUEST_URI` (`:72`): Symfony принимает
+`/index.php` за `SCRIPT_NAME` и `path()` отдаёт `/`, иначе старый адрес главной
+не отличить от самой главной. `CODE` отбрасывается, остальные параметры
+(`utm_*`, `PAGEN_1`) переносятся в новый адрес. Middleware подключён в
+`Plugin.php:99` только вне консоли — юнит-тесты гоняют его напрямую.
+
+Мета записи (`seo_title`/`seo_description` в blueprints) не заведена — M20;
+расширения микроразметки (`Event`, `Product`, `Article`) — P2-4.
 
 ## 7. Очереди и планировщик
 

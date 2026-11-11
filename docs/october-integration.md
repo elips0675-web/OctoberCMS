@@ -101,20 +101,26 @@
 
 | Что | Источник | Цель |
 |---|---|---|
-| meta, OG, canonical | `nlb_seo.php` (229 строк) | `Seo` |
-| JSON-LD | `nlb_seo.php` | `Seo::jsonld()` |
-| `/sitemap.xml` | `sitemap.php` | контроллер: 110 URL + `lastmod` из `updated_at` |
+| meta, OG, canonical | `nlb_seo.php` (229 строк) | layout `themes/nlb/layouts/default.htm:10-18` |
+| JSON-LD | `nlb_seo.php` | `Seo::jsonld()` (`plugins/nlb/library/classes/Seo.php:44`) |
+| `/sitemap.xml` | `sitemap.php` | `Sitemap::xml()` — 106 адресов (15 статических + 91 детальная) с `lastmod` |
 | `/sitemap/` (HTML) | страница | CMS-страница |
-| `robots.txt` | корень | `robots.txt` в корне веб-корня (пути не менять) |
+| `robots.txt` | корень | маршрут `Seo::robots()`: домен из запроса, а не статический файл |
+| 301 со старых адресов | `urlrewrite.php` | `classes/Http/LegacyRedirect.php` |
 | `manifest.webmanifest`, `sw.js`, `offline.html` | корень | корень веб-корня (пути не менять) |
 | версия SW | `sw.js` | поднимается при изменении ассетов |
 
-Состояние 11.11.2026: meta, OG и canonical уже отдаёт layout
-(`themes/nlb/layouts/default.htm:14-27`); JSON-LD в теме **отсутствует**
-(`ld+json` — 0 совпадений), `nlb_seo_jsonld()` источника не перенесён;
-`/sitemap.xml` и `/robots.txt` отвечают **404** (проверено на живом сервере),
-`/rss.xml` — тоже 404. Это закрывают M20 (sitemap, robots, 301, мета записи,
-базовый JSON-LD) и P2-6 (лента), расширения — P2-4.
+Состояние 11.11.2026 (Stage 7): meta, OG и canonical отдаёт layout; JSON-LD
+`Library` + `WebSite` подключён в `<head>` через `nlb_jsonld()`;
+`/sitemap.xml` — 200 `application/xml`, 106 `<loc>` с `lastmod` (110 из
+инвентаря минус `/404` и три закрытых в robots адреса: `/auth/`,
+`/personal/`, `/search/`); `/robots.txt` — 200 `text/plain` с `Sitemap:`
+текущего хоста; `/index.php`, `/sitemap.php`, `/{section}/index.php` и
+`/{section}/detail.php?CODE=…` — 301 на новые адреса с сохранением `utm_*`.
+Проверка — `node tools/check-seo.mjs` (гейт) и `tests/SeoTest.php` (17 тестов).
+Осталось: мета записи (`seo_title`/`seo_description` в blueprints) — M20;
+`/rss.xml` — P2-6; расширения микроразметки (`Event`, `Product`, `Article`) —
+P2-4; валидация на живом домене — M17.
 
 ## 9. Безопасность
 

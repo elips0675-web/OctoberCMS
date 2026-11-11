@@ -6,6 +6,93 @@
 
 ---
 
+(Stage 7 — 11.11.2026) — **SEO-периметр: `/robots.txt`, `/sitemap.xml` на 106
+адресов, 301 со старых адресов Битрикса и базовая микроразметка.**
+
+Повод: M20. Проверка 11.11.2026 на живом сервере: `GET /sitemap.xml` → 404,
+`GET /robots.txt` → 404. Старые адреса источника (`/index.php`,
+`/news/detail.php?CODE=…`) после переезда отдавали бы 404, а внешние ссылки и
+закладки — это потерянный трафик. JSON-LD в теме отсутствовал (`ld+json` — 0
+совпадений), хотя в источнике он был (`local/php_interface/include/nlb_seo.php`).
+
+Сделано:
+
+- `plugins/nlb/library/routes.php:20-21` — `GET /sitemap.xml` и `GET /robots.txt`
+  в группе `web`: оба файла генерируются, а не лежат в `public/`.
+- `classes/Http/SeoController.php:20,30` — отдача с типами
+  `application/xml; charset=UTF-8` и `text/plain; charset=UTF-8`.
+- `classes/Sitemap.php:70` — `urls()`: 15 статических страниц (`PAGES`,
+  `:37` — адрес, файл, `changefreq`, `priority`) плюс детальные из
+  `Content::records()` (`SECTIONS`, `:21`) — те же записи, что показывает тема,
+  поэтому отключённая или удалённая запись в карту не попадает.
+  `:58` — `CLOSED` (`/auth/`, `/personal/`, `/search/`) не кладутся в карту:
+  `Disallow` в robots и `<loc>` в sitemap противоречат друг другу.
+  `:109` — `xml()`, `:147` — `pageLastmod()` (свежая запись списка, иначе
+  `filemtime` файла страницы: у текстовой страницы другого источника изменения
+  нет), `:193` — `recordLastmod()` из `updated_at`.
+- `classes/Seo.php:44` — `jsonld()`: `Library` (адрес, телефон, часы работы,
+  соцсети) + `WebSite` с `SearchAction` на `/search/?q={search_term_string}`,
+  `</` экранируется в `<\/`, иначе закрывающий тег рвёт `<script>`.
+  `:122` — `robots()`: те же директивы, что в источнике (`robots.txt`), плюс
+  `Disallow: /admin/` и `Sitemap:` с абсолютным адресом текущего запроса.
+  `:25` — `CONTACTS` дублирует подвал (`partials/footer.htm`), как в источнике
+  контакты жили в двух файлах; при P0-6 править три места.
+- `themes/nlb/layouts/default.htm:18` — `<script type="application/ld+json">`
+  в `<head>` через `nlb_jsonld()` (`Plugin.php:192`).
+- `classes/Http/LegacyRedirect.php:50` — middleware 301: `/index.php` → `/`,
+  `/sitemap.php` → `/sitemap.xml`, `/{section}/index.php` с белым списком
+  разделов (`INDEX_PAGES`, `:23`) → `/{section}/`,
+  `/{section}/detail.php?CODE=slug` → `/{section}/{slug}/`. `CODE`
+  отбрасывается, остальные параметры (`utm_*`) сохраняются (`:126`).
+  `:72` — `rawPath()` читает сырой `REQUEST_URI`, потому что Symfony принимает
+  `/index.php` за `SCRIPT_NAME` и `path()` отдаёт `/` — иначе старый адрес
+  главной не отличить от самой главной. Location собирается из
+  `getSchemeAndHttpHost()`: `url('/x/')` срезает хвостовой слэш.
+  `Plugin.php:99` — middleware подключён к ядру (только вне консоли, `:89`).
+- `tools/check-seo.mjs` — гейт: 200 и типы у robots/sitemap, `Sitemap:` на этот
+  же сайт, `Disallow: /admin/`, `Clean-param`, у каждого `<loc>` есть
+  `<lastmod>`, каждый `<loc>` отвечает 200, закрытые адреса в карту не попали,
+  **все** адреса инвентаря `docs/content.md` (кроме закрытых) в карте есть,
+  301 с шести старых форм, детальная сохраняет `utm_source` и теряет `CODE`,
+  JSON-LD на главной разбирается как JSON и содержит `Library` + `WebSite`.
+
+Чем проверено:
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **117 тестов,
+  429 утверждений** (было 100/341): новые `tests/SeoTest.php` (17 тестов) —
+  перечень страниц карты сверяется с `themes/nlb/pages/*.htm` (новая страница
+  без строки в `Sitemap::PAGES` роняет тест), XML разбирается `simplexml`,
+  `lastmod` у каждого адреса, закрытые пути не в карте, редиректы и JSON-LD.
+- `node tools/check-seo.mjs` — «OK: robots.txt и sitemap.xml (106 адресов, все
+  200), 301 со старых адресов, JSON-LD Library + WebSite».
+- Живой прогон (`http://127.0.0.1:8080`, `fetch` с `redirect: 'manual'`):
+  `/index.php` → 301 `/`, `/about/index.php` → 301 `/about/`,
+  `/news/index.php?PAGEN_1=2` → 301 `/news/?PAGEN_1=2`,
+  `/news/detail.php?CODE=cifrovoy-chitalnyy-zal&utm_source=test` → 301
+  `/news/cifrovoy-chitalnyy-zal/?utm_source=test`, `/books/detail.php?CODE=bad code`
+  (пробел в слаге) → 301 `/books/`, `/unknown/page.php` → 404 (не редиректится).
+- Остальные гейты после правок: `check-urls` 109×200 + 404, `check-dom-parity`
+  110/110, `check-css-budget` — бюджет соблюдён (документ главной 187 613
+  знаков при лимите 190 412), `purge-css --check` OK (50,5 КБ).
+- Lighthouse на главной после добавления JSON-LD — **100 / 100 / 100 / 100**
+  (LCP 1,7 с, CLS 0, TBT 40 мс).
+
+**Приёмка M20 уточнена: 106 адресов, а не 110.** 110 — это инвентарь
+`docs/content.md` вместе с `/404` и тремя адресами, закрытыми в robots
+(`/auth/`, `/personal/`, `/search/`), и без `404` в карте быть не может.
+106 = 15 статических + 91 детальная; `check-seo.mjs` сверяет именно это
+множество, а не литеральное число.
+
+**Что не проверено.** Валидаторы Google и Яндекс.Вебмастера (Rich Results Test,
+проверка карты и 301) требуют живой домен — это M17. Редиректы проверены на
+смене структуры адресов, но не на смене домена (домена ещё нет). Мета записи
+(`seo_title`/`seo_description` у blueprints) осталась в M20: layout берёт мету
+только со страницы (`themes/nlb/layouts/default.htm:10-16`), у записи своих
+полей нет. Расширения микроразметки (`Event`, `Product`, `Article`) — P2-4,
+лента `/rss.xml` — P2-6.
+
+---
+
 (Stage 6 — 11.11.2026) — **Админка: списки обращений, броней, заказов и
 подписчиков, смена статуса работает и освобождает слот.**
 

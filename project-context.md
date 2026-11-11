@@ -82,7 +82,8 @@ themes/nlb/
   partials/              # списки, карточки, крошки
   assets/                # картинки, шрифты, js темы
 index.php, .htaccess     # корень проекта = веб-корень (public/ в 4.x нет)
-robots.txt, sw.js, manifest.webmanifest, offline.html  # в корне веб-корня
+sw.js, manifest.webmanifest, offline.html  # в корне веб-корня
+                         # robots.txt и sitemap.xml — маршруты плагина, не файлы
 tools/                   # purge-css.mjs, build-image-variants.php, гейты
 docs/                    # документация (карта — docs/README.md)
 ```
@@ -136,13 +137,15 @@ docs/                    # документация (карта — docs/README.
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 61 зелёный
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 117 зелёных
   (`phpunit.nlb.xml`). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
-  с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`).
-- **Формы, поиск, чат и API — ещё не подключены.** Разметка и валидация на
-  клиенте перенесены 1:1, серверные маршруты — этапы 5–7 (P0-4, P0-5, P1-9,
-  P1-12, P1-16, P1-17, M8).
+  с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
+  `/sitemap.xml` (106 адресов), `/robots.txt`, 301 и JSON-LD — `tools/check-seo.mjs`.
+- **Формы, админка и SEO-периметр подключены** (этапы 5–7): `POST /feedback/`,
+  `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; админка
+  «Библиотека» со статусами и освобождением слота; sitemap, robots, 301.
+  **Поиск, чат и внешние API — ещё нет** (M8, P1-16, P1-17).
 - **Живой SMTP отсутствует** — письма проверяются через `MAIL_MAILER=log`; код
   обязан быть готов к реальному SMTP без правок.
 - **Демо-контент.** Все тексты, контакты, цены, события, фото — заглушки.

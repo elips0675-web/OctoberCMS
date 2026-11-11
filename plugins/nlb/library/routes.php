@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Nlb\Library\Classes\Http\BookingController;
 use Nlb\Library\Classes\Http\FeedbackController;
 use Nlb\Library\Classes\Http\OrderController;
+use Nlb\Library\Classes\Http\SeoController;
 use Nlb\Library\Classes\Http\SubscriberController;
 
 Route::middleware(['web', 'throttle:30,1'])->group(function () {
@@ -16,4 +17,6 @@ Route::middleware(['web', 'throttle:30,1'])->group(function () {
 Route::middleware('web')->group(function () {
     Route::get('subscribe/confirm/{token}', [SubscriberController::class, 'confirm']);
     Route::get('unsubscribe/{token}', [SubscriberController::class, 'unsubscribe']);
+    Route::get('sitemap.xml', [SeoController::class, 'sitemap']);
+    Route::get('robots.txt', [SeoController::class, 'robots']);
 });

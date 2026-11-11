@@ -3,6 +3,7 @@
 use Nlb\Library\Classes\Content;
 use Nlb\Library\Classes\Labels;
 use Nlb\Library\Classes\Media;
+use Nlb\Library\Classes\Seo;
 use System\Classes\PluginBase;
 
 class Plugin extends PluginBase
@@ -92,6 +93,10 @@ class Plugin extends PluginBase
         $this->app
             ->make(\Illuminate\Contracts\Http\Kernel::class)
             ->pushMiddleware(\Nlb\Library\Classes\Http\CompressResponse::class);
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(\Nlb\Library\Classes\Http\LegacyRedirect::class);
     }
 
     public function registerMarkupTags()
@@ -183,6 +188,9 @@ class Plugin extends PluginBase
                 },
                 'nlb_csrf' => function () {
                     return csrf_field();
+                },
+                'nlb_jsonld' => function () {
+                    return Seo::jsonld();
                 },
             ],
             'filters' => [

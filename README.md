@@ -68,6 +68,7 @@ php artisan serve --host=127.0.0.1 --port=8080
 | `node tools/check-css-budget.mjs` | бюджет встроенного CSS и отсутствие внешних таблиц |
 | `node tools/check-urls.mjs` | 110 адресов на живом `serve`: 109×200 + 404 |
 | `node tools/check-dom-parity.mjs` | сверка title/h1/h2/карточек/текста с `preview/` |
+| `node tools/check-seo.mjs` | robots.txt, sitemap.xml (106 адресов), 301, JSON-LD на живом `serve` |
 | `php tools/build-image-variants.php` | WebP/AVIF, 480/960/1280 |
 | `php tools/gen-vapid.php` | ключи Web Push |
 
