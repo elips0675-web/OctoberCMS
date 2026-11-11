@@ -46,7 +46,7 @@ CSP и инлайн-стили: CSS встраивается в документ
 - 59 позиций без снимков (books 24, printing 29, collections 6) — дефект источника,
   пункт P1-11, а не повод ставить заглушки молча.
 
-## 4. Кеш
+## 4. Кеш и сжатие
 
 | Что | Как |
 |---|---|
@@ -54,14 +54,50 @@ CSP и инлайн-стили: CSS встраивается в документ
 | Поисковый индекс | таблицы + команда `nlb:search-index`, хуки на `saved`/`deleted` |
 | HTML | без полностраничного кеша: TTFB в October дешевле на порядок |
 | Конфиг | `php artisan config:clear` после правок `.env` |
+| Сжатие | gzip в периметре (`nginx.conf`) **и** в приложении (`CompressResponse`) |
+| Ассеты | `Cache-Control: public, max-age=31536000, immutable` на `/themes|plugins|modules/*/assets|resources/*`, `max-age=604800` на `/storage/app/*` |
 
 Рассинхрон «файл есть, а его никто не пересобрал» недопустим: отдельного
 `styles.min.css` не существует, минификация — на лету.
 
+### 4.1. Сжатие: почему это не косметика
+
+Замер 11.11.2026 на главной: документ **188 907 → 33 817 байт** (gzip, level 6),
+`script.js` **75 359 → 17 337 байт**. Без сжатия Lighthouse давал
+**Performance 83** (FCP 1,7 с, LCP 3,7 с), со сжатием — **100** (FCP 0,9 с,
+LCP 1,7 с, TBT 0–60 мс, CLS 0). Причина одна: 188 КБ HTML качались дольше,
+чем рендерился документ, а LCP-картинка запрашивалась уже после их разбора.
+
+Где живёт:
+
+1. `nginx.conf` — `gzip on` + `expires` в статических `location`. Это прод:
+   статику и HTML на проде отдаёт периметр, приложение до этого не доходит.
+2. `plugins/nlb/library/classes/Http/CompressResponse.php` — глобальный
+   middleware (регистрация в `Plugin.php::boot()`): gzip для текстовых
+   ответов и `Cache-Control` для ассетов. Нужен там, где nginx нет
+   (shared-хостинг, `php artisan serve`). Уже сжатый ответ middleware не
+   трогает — сравнивает `Accept-Encoding` и наличие `Content-Encoding`,
+   поэтому двойного сжатия с nginx не бывает.
+3. `server.php` + `tools/serve-static.php` — роутер для `php artisan serve`.
+   Стандартный роутер Laravel отдаёт существующие файлы напрямую, мимо
+   приложения: локальный замер видел несжатые 75 КБ JS и без `Cache-Control`,
+   то есть мерил не то, что увидит посетитель. На проде файл не участвует.
+
+Проверка: `curl -sI -H 'Accept-Encoding: gzip' /themes/nlb/assets/js/script.js`
+показывает `Content-Encoding: gzip`, `Content-Length: 17337`,
+`Cache-Control: public, max-age=31536000, immutable`.
+
+Отдельно: `backdrop-filter: blur(16px)` в шапке — самая дорогая краска на
+странице (5 вхождений в `styles.css:403-404, 638-639, 3161`). Прогон с
+`backdrop-filter: none` даёт TBT 10–60 мс вместо 0–110 мс. Оставлено как в
+макете: это дизайн-решение, а не дефект, и 100 достигается без его снятия.
+
 ## 5. Протокол Lighthouse
 
 1. Прогреть страницу (иначе первый прогон даёт ложные 88).
-2. Мобильный профиль PSI (simulated throttling), сервер с gzip.
+2. Мобильный профиль PSI (simulated throttling), сервер с gzip: локально это
+   `php artisan serve --host=127.0.0.1 --port=8080` (роутер `server.php`
+   сжимает статику так же, как `nginx.conf` на проде).
 3. Три прогона подряд, все **100/100/100/100** (Performance, Accessibility,
    Best Practices, SEO).
 4. Сохранить числа: FCP, LCP, TBT, CLS — в `Что сделано.txt`.

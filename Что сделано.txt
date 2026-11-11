@@ -6,6 +6,61 @@
 
 ---
 
+(Stage 4.5 — 11.11.2026) — **Сжатие и кеш: Performance 83 → 100 без правок дизайна.**
+
+Повод: замер владельца на `http://127.0.0.1:8080/` — Performance 83,
+Accessibility/Best Practices/SEO 100. Разбор показал, что просадка не в разметке:
+запросов всего 16, картинки уже AVIF, TBT 0, CLS 0. Терялось на загрузке
+документа — 188 907 байт уезжали **без gzip** (FCP 1,7 с, LCP 3,7 с).
+
+Сделано:
+
+- `plugins/nlb/library/classes/Http/CompressResponse.php` — gzip текстовых
+  ответов (≥ 1 КБ, только если клиент прислал `Accept-Encoding: gzip`, ответ
+  ещё не сжат) + `Cache-Control: public, max-age=31536000, immutable` для
+  `/themes|plugins|modules/*/assets|resources/*` и `max-age=604800` для
+  `/storage/app/*`. Регистрация — `Plugin.php::boot()` (`pushMiddleware`),
+  консоль пропускается.
+- `server.php` + `tools/serve-static.php` — роутер `php artisan serve`
+  (Laravel подхватывает `base_path('server.php')` сам). Стандартный роутер
+  отдавал существующие файлы мимо приложения: локальный замер видел несжатые
+  75 КБ JS и без кеш-заголовков, то есть мерил не то, что отдаёт прод.
+  В `serve-static.php`: gzip для `html/css/js/json/xml/svg`, `ETag`,
+  `Last-Modified`, 304 по `If-None-Match`, защита от выхода за `public/`,
+  PHP-файлы не отдаются.
+- `nginx.conf:1-31` — `gzip on` (level 6, `min_length 1024`, `gzip_vary`,
+  `gzip_proxied any`, типы включая `image/svg+xml`), `expires 1y` в
+  статических `location`, `expires 7d` для `/storage/app/*`. Это прод:
+  на проде gzip обязан быть в периметре, а не только в PHP.
+- `themes/nlb/layouts/default.htm:42-44` — `<link rel="preload" as="image"
+  type="image/avif" fetchpriority="high" imagesrcset="…hero-1…">` для главной:
+  LCP-картинка начинает грузиться из `<head>`, а не после разбора `<body>`.
+- `docs/security-performance.md` §4/§4.1 — где живёт сжатие, чем проверять,
+  числа до/после; §5 п.2 — локальный замер через `server.php`.
+
+Чем проверено:
+
+- `curl`/`Invoke-WebRequest` с `Accept-Encoding: gzip`: главная 188 907 → 33 817
+  байт, `script.js` 75 359 → 17 337 байт, `Cache-Control` и `ETag` на месте.
+- Lighthouse 13.6.0, Chrome 157, мобильный профиль: **4 прогона подряд
+  100/100/100/100** (FCP 0,9 с, LCP 1,7 с, TBT 0–60 мс, CLS 0). До правок:
+  83 (FCP 1,7 с, LCP 3,7 с), затем 94 после одного только gzip в HTML.
+- `node tools/check-urls.mjs` — 109×200 + 404; `node tools/check-dom-parity.mjs` —
+  110/110; `node tools/check-css-budget.mjs --url http://127.0.0.1:8080/` —
+  документ 186 069 знаков (бюджет 190 412), инлайн CSS 57 794 + 51 508 байт.
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — 61 тест, 218
+  утверждений, OK (`Plugin.php` менялся).
+
+Замер «а если убрать blur»: с `backdrop-filter: none` TBT 10–60 мс вместо
+0–110 мс, но это меняет вид шапки — оставлено как в макете. 100 достигается
+и с blur; редкие 99 в промежуточных прогонах приходились на TBT 90–110 мс,
+то есть на одну и ту же задачу раскладки, а не на сеть.
+
+**Что не проверено.** Прод-nginx не запускался (нет прод-контура): `gzip on`
+в `nginx.conf` проверен только чтением конфига и middleware-дублёром.
+HTTP/2 и CDN не проверялись — их в бесплатном контуре нет.
+
+---
 (Stage 4.4 — 11.11.2026) — **`git status` всегда чистый: черновики владельца в
 `.gitignore`, плюс гейт `tools/check-clean-tree.mjs`.**
 

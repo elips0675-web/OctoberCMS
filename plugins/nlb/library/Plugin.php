@@ -22,6 +22,17 @@ class Plugin extends PluginBase
         $this->discoverConsoleCommands();
     }
 
+    public function boot()
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(\Nlb\Library\Classes\Http\CompressResponse::class);
+    }
+
     public function registerMarkupTags()
     {
         return [
