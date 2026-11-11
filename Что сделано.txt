@@ -6,6 +6,72 @@
 
 ---
 
+(Stage 4.1 — 11.11.2026) — **Зафиксированы решения по лицензии, Winter CMS,
+плагинам и расширению сайта; два новых пункта бэклога (M20, M21).**
+
+Повод: вопросы владельца — стоит ли переходить на Winter CMS ради лицензии,
+какие плагины с Marketplace ставить, чего не хватает до «универсального сайта»
+с блогом и отзывами, разбор черновика `Архитектура October CMS Маркетплейс +
+Бронирование deepseek.html` (в git не попадает).
+
+**Новый канон — `docs/plugins.md`** (внесён в карту `README.md` и `docs/README.md`):
+
+- Лицензия October (`octobercms.com/pricing`, 11.11.2026): первая бесплатна,
+  обновления **$39/год**, unlimited — $312/год; скачанные версии вечные, но
+  Update Gateway требует активной лицензии. Решение — self-host, покупка за
+  владельцем, перед релизом архив установки (`vendor/`, `composer.lock`).
+- Winter CMS **не берём**: форк October 1.0, `laravel/framework: ^9.1`
+  (security-фиксы Laravel 9 закончились 06.02.2024, в `composer.json` Winter они
+  прямо заглушены через `policy.advisories.ignore`), Tailor отсутствует —
+  девять blueprints и `type: structure` пришлось бы переписать.
+- Плагины: не больше трёх, по одной задаче. Разрешённый список с фактами
+  (установки, версия 4.x, PHP, дата обновления): Vdlp.Redirect, Renatio.SeoManager
+  или Initbiz.SeoStorm, Renatio.DynamicPDF, October.Drivers, Responsiv.Uploader.
+  Запрещены: RainLab.Blog, POWER SEO Toolkit (1 проект), SeoCore (63 установки),
+  Shopaholic/OFFLINE.Mall, page builder'ы, Translate.
+- Разбор черновика: верно про `app/blueprints`
+  (`modules/tailor/classes/BlueprintIndexer.php:215`) и `type: submission`
+  (`modules/tailor/classes/Blueprint.php:533`); неверно про «honeypot встроен
+  в October» — он только в `modules/tailor/components/SubmissionComponent.php:263`;
+  `submission` создаёт второй склад отзывов рядом с `nlb_*`, поэтому отзывы — своя
+  таблица; POWER SEO Toolkit ставить рано.
+- Проверено на живом сайте: `/sitemap.xml`, `/robots.txt`, `/rss.xml` → **404**.
+  Поля для блога в `plugins/nlb/library/blueprints/news/item.yaml` уже есть
+  (`author`, `tags`, `read_time`, `image`, `source_url`) — не хватает ленты
+  (P2-6) и меты записи (M20).
+
+**Куда записано:** `project-context.md` §3.8–3.9 (лицензия и Winter),
+`AGENTS.md` §4.5 (сторонний плагин — только из `docs/plugins.md`, максимум три),
+`docs/architecture.md` §9, `docs/october-integration.md` §8 (состояние SEO),
+`Что доделать.txt` — M3 (факты лицензии), **M20** (sitemap/robots/301 и мета
+записи), **M21** (своя `nlb_reviews` с привязкой к брони), P2-6 (факт 404 и поля),
+M17 (в приёмку добавлены бэкап и health-проба); `docs/qa-checklist.md` — две
+команды PHPUnit вместо одной.
+
+**Гейты.** Код не менялся, поэтому числа этапа 4 в силе; повторный прогон
+11.11.2026: PHPUnit плагина (`-c phpunit.nlb.xml`) — **61 тест, 218 утверждений,
+0 упавших**; ядро October (`phpunit.xml`) — 1171 тест, 3896 утверждений,
+8 пропущено (заглушки ядра), 0 упавших; `check-urls` — 109×200 + 404, главная
+185 676 знаков; `check-dom-parity` — 110/110; `check-css-budget` — styles.css
+57 795 из 57 856, bootstrap 51 508 из 61 377; `purge-css --check` — сборка
+совпадает.
+
+Попутно найдена дыра в гейте: `AGENTS.md` §5 предписывал
+`vendor/phpunit/phpunit/phpunit` без `-c`, а корневой `phpunit.xml` содержит
+только `<directory>./modules/*/tests</directory>` — **тесты плагина в этот прогон
+не попадали**, гейт был зелёным по построению. Исправлено: в §5 две строки —
+`-c phpunit.nlb.xml` (61 тест плагина, sqlite `:memory:`) и ядро отдельно.
+Запуск `phpunit plugins/nlb/library/tests` без `-c` даёт 34 ошибки не потому,
+что код плохой, а потому что корневой конфиг подменяет `PLUGINS_PATH` на
+`modules/system/tests/fixtures/plugins` — плагин `Nlb.Library` не регистрируется.
+Канон — только `-c phpunit.nlb.xml`.
+
+**Что не проверено.** Ни один сторонний плагин не установлен и не тестировался
+(решение — ставить по необходимости, а не сейчас). Цены и данные карточек —
+на 11.11.2026. Отзывы и sitemap существуют только как пункты бэклога.
+
+---
+
 (Stage 4 — 11.11.2026) — **Тема `nlb`, 110 адресов, DOM и текст 1:1 с `preview/`,
 демо-тема и демо-плагин удалены, инлайн CSS в бюджете.**
 

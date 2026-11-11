@@ -42,7 +42,9 @@ deprecation-шума). MySQL 8.4 локально; на хостинге нуж�
 
 Приёмка: хостинг и домен записаны в `README.md` одной строкой; `APP_URL` и
 `APP_ENV=production` в `.env`; HTTPS с валидным сертификатом; `php artisan
-october:about` на сервере печатает ту же версию, что локально.
+october:about` на сервере печатает ту же версию, что локально; бэкап БД и
+`storage/app` по cron (восстановление проверено один раз, а не «скрипт есть»);
+health-проба `/` и `/admin` с алертом при падении.
 
 ### P0-4. Обратная связь: письмо на реальный ящик не проверялось
 
@@ -105,8 +107,16 @@ october:about` на сервере печатает ту же версию, чт
 и на `composer require october/all` (в 4.x требует `auth.json` с ключом —
 `docs.octobercms.com/4.x/resources/migrate-laravel-project.html`).
 
+Факт 11.11.2026 (`docs/plugins.md`, раздел 1): первая лицензия бесплатна
+(включая коммерческие проекты), обновления — $39/год после первого года,
+unlimited — $312/год. Скачанные версии остаются навсегда; Update Gateway
+требует активной лицензии. Решение: работаем self-host, покупку и регистрацию
+делает владелец; перед релизом — архив установки (`vendor/`, `composer.lock`).
+Winter CMS не берём: нет Tailor и Laravel 9 без security-фиксов
+(`docs/plugins.md`, раздел 2).
+
 Приёмка: прод-установка прошла на self-host без покупок либо есть письменное
-решение владельца.
+решение владельца; архив установки сохранён рядом с бэкапом БД.
 
 ---
 
@@ -310,6 +320,39 @@ MySQL — SQLite `lockForUpdate` не держит.
 `MediaTest` (19), подписи `LabelsTest` (7) и карта слотов `SlotMapTest` (6).
 Осталось: тесты трёх форм, поиска и чата (этапы 5–7).
 
+### M20. `/sitemap.xml`, `/robots.txt` и карта 301 не сделаны
+
+`docs/october-integration.md`, раздел 8: `/sitemap.xml` — контроллер на 110 URL
+с `lastmod` из `updated_at`; `robots.txt` — в корне веб-корня; старые URL
+Битрикса — 301. Проверено 11.11.2026 на живом сервере: `GET /sitemap.xml` → **404**,
+`GET /robots.txt` → **404**, `GET /rss.xml` → **404**. Мета записи
+(`seo_title`/`seo_description` у `Nlb\News` и других blueprints) тоже не заведена:
+layout берёт мету только со страницы (`themes/nlb/layouts/default.htm:14-27`).
+
+Приёмка: `/sitemap.xml` отдаёт `application/xml`, 110 `<loc>` с `lastmod`;
+`/robots.txt` — 200 и `Sitemap:`; редиректы проверены на смене домена и структуры;
+`tools/check-urls.mjs` остаётся зелёным; у записи есть свои мета-поля и они
+попадают в `<head>`; базовый JSON-LD (`Library`/`WebSite`) отдаётся и валиден
+в Rich Results Test, расширения (`Event`, `Product`, `Article`) — P2-4.
+
+### M21. Отзывов нет: нужна своя `nlb_reviews`
+
+В `plugins/nlb/library/blueprints/` девять YAML, отзывов среди них нет.
+`type: submission` (`modules/tailor/classes/Blueprint.php:533`) пишет в `tailor_*`
+и навязывает свою разметку, а у нас правило «1:1 с `preview/`» — решение
+зафиксировано в `docs/plugins.md`, раздел 5.
+
+Своя таблица `nlb_reviews` + миграция + Eloquent-модель: `booking_id` (отзыв
+только после подтверждённой брони), `service_code`, `author_name`, `rating` 1–5,
+`text`, `status` (`pending`/`approved`/`rejected`), `consent`, `ip_hash`,
+`created_at`. Модерация — список в админке. Агрегат рейтинга и JSON-LD
+`AggregateRating` — на странице услуги.
+
+Приёмка: миграция в `plugins/nlb/library/updates/` и описание в `docs/db.md`;
+CHECK по `rating`; отзыв без подтверждённой брони отбит `422`; модерация в админке;
+агрегат и JSON-LD на странице услуги; тесты (не меньше 8) и `nlb_reviews` нет
+в Tailor-таблицах.
+
 ---
 
 ## P2 — развитие
@@ -346,7 +389,10 @@ workflow на push + скриншоты 360/768/1440 (Playwright).
 ### P2-6. RSS новостей
 
 Источник P2-6: `/news/rss/`. В October — отдельный шаблон/маршрут, отдающий
-`nlb_news` в RSS 2.0.
+`nlb_news` в RSS 2.0. Проверено 11.11.2026: `GET /rss.xml` → **404**; поля записи
+для ленты уже есть (`plugins/nlb/library/blueprints/news/item.yaml`: `title`,
+`slug`, `published_at`, `excerpt`, `content`, `author`, `tags`, `image`),
+не хватает только маршрута и `<link>` на него в layout.
 
 ### P2-7. Чат: картинки в ответах и один вход вместо двух
 

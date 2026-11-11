@@ -69,7 +69,10 @@
 4. **Bootstrap 5.3.3 остаётся.** Урезанный CSS собирается `tools/purge-css.mjs`, встраивается
    в layout **инлайном** и минифицируется хелпером плагина с кешем по `mtime`. Ни одного
    внешнего CSS-запроса, никаких Google Fonts, Tailwind, React, Vite.
-5. **Один плагин** `nlb/library` (vendor `nlb`). Никаких демо-плагинов, тем и RainLab.Blog.
+5. **Один плагин** `nlb/library` (vendor `nlb`). Никаких демо-плагинов, тем и
+   RainLab.Blog. Сторонний плагин — только из списка `docs/plugins.md` (не больше
+   трёх на проект), с проверкой строки «Platform Compatibility» 4.x, даты
+   обновления и `composer audit` после установки.
 6. **Экранирование.** Пользовательский текст в Blade — `{{ }}`; сырой HTML — только через
    `{!! !!}` и только для собственного, проверенного фрагмента (спрайт, инлайн-CSS).
 7. **Доступность не ломать.** У иконки-кнопки есть `aria-label`, текущий пункт —
@@ -87,7 +90,8 @@
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
-& $php vendor/phpunit/phpunit/phpunit    # PHPUnit 9.6, 0 упавших (artisan test в 4.x нет)
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml  # тесты плагина: 61 тест, 0 упавших
+& $php vendor/phpunit/phpunit/phpunit             # ядро October: 1171 тест, 0 упавших (artisan test в 4.x нет)
 & $php artisan october:migrate           # схема поднимается, 0 ошибок
 Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.php -File |
   ForEach-Object { & $php -l $_.FullName }  # 0 ошибок синтаксиса
