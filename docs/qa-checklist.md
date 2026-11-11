@@ -13,6 +13,7 @@ node tools/purge-css.mjs --check
 node tools/check-css-budget.mjs
 node tools/check-urls.mjs
 node tools/check-dom-parity.mjs
+node tools/check-clean-tree.mjs
 ```
 
 - [ ] PHPUnit плагина (`-c phpunit.nlb.xml`) — 0 упавших; без `-c` плагин не
@@ -22,6 +23,7 @@ node tools/check-dom-parity.mjs
 - [ ] `php -l` по всем PHP-файлам вне `vendor/` и `storage/` — 0 ошибок.
 - [ ] `check-urls` — 109 страниц `200`, 404 со страницей, внешнего CSS нет.
 - [ ] `check-dom-parity` — 0 расхождений с эталоном (title, h1, h2, карточки, текст).
+- [ ] `check-clean-tree` — дерево чистое, черновики владельца не в индексе.
 - [ ] `git status` чистый, коммит поимённый, запись в журнале есть.
 
 ## B. 110 адресов (этап 4)

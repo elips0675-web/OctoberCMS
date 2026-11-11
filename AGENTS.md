@@ -99,6 +99,7 @@ node tools/purge-css.mjs --check          # CSS на месте после пр�
 node tools/check-css-budget.mjs           # бюджет CSS
 node tools/check-urls.mjs                 # 110 адресов на живом сервере (нужен serve)
 node tools/check-dom-parity.mjs           # DOM и текст против preview/ источника
+node tools/check-clean-tree.mjs           # дерево чистое, черновики владельца не в индексе
 ```
 
 `check-urls` и `check-dom-parity` работают по запущенному `php artisan serve`
@@ -143,6 +144,11 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 в `docs/installation.md` §7 и `README.md` есть ссылка на файл, а не значение.
 Проверять утечку — `git check-ignore -v .local/admin-credentials.md` и
 `git log -p -- .local` (должно быть пусто).
+
+Черновики владельца (`Архитектура*.html`, `Продажа шаблона*.txt` в корне) не
+коммитятся: в них чужие оценки и внутренние заметки. Они перечислены в
+`.gitignore`, а `tools/check-clean-tree.mjs` падает, если такой файл всё же
+попал в индекс.
 
 ## 8. Стиль ответа
 
