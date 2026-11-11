@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Nlb\Library\Classes\Http\BookingController;
+use Nlb\Library\Classes\Http\FeedbackController;
+use Nlb\Library\Classes\Http\OrderController;
+use Nlb\Library\Classes\Http\SubscriberController;
+
+Route::middleware(['web', 'throttle:30,1'])->group(function () {
+    Route::post('feedback', [FeedbackController::class, 'store']);
+    Route::post('booking', [BookingController::class, 'store']);
+    Route::post('order', [OrderController::class, 'store']);
+    Route::post('subscribe', [SubscriberController::class, 'store']);
+});
+
+Route::middleware('web')->group(function () {
+    Route::get('subscribe/confirm/{token}', [SubscriberController::class, 'confirm']);
+    Route::get('unsubscribe/{token}', [SubscriberController::class, 'unsubscribe']);
+});

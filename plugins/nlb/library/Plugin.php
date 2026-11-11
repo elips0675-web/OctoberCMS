@@ -120,6 +120,9 @@ class Plugin extends PluginBase
 
                     return url($path);
                 },
+                'nlb_csrf' => function () {
+                    return csrf_field();
+                },
             ],
             'filters' => [
                 'nlb_image' => function ($value) {

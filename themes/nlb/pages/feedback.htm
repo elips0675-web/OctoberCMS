@@ -21,7 +21,8 @@ seo_description = "Напишите в библиотеку: вопрос о ф�
             <div class="col-lg-7" data-reveal>
                 <div class="info-card">
                     <h2 class="h4 mb-3">Форма сообщения</h2>
-                    <form class="needs-validation" action="/" method="post" data-nlb-form="request">
+                    <form class="needs-validation" action="/feedback/" method="post" data-nlb-form="request">
+                        {{ nlb_csrf()|raw }}
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label" for="nlbFbName">Имя *</label>

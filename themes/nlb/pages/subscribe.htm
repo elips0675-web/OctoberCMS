@@ -21,7 +21,8 @@ seo_description = "Подпишитесь на анонсы событий и н
             <div class="col-lg-7" data-reveal>
                 <div class="info-card">
                     <h2 class="h4 mb-3">Оформить подписку</h2>
-                    <form class="needs-validation" action="/" method="post">
+                    <form class="needs-validation" action="/subscribe/" method="post">
+                        {{ nlb_csrf()|raw }}
                         <div class="mb-3">
                             <label class="form-label" for="nlbSubEmail">E-mail</label>
                             <input class="form-control" id="nlbSubEmail" type="email" name="EMAIL"

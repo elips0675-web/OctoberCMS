@@ -147,7 +147,8 @@ function onStart()
         <h2 class="section-title">Забронировать</h2>
         <p class="section-lead mb-0">Заполните форму, и мы свяжемся с вами для подтверждения брони.</p>
     </div>
-    <form class="feedback-form needs-validation booking-form" action="/feedback/" method="post" data-nlb-form="booking" data-nlb-slots="{{ nlb_slot_map(record.slug) }}">
+    <form class="feedback-form needs-validation booking-form" action="/booking/" method="post" data-nlb-form="booking" data-nlb-slots="{{ nlb_slot_map(record.slug) }}">
+        {{ nlb_csrf()|raw }}
         <input type="hidden" name="NAME" data-nlb-field="NAME" value="Бронь: {{ record.title }}">
         <input type="hidden" name="PROPERTY[SERVICE][0]" data-nlb-field="SERVICE" value="{{ record.title }}">
         <input type="hidden" name="PROPERTY[SERVICE_CODE][0]" data-nlb-field="SERVICE_CODE" value="{{ record.slug }}">

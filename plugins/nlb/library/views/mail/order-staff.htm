@@ -1,0 +1,11 @@
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Заказ сувенира</h1>
+<table cellpadding="0" cellspacing="0" style="font:14px/1.5 Arial, sans-serif">
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Товар</td><td>{{ order.ITEM }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Артикул</td><td>{{ order.ARTICLE ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Цена</td><td>{{ order.PRICE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Количество</td><td>{{ order.QTY }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Имя</td><td>{{ order.PERSON }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Телефон</td><td>{{ order.PHONE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">E-mail</td><td>{{ order.EMAIL ?: '—' }}</td></tr>
+</table>
+<p style="font:14px/1.5 Arial, sans-serif; margin:16px 0 0; white-space:pre-line">{{ order.COMMENT ?: 'Без комментария.' }}</p>

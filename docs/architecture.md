@@ -165,25 +165,44 @@ plugins/nlb/library/
 
 | Маршрут | Назначение | Контракт |
 |---|---|---|
+| `POST /feedback/` | обратная связь (P0-4) | `nlb_requests` + письмо в очередь; `201` JSON / `302 ?sent=1#form`; `422` на пустые поля |
+| `POST /subscribe/` | подписка (P0-5) | `nlb_subscribers` + письмо double opt-in; повторный адрес не даёт второй строки |
+| `GET /subscribe/confirm/{token}` | подтверждение подписки | `200` страница «Подписка подтверждена», `410` на использованный токен |
+| `GET /unsubscribe/{token}` | отписка | `200` страница «Вы отписались», повторный переход безопасен |
+| `POST /booking/` | бронь услуги (P1-9) | `nlb_bookings` + слот + два письма; `409 SLOT_UNAVAILABLE` на занятое время, `422` вне окна слотов |
+| `POST /order/` | заказ сувенира (P1-12) | `nlb_orders` + письмо; `422` на `QTY < 1` и отрицательную цену |
 | `GET /ajax/search` | мгновенная выдача | `?q=`, `&limit=`; коды `200/400/405/503` (как `local/ajax/search.php`) |
 | `POST /api/chat` | проверка сообщения чата | `200/400/403/405/413/422/503`, `{ok, verdict, error}` |
 | `POST /api/bookings` | REST для Telegram-бота (P1-16) | `Bearer`-токен, идемпотентность по `external_id`, `200/201/400/401/409/422/429` |
 | `POST /ajax/push/subscribe`, `POST /ajax/push/unsubscribe` | Web Push | VAPID из `.env` |
 
+Формы (`plugins/nlb/library/routes.php`) сидят в группе `web`: обязателен
+`_token` (в шаблоне — `{{ nlb_csrf()|raw }}`), лимит `throttle:30,1`.
+Поля источника `PROPERTY[EMAIL][0]` разбирает `classes/FormFields.php` в плоские
+`EMAIL`, `DATE`, … Возврат — на страницу формы из `Referer` того же хоста,
+иначе на `fallbackPath()`: чужой `Referer` не превращается в открытый редирект.
+
 ## 7. Очереди и планировщик
 
 | Задача | Тип | Что делает |
 |---|---|---|
-| `SendFormNotification` | `ShouldQueue` | письмо администратору о заявке/брони/заказе |
-| `SendBookingConfirmation` | `ShouldQueue` | подтверждение клиенту |
-| `SendSubscriptionConfirmation` | `ShouldQueue` | double opt-in |
-| `NotifyStaffPush` | `ShouldQueue` | Web Push персоналу о брони |
+| `FeedbackNotification` | `Mailable` в очереди | письмо сотрудникам об обращении с сайта |
+| `BookingNotification` | `Mailable` в очереди | письмо сотрудникам о новой брони |
+| `BookingConfirmation` | `Mailable` в очереди | подтверждение брони клиенту |
+| `OrderNotification` | `Mailable` в очереди | письмо сотрудникам о заказе сувенира |
+| `SubscriptionConfirmation` | `Mailable` в очереди | double opt-in и ссылка отписки |
+| `NotifyStaffPush` | план | Web Push персоналу о брони |
 | `nlb:slots-generate` | schedule (ежедневно) | генерация слотов из расписания услуг |
 | `nlb:search-index` | schedule + хуки `saved`/`deleted` | переиндексация BM25 |
-| `ExpireUnconfirmedBookings` | schedule | снятие просроченных броней |
+| `ExpireUnconfirmedBookings` | план | снятие просроченных броней |
 
-SMTP у владельца нет: `MAIL_MAILER=log`, письма проверяются в `storage/logs/laravel.log`
-и Mailpit. Код обязан работать с реальным SMTP без правок.
+Отдельных job-классов нет: письмо ставит в очередь контроллер формы
+(`Mail::queue(new …)`), письма — `plugins/nlb/library/classes/Mail/`. Очередь
+`QUEUE_CONNECTION=database`, поэтому без воркера (`php artisan queue:work`)
+письма лежат в таблице `jobs` и не уходят — это требование хостинга, а не код.
+
+SMTP у владельца нет: `MAIL_MAILER=log`, письма проверяются в
+`storage/logs/system.log` и Mailpit. Код обязан работать с реальным SMTP без правок.
 
 ## 8. Медиа и CSS
 

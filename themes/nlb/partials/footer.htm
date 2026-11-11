@@ -60,6 +60,7 @@
                 </div>
 
                 <form class="newsletter mt-4 needs-validation" action="/subscribe/" method="post">
+                    {{ nlb_csrf()|raw }}
                     <label class="visually-hidden" for="nlbSubscribeEmail">E-mail для подписки</label>
                     <div class="d-flex flex-column flex-sm-row gap-2">
                         <input class="form-control" id="nlbSubscribeEmail" type="email" name="EMAIL" placeholder="Ваш e-mail" autocomplete="email" required>
@@ -173,6 +174,7 @@
             </div>
             <div class="modal-body">
                 <form class="needs-validation" action="/feedback/" method="post">
+                    {{ nlb_csrf()|raw }}
                     <div class="mb-3">
                         <label class="form-label" for="nlbFeedbackName">Ваше имя</label>
                         <input class="form-control" id="nlbFeedbackName" type="text" name="NAME" required>

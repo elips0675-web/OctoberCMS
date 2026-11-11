@@ -63,7 +63,8 @@ function onStart()
         <h2 class="section-title">Заказать «{{ record.title }}»</h2>
         <p class="section-lead mb-0">Оставьте контакты — подтвердим наличие, способ оплаты и получения.</p>
     </div>
-    <form class="feedback-form needs-validation" action="/books/" method="post" data-nlb-form="order">
+    <form class="feedback-form needs-validation" action="/order/" method="post" data-nlb-form="order">
+        {{ nlb_csrf()|raw }}
         <input type="hidden" name="NAME" value="Заказ: {{ record.title }}">
         <input type="hidden" name="PROPERTY[ITEM][0]" value="{{ record.title }}">
         <input type="hidden" name="PROPERTY[ARTICLE][0]" value="{{ record.isbn }}">

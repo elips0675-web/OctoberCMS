@@ -1,0 +1,12 @@
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Новая бронь</h1>
+<table cellpadding="0" cellspacing="0" style="font:14px/1.5 Arial, sans-serif">
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Услуга</td><td>{{ booking.SERVICE }} ({{ booking.SERVICE_CODE }})</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Дата</td><td>{{ booking.DATE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Время</td><td>{{ booking.TIME }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Тариф</td><td>{{ booking.TARIFF ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Цена</td><td>{{ booking.PRICE ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Имя</td><td>{{ booking.PERSON }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Телефон</td><td>{{ booking.PHONE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">E-mail</td><td>{{ booking.EMAIL ?: '—' }}</td></tr>
+</table>
+<p style="font:14px/1.5 Arial, sans-serif; margin:16px 0 0; white-space:pre-line">{{ booking.COMMENT ?: 'Без комментария.' }}</p>
