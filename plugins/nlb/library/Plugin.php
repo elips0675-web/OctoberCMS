@@ -184,7 +184,7 @@ class Plugin extends PluginBase
                         $path .= '/';
                     }
 
-                    return url($path);
+                    return request()->getSchemeAndHttpHost() . $path;
                 },
                 'nlb_csrf' => function () {
                     return csrf_field();

@@ -57,7 +57,7 @@ php artisan serve --host=127.0.0.1 --port=8080
 | Команда | Что делает |
 |---|---|
 | `php vendor/phpunit/phpunit/phpunit` | PHPUnit ядра на реальной БД (`artisan test` в 4.x нет) |
-| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на sqlite `:memory:` |
+| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на живой MySQL (127 тестов) |
 | `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
 | `php artisan october:fresh` | **сносит контент**: схема + демо с нуля; для этапа 4 не использовался |
 | `php artisan migrate:fresh` | схема с нуля |

@@ -132,16 +132,16 @@ Winter оправдан, только если сайт форкается и п
 
 | Домен | Состояние 11.11.2026 | Пункт бэклога |
 |---|---|---|
-| **Блог** | есть `Nlb\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url` и разделами (`section.yaml`, `type: structure`); нет RSS и мета записи (`seo_title`/`seo_description` у записи) | P2-6 (RSS), мета — в M20 |
+| **Блог** | есть `Nlb\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url`, разделами (`section.yaml`, `type: structure`) и мета-полями `seo_title`/`seo_description`; нет RSS | P2-6 (RSS) |
 | **Отзывы** | blueprint'а нет; `type: submission` пишет в `tailor_*` и навязывает разметку | M21 — своя `nlb_reviews` + привязка к брони |
-| **SEO** | canonical, OG, robots — в `themes/nlb/layouts/default.htm:10-18`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:44`); `/sitemap.xml` (106 адресов) и `/robots.txt` — 200, 301 со старых адресов (Stage 7). Нет мета записи и `/rss.xml` | M20 (мета записи), P2-4 (Event/Product), P2-6 (RSS) |
+| **SEO** | canonical, OG, robots — в `themes/nlb/layouts/default.htm:10-18`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:44`); `/sitemap.xml` (106 адресов) и `/robots.txt` — 200, 301 со старых адресов (Stage 7); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:126`, Stage 8). Нет `/rss.xml` | P2-4 (Event/Product), P2-6 (RSS) |
 | **Формы** | разметка и клиентская валидация 1:1, согласие на обработку есть в `feedback.htm:51` и `services-detail.htm:184`; серверные `POST` пишут в `nlb_*` и ставят письма в очередь, статусы меняются в админке (Stage 5–6) | SMTP — M14 |
 | **Почта** | `MAIL_MAILER=log`, живого SMTP нет | M14 |
 | **Инфраструктура** | нет staging, хостинга, бэкапов и мониторинга; `QUEUE_CONNECTION=database`, но воркера и cron нет | M17, P2-2 (CI) |
 | **Контент** | 59 из 91 позиции без фото; контакты и реквизиты — заглушки; права на демо-фото не зафиксированы | P1-11, P0-6, P0-7 |
 
-Порядок работ: формы и письма (этап 5), админка (этап 6) и SEO-периметр
-(этап 7) закрыты; дальше — мета записи (M20), M21 (отзывы), поиск и чат.
+Порядок работ: формы и письма (этап 5), админка (этап 6), SEO-периметр
+(этап 7) и мета записи (этап 8) закрыты; дальше — M21 (отзывы), поиск и чат.
 Поля блога уже есть, лента — P2-6. Плагины — только когда без них нельзя.
 
 ## 7. Бесплатный контур

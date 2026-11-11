@@ -113,6 +113,38 @@ class Seo
     }
 
     /**
+     * applyRecord проставляет мета детальной страницы из записи Tailor.
+     *
+     * Пустые поля не затирают поведение по умолчанию: заголовок остаётся
+     * «Название — Библиотека 2026», описание берётся из анонса — ровно так
+     * страница выглядела до появления полей. Обрезка до 160 знаков держит
+     * description в разумных рамках: из текста записи он не собирается.
+     *
+     * @param  \Cms\Classes\Page  $page
+     * @param  \Tailor\Models\EntryRecord  $record
+     */
+    public static function applyRecord($page, $record): void
+    {
+        $page->title = $record->title . ' — ' . static::SITE_NAME;
+
+        $title = trim((string) $record->seo_title);
+
+        if ($title !== '') {
+            $page->seo_title = $title;
+        }
+
+        $description = trim((string) $record->seo_description);
+
+        if ($description === '') {
+            $description = trim(strip_tags((string) $record->excerpt));
+        }
+
+        if ($description !== '') {
+            $page->seo_description = mb_substr($description, 0, 160);
+        }
+    }
+
+    /**
      * robots отдаёт robots.txt с абсолютным адресом карты сайта.
      *
      * Файл динамический, а не статический в `public/`: домен появится только

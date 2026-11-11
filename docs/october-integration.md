@@ -110,17 +110,19 @@
 | `manifest.webmanifest`, `sw.js`, `offline.html` | корень | корень веб-корня (пути не менять) |
 | версия SW | `sw.js` | поднимается при изменении ассетов |
 
-Состояние 11.11.2026 (Stage 7): meta, OG и canonical отдаёт layout; JSON-LD
+Состояние 11.11.2026 (Stage 8): meta, OG и canonical отдаёт layout, у записи
+своя мета (`Seo::applyRecord()`, `classes/Seo.php:126`) — `seo_title` и
+`seo_description` из blueprints перекрывают имя и `excerpt`; JSON-LD
 `Library` + `WebSite` подключён в `<head>` через `nlb_jsonld()`;
 `/sitemap.xml` — 200 `application/xml`, 106 `<loc>` с `lastmod` (110 из
 инвентаря минус `/404` и три закрытых в robots адреса: `/auth/`,
 `/personal/`, `/search/`); `/robots.txt` — 200 `text/plain` с `Sitemap:`
 текущего хоста; `/index.php`, `/sitemap.php`, `/{section}/index.php` и
 `/{section}/detail.php?CODE=…` — 301 на новые адреса с сохранением `utm_*`.
-Проверка — `node tools/check-seo.mjs` (гейт) и `tests/SeoTest.php` (17 тестов).
-Осталось: мета записи (`seo_title`/`seo_description` в blueprints) — M20;
-`/rss.xml` — P2-6; расширения микроразметки (`Event`, `Product`, `Article`) —
-P2-4; валидация на живом домене — M17.
+Canonical совпадает с `<loc>` карты побайтово (`Plugin.php:187`).
+Проверка — `node tools/check-seo.mjs` (гейт) и `tests/SeoTest.php` (27 тестов).
+Осталось: `/rss.xml` — P2-6; расширения микроразметки (`Event`, `Product`,
+`Article`) — P2-4; валидация на живом домене — M17.
 
 ## 9. Безопасность
 

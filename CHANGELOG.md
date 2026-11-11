@@ -19,12 +19,15 @@
   `tests/AdminTest.php` (13 тестов).
 - Этап 7: `/sitemap.xml` (106 адресов), `/robots.txt`, 301 со старых адресов
   Битрикса и JSON-LD `Library` + `WebSite`; `tests/SeoTest.php` (17 тестов),
-  гейт `tools/check-seo.mjs`. В плагине 117 тестов.
+  гейт `tools/check-seo.mjs`.
+- Этап 8: мета записи — `seo_title`/`seo_description` в шести blueprints,
+  `Seo::applyRecord()` выставляет их в `<head>` (пустые поля откатываются на имя
+  записи и `excerpt`), canonical совпадает с `<loc>` карты; `tests/SeoTest.php`
+  вырос до 27 тестов. В плагине 127 тестов, 462 утверждения.
 
 ### Планируется
 
-- Мета записи (`seo_title`/`seo_description` в blueprints), поиск BM25,
-  `/rss.xml`, роль редактора, подписи дашборда.
+- Поиск BM25, `/rss.xml`, роль редактора, подписи дашборда.
 
 ## [0.4.0] — 11.11.2026
 

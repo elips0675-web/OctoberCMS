@@ -69,6 +69,17 @@ fields:
         type: textarea
         size: small
 
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — анонс. До 160 символов.'
+        type: textarea
+        size: small
+
     content:
         label: Текст
         type: richeditor

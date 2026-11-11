@@ -137,14 +137,16 @@ docs/                    # документация (карта — docs/README.
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 117 зелёных
-  (`phpunit.nlb.xml`). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 127 зелёных
+  (`phpunit.nlb.xml`, 462 утверждения). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
-  `/sitemap.xml` (106 адресов), `/robots.txt`, 301 и JSON-LD — `tools/check-seo.mjs`.
-- **Формы, админка и SEO-периметр подключены** (этапы 5–7): `POST /feedback/`,
+  `/sitemap.xml` (106 адресов), `/robots.txt`, 301 и JSON-LD — `tools/check-seo.mjs`;
+  мета записи — `tests/SeoTest.php`.
+- **Формы, админка и SEO-периметр подключены** (этапы 5–8): `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; админка
-  «Библиотека» со статусами и освобождением слота; sitemap, robots, 301.
+  «Библиотека» со статусами и освобождением слота; sitemap, robots, 301,
+  JSON-LD и мета записи из blueprints.
   **Поиск, чат и внешние API — ещё нет** (M8, P1-16, P1-17).
 - **Живой SMTP отсутствует** — письма проверяются через `MAIL_MAILER=log`; код
   обязан быть готов к реальному SMTP без правок.

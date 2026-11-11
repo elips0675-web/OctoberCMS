@@ -11,10 +11,7 @@ function onStart()
         $this->page->title = 'Страница не найдена — Библиотека 2026';
     }
     else {
-        $this->page->title = $record->title . ' — Библиотека 2026';
-        if ($record->excerpt) {
-            $this->page->seo_description = mb_substr(trim(strip_tags($record->excerpt)), 0, 160);
-        }
+        \Nlb\Library\Classes\Seo::applyRecord($this->page, $record);
     }
 
     $this['record'] = $record;
