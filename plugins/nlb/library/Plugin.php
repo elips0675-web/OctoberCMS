@@ -22,6 +22,67 @@ class Plugin extends PluginBase
         $this->discoverConsoleCommands();
     }
 
+    public function registerPermissions()
+    {
+        return [
+            'nlb.library.requests' => [
+                'label' => 'Обращения с сайта',
+                'tab' => 'Библиотека',
+            ],
+            'nlb.library.bookings' => [
+                'label' => 'Брони услуг',
+                'tab' => 'Библиотека',
+            ],
+            'nlb.library.orders' => [
+                'label' => 'Заказы сувениров',
+                'tab' => 'Библиотека',
+            ],
+            'nlb.library.subscribers' => [
+                'label' => 'Подписчики рассылки',
+                'tab' => 'Библиотека',
+            ],
+        ];
+    }
+
+    public function registerNavigation()
+    {
+        return [
+            'library' => [
+                'label' => 'Библиотека',
+                'url' => \Backend::url('nlb/library/requests'),
+                'icon' => 'icon-book',
+                'order' => 400,
+                'permissions' => ['nlb.library.requests'],
+                'sideMenu' => [
+                    'requests' => [
+                        'label' => 'Обращения',
+                        'icon' => 'icon-envelope',
+                        'url' => \Backend::url('nlb/library/requests'),
+                        'permissions' => ['nlb.library.requests'],
+                    ],
+                    'bookings' => [
+                        'label' => 'Брони',
+                        'icon' => 'icon-calendar',
+                        'url' => \Backend::url('nlb/library/bookings'),
+                        'permissions' => ['nlb.library.bookings'],
+                    ],
+                    'orders' => [
+                        'label' => 'Заказы',
+                        'icon' => 'icon-shopping-cart',
+                        'url' => \Backend::url('nlb/library/orders'),
+                        'permissions' => ['nlb.library.orders'],
+                    ],
+                    'subscribers' => [
+                        'label' => 'Подписчики',
+                        'icon' => 'icon-users',
+                        'url' => \Backend::url('nlb/library/subscribers'),
+                        'permissions' => ['nlb.library.subscribers'],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     public function boot()
     {
         if ($this->app->runningInConsole()) {

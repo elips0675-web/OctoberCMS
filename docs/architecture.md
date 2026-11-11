@@ -182,6 +182,36 @@ plugins/nlb/library/
 `EMAIL`, `DATE`, … Возврат — на страницу формы из `Referer` того же хоста,
 иначе на `fallbackPath()`: чужой `Referer` не превращается в открытый редирект.
 
+### 6.3. Админка
+
+| Раздел (меню «Библиотека») | Контроллер (`plugins/nlb/library/controllers`) | Право |
+|---|---|---|
+| Обращения | `Requests.php` — `nlb/library/requests` | `nlb.library.requests` |
+| Брони | `Bookings.php` — `nlb/library/bookings` | `nlb.library.bookings` |
+| Заказы | `Orders.php` — `nlb/library/orders` | `nlb.library.orders` |
+| Подписчики | `Subscribers.php` — `nlb/library/subscribers` | `nlb.library.subscribers` |
+
+Права и меню объявлены в `Plugin.php` (`registerPermissions()`,
+`registerNavigation()`): у каждого пункта свой `permissions`, поэтому оператор
+видит только выданные разделы. Списки — `ListController` + `columns.yaml`
+(поиск по теме, e-mail, телефону, услуге, товару, адресу); правка —
+`FormController` + `fields.yaml`, где данные гостя только для чтения
+(`disabled`), а редактируется один `status`.
+
+Смена статуса — единственное действие админки, и оно не обходит бизнес-логику:
+
+- `Request::saving` / `Order::saving` ставят `date_processed`, когда статус стал
+  «Выполнено»/«Отменён»;
+- `Booking::updating` при статусе «Отменена» освобождает слот через
+  `BookingService::releaseSlot()` (общий код с `BookingService::cancel()`), а
+  возврат отменённой брони в работу запрещён `ApplicationException` — иначе
+  слот вернулся бы в продажу без брони.
+
+Демо-подсказка «часть слотов занята» и массовые действия (удаление, экспорт)
+не делались: их нет в приёмке.
+
+
+
 ## 7. Очереди и планировщик
 
 | Задача | Тип | Что делает |
@@ -210,10 +240,14 @@ SMTP у владельца нет: `MAIL_MAILER=log`, письма провер�
   (GD, `imagewebp`, `imageavif`) — переносится как есть.
 - `<picture>` выводит `Picture`-компонент: `srcset`, `width`/`height`,
   `fetchpriority="high"` у hero, `loading="lazy"` ниже первого экрана.
-- CSS: `bootstrap.min.css` (61 433 байта) урезается `tools/purge-css.mjs`, вместе со
-  `styles.css` (81 179 байт) минифицируется хелпером `Media::minifyCss()` и встраивается
-  инлайном в layout. Кеш — по `mtime`, отдельного `styles.min.css` не существует
-  (рассинхрон «файл есть, а его никто не пересобрал» недопустим).
+- CSS: `bootstrap.min.css` (51 758 байт) собирается `tools/purge-css.mjs` из
+  `bootstrap.source.min.css` (232 803 байта) по классам, которые реально есть в
+  `themes/nlb/**` и `plugins/nlb/**`; каталог `controllers` в обход сканера —
+  это разметка админки, её стилизует тема backend, а не CSS сайта. Вместе со
+  `styles.css` (84 995 байт) результат минифицируется хелпером
+  `Media::minifyCss()` и встраивается инлайном в layout. Кеш — по `mtime`,
+  отдельного `styles.min.css` не существует (рассинхрон «файл есть, а его никто
+  не пересобрал» недопустим).
 
 ## 9. Зависимости
 

@@ -1,0 +1,28 @@
+columns:
+    id:
+        label: '#'
+        type: number
+        sortable: true
+    created_at:
+        label: Получено
+        type: datetime
+        sortable: true
+    subject:
+        label: Тема
+        searchable: true
+    email:
+        label: E-mail
+        searchable: true
+    phone:
+        label: Телефон
+        searchable: true
+    source:
+        label: Источник
+    status:
+        label: Статус
+        type: selectable
+        select: status
+        options:
+            new: Новое
+            in_progress: В работе
+            done: Выполнено

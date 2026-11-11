@@ -1,0 +1,4 @@
+name: Заказ
+modelClass: Nlb\Library\Models\Order
+form: $/nlb/library/models/order/fields.yaml
+defaultRedirect: nlb/library/orders

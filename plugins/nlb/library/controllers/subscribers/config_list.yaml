@@ -1,0 +1,13 @@
+title: Подписчики
+list: $/nlb/library/models/subscriber/columns.yaml
+modelClass: Nlb\Library\Models\Subscriber
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: false
+noRecordsMessage: 'Подписчиков пока нет — форма в подвале сайта пишет сюда автоматически.'
+defaultSort:
+    column: id
+    direction: desc
+toolbar:
+    search:
+        prompt: 'Поиск по адресу'

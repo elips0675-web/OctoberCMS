@@ -1,0 +1,20 @@
+columns:
+    id:
+        label: '#'
+        type: number
+        sortable: true
+    email:
+        label: Адрес
+        searchable: true
+    created_at:
+        label: Подписался
+        type: datetime
+        sortable: true
+    confirmed_at:
+        label: Подтвердил
+        type: datetime
+        sortable: true
+    unsubscribed_at:
+        label: Отписался
+        type: datetime
+        sortable: true

@@ -2,6 +2,8 @@
 
 use October\Rain\Database\Model;
 use October\Rain\Database\Traits\Validation;
+use October\Rain\Exception\ApplicationException;
+use Nlb\Library\Classes\BookingService;
 
 /**
  * Booking — бронь услуги на дату и время.
@@ -46,6 +48,28 @@ class Booking extends Model
     public const STATUS_NEW = 'new';
     public const STATUS_CONFIRMED = 'confirmed';
     public const STATUS_CANCELLED = 'cancelled';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function (self $booking) {
+            if (!$booking->isDirty('status')) {
+                return;
+            }
+
+            if ($booking->status === self::STATUS_CANCELLED) {
+                app(BookingService::class)->releaseSlot($booking);
+                $booking->date_processed = $booking->date_processed ?: now();
+
+                return;
+            }
+
+            if ($booking->getOriginal('status') === self::STATUS_CANCELLED) {
+                throw new ApplicationException('Отменённую бронь нельзя вернуть в работу — создайте новую.');
+            }
+        });
+    }
 
     public function scopeActive($query)
     {

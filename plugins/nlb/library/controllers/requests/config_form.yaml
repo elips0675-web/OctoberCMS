@@ -1,0 +1,4 @@
+name: Обращение
+modelClass: Nlb\Library\Models\Request
+form: $/nlb/library/models/request/fields.yaml
+defaultRedirect: nlb/library/requests

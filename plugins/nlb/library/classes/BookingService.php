@@ -89,27 +89,40 @@ class BookingService
                 return $fresh;
             }
 
-            $slot = Slot::query()
-                ->where('service_code', (string) $fresh->service_code)
-                ->whereDate('date', $this->dateToString($fresh->date))
-                ->where('time', (string) $fresh->time)
-                ->lockForUpdate()
-                ->first();
-
-            if ($slot) {
-                $slot->taken = max(0, (int) $slot->taken - 1);
-                if ((int) $slot->booking_id === (int) $fresh->getKey()) {
-                    $slot->booking_id = null;
-                }
-                $slot->save();
-            }
+            $this->releaseSlot($fresh);
 
             $fresh->status = Booking::STATUS_CANCELLED;
             $fresh->date_processed = now();
-            $fresh->save();
+            $fresh->saveQuietly();
 
             return $fresh;
         });
+    }
+
+    /**
+     * releaseSlot освобождает слот брони.
+     *
+     * Вызывается и из BookingService::cancel, и из хука модели Booking, поэтому
+     * done молча: слот ищется по услуге, дате и времени, taken не уходит ниже нуля.
+     */
+    public function releaseSlot(Booking $booking): void
+    {
+        $slot = Slot::query()
+            ->where('service_code', (string) $booking->service_code)
+            ->whereDate('date', $this->dateToString($booking->date))
+            ->where('time', (string) $booking->time)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$slot) {
+            return;
+        }
+
+        $slot->taken = max(0, (int) $slot->taken - 1);
+        if ((int) $slot->booking_id === (int) $booking->getKey()) {
+            $slot->booking_id = null;
+        }
+        $slot->save();
     }
 
     /**

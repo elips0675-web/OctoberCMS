@@ -1,0 +1,33 @@
+columns:
+    id:
+        label: '#'
+        type: number
+        sortable: true
+    created_at:
+        label: Создана
+        type: datetime
+        sortable: true
+    date:
+        label: Дата
+        type: date
+        sortable: true
+    time:
+        label: Время
+        sortable: true
+    service:
+        label: Услуга
+        searchable: true
+    person:
+        label: Имя
+        searchable: true
+    phone:
+        label: Телефон
+        searchable: true
+    status:
+        label: Статус
+        type: selectable
+        select: status
+        options:
+            new: Новая
+            confirmed: Подтверждена
+            cancelled: Отменена

@@ -1,0 +1,61 @@
+fields:
+    id:
+        label: '#'
+        disabled: true
+        span: left
+    created_at:
+        label: Получен
+        type: datepicker
+        mode: datetime
+        disabled: true
+        span: right
+    item:
+        label: Товар
+        disabled: true
+        span: left
+    article:
+        label: Артикул
+        disabled: true
+        span: right
+    price:
+        label: Цена, руб.
+        type: number
+        disabled: true
+        span: left
+    qty:
+        label: Количество
+        type: number
+        disabled: true
+        span: right
+    person:
+        label: Имя
+        disabled: true
+        span: left
+    phone:
+        label: Телефон
+        disabled: true
+        span: right
+    email:
+        label: E-mail
+        disabled: true
+        span: left
+    status:
+        label: Статус
+        type: dropdown
+        span: right
+        options:
+            new: Новый
+            processing: В работе
+            done: Выполнен
+            cancelled: Отменён
+    comment:
+        label: Комментарий
+        type: textarea
+        size: small
+        disabled: true
+    date_processed:
+        label: Обработан
+        type: datepicker
+        mode: datetime
+        disabled: true
+        span: left

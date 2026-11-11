@@ -1,0 +1,33 @@
+columns:
+    id:
+        label: '#'
+        type: number
+        sortable: true
+    created_at:
+        label: Получен
+        type: datetime
+        sortable: true
+    item:
+        label: Товар
+        searchable: true
+    person:
+        label: Имя
+        searchable: true
+    phone:
+        label: Телефон
+        searchable: true
+    price:
+        label: Цена, руб.
+        type: number
+    qty:
+        label: Кол-во
+        type: number
+    status:
+        label: Статус
+        type: selectable
+        select: status
+        options:
+            new: Новый
+            processing: В работе
+            done: Выполнен
+            cancelled: Отменён

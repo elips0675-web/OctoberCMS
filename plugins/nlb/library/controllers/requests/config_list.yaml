@@ -1,0 +1,14 @@
+title: Обращения
+list: $/nlb/library/models/request/columns.yaml
+modelClass: Nlb\Library\Models\Request
+recordUrl: nlb/library/requests/update/:id
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: false
+noRecordsMessage: 'Обращений пока нет — форма обратной связи пишет сюда автоматически.'
+defaultSort:
+    column: id
+    direction: desc
+toolbar:
+    search:
+        prompt: 'Поиск по теме, e-mail или телефону'

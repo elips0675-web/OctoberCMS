@@ -32,7 +32,10 @@ const target = path.join(vendor, 'bootstrap.min.css');
 const check = process.argv.includes('--check');
 
 const scanRoots = [path.join(root, 'themes/nlb'), path.join(root, 'plugins/nlb/library')];
-const skipDirs = new Set(['node_modules', 'vendor', 'storage', 'tests', 'lang']);
+// `controllers` — разметка админки: её стилизует тема backend, а не CSS сайта,
+// поэтому классы `btn btn-primary` из index/update.htm не должны тянуть
+// правила Bootstrap в файл, который встраивается в публичные страницы.
+const skipDirs = new Set(['node_modules', 'vendor', 'storage', 'tests', 'lang', 'controllers']);
 const scanExt = /\.(htm|php|html|js|json)$/i;
 
 function walk(dir, out) {

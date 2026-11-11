@@ -40,6 +40,17 @@ class Request extends Model
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_DONE = 'done';
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function (self $request) {
+            if ($request->status === self::STATUS_DONE && !$request->date_processed) {
+                $request->date_processed = now();
+            }
+        });
+    }
+
     public function markProcessed(): void
     {
         $this->status = self::STATUS_DONE;

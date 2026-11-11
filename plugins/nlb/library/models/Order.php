@@ -46,6 +46,17 @@ class Order extends Model
     public const STATUS_DONE = 'done';
     public const STATUS_CANCELLED = 'cancelled';
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function (self $order) {
+            if (in_array($order->status, [self::STATUS_DONE, self::STATUS_CANCELLED], true) && !$order->date_processed) {
+                $order->date_processed = now();
+            }
+        });
+    }
+
     public function total(): int
     {
         return (int) $this->price * (int) $this->qty;

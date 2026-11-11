@@ -1,0 +1,69 @@
+fields:
+    id:
+        label: '#'
+        disabled: true
+        span: left
+    created_at:
+        label: Создана
+        type: datepicker
+        mode: datetime
+        disabled: true
+        span: right
+    service:
+        label: Услуга
+        disabled: true
+        span: left
+    service_code:
+        label: Код услуги
+        disabled: true
+        span: right
+    tariff:
+        label: Тариф
+        disabled: true
+        span: left
+    price:
+        label: Цена
+        disabled: true
+        span: right
+    date:
+        label: Дата
+        type: datepicker
+        mode: date
+        disabled: true
+        span: left
+    time:
+        label: Время
+        disabled: true
+        span: right
+    person:
+        label: Имя
+        disabled: true
+        span: left
+    phone:
+        label: Телефон
+        disabled: true
+        span: right
+    email:
+        label: E-mail
+        disabled: true
+        span: left
+    status:
+        label: Статус
+        type: dropdown
+        span: right
+        comment: 'Если выбрать «Отменена», слот освободится и время снова станет доступным.'
+        options:
+            new: Новая
+            confirmed: Подтверждена
+            cancelled: Отменена
+    comment:
+        label: Комментарий гостя
+        type: textarea
+        size: small
+        disabled: true
+    date_processed:
+        label: Обработана
+        type: datepicker
+        mode: datetime
+        disabled: true
+        span: left
