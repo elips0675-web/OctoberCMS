@@ -442,7 +442,7 @@ Stage 77–80 довели мобильный Lighthouse до 100/100/100/100 н
   (`tools/check-urls.mjs`, `tools/check-dom-parity.mjs`).
 - **M7** (инлайн-CSS и бюджет) — `tools/purge-css.mjs` и
   `tools/check-css-budget.mjs` созданы и зелёные; главная 185 676 знаков
-  (бюджет 190 412), инлайн `styles.css` 57 795 байт (бюджет 56,4 КБ),
+  (бюджет 190 412), инлайн `styles.css` 57 795 байт (порог 57 856),
   внешних CSS-запросов и Google Fonts нет.
 - **M12** (тема `nlb`) — тема зарегистрирована, layout отдаёт инлайн-CSS и
   спрайт, страницы собраны из partials, `script.js` побайтово равен источнику.

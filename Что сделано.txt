@@ -58,7 +58,8 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
   h2, карточки, текст). Расхождение было одно: в `services-detail.htm` потерялась
   демо-подсказка о занятых слотах — возвращена дословно, пункт P1-9 уточнён.
 - `node tools/check-css-budget.mjs` → `styles.css` 81 179 → **57 795 байт**
-  (бюджет 56,4 КБ), `bootstrap.min.css` 51 758 → 51 508; `purge-css.mjs --check`
+  (57 795 байт = 56,4 КиБ при пороге 57 856), `bootstrap.min.css` 51 758 → 51 508
+  (порог 61 377); `purge-css.mjs --check`
   — сборка совпадает.
 - `october:migrate` → `Nlb.Library v1.0.2 -> v1.1.0`, 0 ошибок.
 - `php -l` по `app,config,database,plugins,themes,tests` → **0 ошибок синтаксиса**.
