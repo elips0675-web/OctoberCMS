@@ -6,6 +6,70 @@
 
 ---
 
+(Stage 10 — 11.11.2026) — **CSP и заголовки безопасности: nonce для инлайнового
+скрипта, админка без CSP, статика — через nginx.**
+
+Повод: P1-4. Источник ставил CSP из PHP и никогда его не проверял; в October
+заголовки нужны в двух местах — приложение и периметр, — иначе статика уезжает
+без защиты. До этапа `curl -I /` не отдавал ни `Content-Security-Policy`,
+ни `X-Frame-Options`: заголовков не было вообще (`docs/roadmap.md:20`).
+
+Сделано:
+
+- `classes/Http/SecurityHeaders.php:27` — middleware: генерирует nonce до
+  рендера, ставит `X-Content-Type-Options`, `Referrer-Policy`,
+  `Permissions-Policy`, `X-Frame-Options` (фронт `DENY`, админка
+  `SAMEORIGIN`), HSTS только на HTTPS.
+- `classes/Http/SecurityHeaders.php:89` — политика CSP: `default-src 'self'`,
+  `base-uri 'self'`, `object-src 'none'`, `frame-ancestors 'none'`,
+  `form-action 'self'`, `img-src 'self' data:`, `font-src 'self'`,
+  `style-src 'self' 'unsafe-inline'` (инлайн-блок CSS — осознанно, иначе
+  пропадает FCP 0,9 с), `script-src 'self' 'nonce-…'`, `connect-src 'self'`,
+  `media-src`, `manifest-src`, `worker-src`; `upgrade-insecure-requests`
+  только на HTTPS. `unsafe-eval` нет нигде.
+- `classes/Http/SecurityHeaders.php:78` — админка (`config('backend.uri')`,
+  по умолчанию `/admin`) исключена из CSP: October использует инлайновые
+  скрипты и eval в редакторах, строгая политика ломает виджеты.
+- `Plugin.php:104` — регистрация рядом с `CompressResponse` и `LegacyRedirect`;
+  `Plugin.php:190` — хелпер `nlb_csp_nonce()`.
+- `themes/nlb/partials/filter-script.htm:1` — единственный исполняемый
+  инлайновый скрипт темы (фильтры списков) получил `nonce="{{ nlb_csp_nonce() }}"`.
+- `nginx.conf:36-38` — статические заголовки для статики и ответов ошибок
+  (`add_header … always`); `nginx.conf:53-55` — `fastcgi_hide_header` для трёх
+  заголовков, которые ставит PHP, чтобы браузер не получал два значения.
+  CSP и `X-Frame-Options` в nginx не дублируются: nonce одноразовый, а
+  `X-Frame-Options` зависит от пути.
+- `tests/SecurityHeadersTest.php` — 12 тестов: набор заголовков, политика,
+  уникальность nonce, HSTS только на HTTPS, админка без CSP, 404 с заголовками,
+  `reset()`.
+- `tools/check-headers.mjs` — гейт на живом сервере: 12 публичных страниц,
+  уникальный nonce на каждый ответ, совпадение nonce заголовка и скрипта,
+  отсутствие инлайновых скриптов без nonce, админка без CSP, 404 с заголовками.
+
+Проверено:
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **162 теста,
+  569 утверждений**, 0 упавших (было 150/535).
+- `node tools/check-headers.mjs` — OK: 12 страниц, CSP с уникальным nonce,
+  `/admin` без CSP, 404 с заголовками.
+- `check-urls` 109×200 + 404; `check-dom-parity` 110/110; `check-seo` 106
+  адресов и узел записи; `purge-css --check` и `check-css-budget` зелёные;
+  `php -l` на трёх файлах — 0 ошибок; `october:migrate` — nothing to migrate.
+
+Не проверено:
+
+- Консоль браузера на живых страницах: нарушения CSP видны только в DevTools,
+  headless-браузера в проекте нет — проверка HTTP-уровня, не рендера.
+- `nginx.conf` не применялся на реальном сервере — M17; локально заголовки
+  приложения видны через `php artisan serve`.
+- HSTS за прокси: `isSecure()` не видит `X-Forwarded-Proto`, на проде HSTS
+  обязан ставить nginx в блоке 443 (записано в `docs/security-performance.md`).
+- Виджеты и редакторы админки проверены кодами ответов, а не кликами.
+- Статика на проде отдаётся nginx мимо PHP; локальный `artisan serve` отдаёт
+  файлы без middleware — это ожидаемо и описано в документе.
+
+---
+
 (Stage 9 — 11.11.2026) — **Микроразметка записи: `Article`, `Event`, `Product`,
 `Service` в JSON-LD, картинка записи в `og:image` и `twitter:image`.**
 

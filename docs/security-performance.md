@@ -6,22 +6,35 @@
 ## 1. Заголовки и CSP
 
 Источник — `nlb_security.php` (77 строк): CSP, `X-Frame-Options`, `Referrer-Policy`,
-`Permissions-Policy`. В October заголовки живут в двух местах:
+`Permissions-Policy`. В October набор разделён осознанно, потому что два
+заголовка зависят от запроса и статикой не ставятся:
 
-1. middleware `Security\Headers` — ответы приложения;
-2. конфиг сервера (nginx/apache) — статика, ассеты, страницы ошибок.
+| Заголовок | Где | Почему |
+|---|---|---|
+| `Content-Security-Policy` | `SecurityHeaders` (PHP) | в `script-src` одноразовый `nonce` на каждый ответ, nginx его не знает |
+| `X-Frame-Options` | `SecurityHeaders` (PHP) | фронт `DENY`, админка `SAMEORIGIN` — зависит от пути |
+| `Strict-Transport-Security` | nginx 443 (PHP — только если запрос уже HTTPS) | за прокси `isSecure()` не видит `X-Forwarded-Proto`, HSTS обязан ставить периметр |
+| `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` | `SecurityHeaders` **и** `nginx.conf` | одинаковы для всех; nginx скрывает версию PHP (`fastcgi_hide_header`), чтобы не было дублей |
 
-Правило: набор обязан совпадать. Заголовок только в middleware — «есть» лишь на HTML
-и лишь в тесте; статику отдаёт сервер, и она уезжает без защиты.
+Middleware — `plugins/nlb/library/classes/Http/SecurityHeaders.php`, регистрация
+в `Plugin.php::boot()` рядом с `CompressResponse` и `LegacyRedirect`.
 
 CSP и инлайн-стили: CSS встраивается в документ намеренно (это и даёт FCP 0,9 с),
-поэтому `style-src` требует либо `'unsafe-inline'` **осознанно**, либо хеш инлайн-блока.
-Решение фиксируется в этом документе и в `Что сделано.txt` до первого замера:
-выбираем `'unsafe-inline'` для `style-src` (инлайн-блок формируется сервером, а не
-пользователем) и `script-src` без `'unsafe-inline'` (скрипты — файлами).
+поэтому `style-src` требует `'unsafe-inline'` **осознанно** — инлайн-блок
+формируется сервером, а не пользователем. `script-src` — `'self'` плюс nonce:
+инлайновый скрипт фильтров (`themes/nlb/partials/filter-script.htm:1`) помечен
+`nonce="{{ nlb_csp_nonce() }}"`, `'unsafe-inline'` для скриптов не выдаётся.
+`unsafe-eval` не разрешён нигде.
 
-Приёмка: `curl -I` на HTML и на статике показывает полный набор; CSP не ломает
-инлайн-стили и не даёт console-ошибок.
+Админка исключена из CSP: October подключает инлайновые скрипты и eval в бэкенде,
+строгая политика ломает редакторы и виджеты. Для неё остаются статические
+заголовки и `X-Frame-Options: SAMEORIGIN` (всплывающие окна).
+
+Приёмка: `node tools/check-headers.mjs` — 12 публичных страниц, CSP с уникальным
+nonce, nonce скрипта совпадает с заголовком, админка без CSP, 404 с заголовками.
+Дополнительно: `curl -I` на HTML и на статике; в консоли браузера нет нарушений
+CSP. Заголовки статики на проде ставит nginx (`nginx.conf`), потому что файлы
+до PHP не доходят.
 
 ## 2. Бюджеты
 

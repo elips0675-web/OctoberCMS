@@ -131,23 +131,24 @@ docs/                    # документация (карта — docs/README.
 | Правила чата | `script.js:169` (11 правил), `script.js:281` (10 подсказок) | данные в плагине, не `if` в JS |
 | Чат-эндпоинт | `script.js:155-156` (`USE_REAL_AI=false`, `/api/chat`) | контроллер `/api/chat` (правила + оператор) |
 | SEO | `nlb_seo.php` | `classes/Seo.php` + layout: meta, OG/Twitter, canonical, JSON-LD `Library`/`WebSite` + узел записи |
-| Заголовки | `nlb_security.php` | middleware + конфиг сервера (заголовки дублируются) — ещё не сделано, P1-4 |
+| Заголовки | `nlb_security.php` | `classes/Http/SecurityHeaders.php`: CSP с nonce, `X-Frame-Options`, HSTS; статические — ещё и `nginx.conf` (Stage 10) |
 
 ## 8. Ограничения и что ещё не проверено
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 150 зелёных
-  (`phpunit.nlb.xml`, 535 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 162 зелёных
+  (`phpunit.nlb.xml`, 569 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
   `/sitemap.xml` (106 адресов), `/robots.txt`, 301 и JSON-LD — `tools/check-seo.mjs`;
   мета записи и микроразметка `Article`/`Event`/`Product`/`Service` —
   `tests/SeoTest.php` (50 тестов).
-- **Формы, админка и SEO-периметр подключены** (этапы 5–9): `POST /feedback/`,
+- **Формы, админка, SEO и заголовки подключены** (этапы 5–10): `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; админка
   «Библиотека» со статусами и освобождением слота; sitemap, robots, 301,
-  JSON-LD, мета записи из blueprints и узел записи в `@graph`.
+  JSON-LD, мета записи из blueprints и узел записи в `@graph`; CSP с nonce,
+  `X-Frame-Options`, HSTS-условие и статические заголовки в `nginx.conf`.
   **Поиск, чат и внешние API — ещё нет** (M8, P1-16, P1-17).
 - **Живой SMTP отсутствует** — письма проверяются через `MAIL_MAILER=log`; код
   обязан быть готов к реальному SMTP без правок.

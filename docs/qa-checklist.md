@@ -56,6 +56,20 @@ node tools/check-clean-tree.mjs
   `og:image` и `twitter:image` — абсолютные и из записи, если картинка есть.
 - [ ] `node tools/check-seo.mjs` — exit 0.
 
+## B3. Заголовки безопасности (этап 10)
+
+- [ ] Каждая публичная страница отдаёт `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy` без камеры, микрофона и геолокации.
+- [ ] CSP: `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`,
+  `script-src 'self' 'nonce-…'`, `style-src` с `'unsafe-inline'`, без
+  `unsafe-eval`; nonce в заголовке совпадает с `nonce` инлайнового скрипта
+  фильтров, у следующего запроса nonce другой.
+- [ ] `/admin` (или `BACKEND_URI`) — без CSP, `X-Frame-Options: SAMEORIGIN`,
+  виджеты и редакторы October работают.
+- [ ] 404 получает тот же набор, статика на проде — от nginx (`nginx.conf`).
+- [ ] `node tools/check-headers.mjs` — exit 0.
+
 ## C. Lighthouse (этап 8)
 
 - [ ] Три прогона подряд через gzip-сервер, мобильный профиль: 100/100/100/100.

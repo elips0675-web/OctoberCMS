@@ -30,6 +30,12 @@
   `Product` бренд — библиотека, а не упаковка. `tests/SeoTest.php` вырос до
   50 тестов, в плагине 150 тестов, 535 утверждений; `tools/check-seo.mjs`
   проверяет узел записи на каждой детальной странице.
+- Этап 10: CSP и заголовки безопасности — middleware `SecurityHeaders` с
+  одноразовым nonce для инлайнового скрипта фильтров, `X-Frame-Options`
+  (`DENY` на сайте, `SAMEORIGIN` в админке без CSP), `Referrer-Policy`,
+  `Permissions-Policy`, HSTS на HTTPS; статические заголовки дублируются в
+  `nginx.conf`. `tests/SecurityHeadersTest.php` (12 тестов), гейт
+  `tools/check-headers.mjs`; в плагине 162 теста, 569 утверждений.
 
 ### Планируется
 

@@ -137,14 +137,20 @@ Canonical совпадает с `<loc>` карты побайтово (`Seo::can
 
 | Что | Источник | Цель |
 |---|---|---|
-| CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy | `nlb_security.php` (77 строк) | middleware `SecurityHeaders` **и** конфиг сервера |
+| CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy | `nlb_security.php` (77 строк) | middleware `SecurityHeaders` (`classes/Http/SecurityHeaders.php`) + `nginx.conf` |
 | CSRF | `bitrix_sessid` | Laravel CSRF (формы и AJAX) |
 | Лимитеры | `nlb_forms.php` (антиспам) | `RateLimiter` на формы и API |
 | Доступ к админке | `nlb_security_is_admin()` | штатный backend October + политики |
 
-Важно: заголовки в middleware отвечают только за ответы приложения. Статику и ассеты
-отдаёт сервер — набор дублируется там (nginx/apache), иначе «заголовки есть» только
-на HTML и только в тесте.
+Сделано на Stage 10. CSP и `X-Frame-Options` ставит только PHP: в CSP
+одноразовый `nonce` на каждый ответ (инлайновый скрипт фильтров подписан
+`nonce="{{ nlb_csp_nonce() }}"`), а `X-Frame-Options` зависит от пути — фронт
+`DENY`, админка `SAMEORIGIN`, потому что October использует фреймы во виджетах.
+Статические `X-Content-Type-Options`, `Referrer-Policy` и `Permissions-Policy`
+дублируются в `nginx.conf` (статику PHP не отдаёт), а версия приложения в
+FastCGI-блоке скрывается через `fastcgi_hide_header`, чтобы не было дублей.
+HSTS ставит nginx в блоке 443: за прокси `isSecure()` не видит
+`X-Forwarded-Proto`. Проверка — `node tools/check-headers.mjs`.
 
 ## 10. Чего в переносе нет
 

@@ -230,6 +230,7 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `robots.txt` | `classes/Seo.php:472` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
+| Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
 
 Карта сайта собирается из тех же записей, что показывает тема: отключённая или
 удалённая запись в карту не попадает, а новая страница темы без строки в
@@ -239,7 +240,8 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 `/index.php` за `SCRIPT_NAME` и `path()` отдаёт `/`, иначе старый адрес главной
 не отличить от самой главной. `CODE` отбрасывается, остальные параметры
 (`utm_*`, `PAGEN_1`) переносятся в новый адрес. Middleware подключён в
-`Plugin.php:99` только вне консоли — юнит-тесты гоняют его напрямую.
+`Plugin.php:100` только вне консоли — юнит-тесты гоняют его напрямую; рядом
+`SecurityHeaders` (`Plugin.php:104`) и `CompressResponse` (`Plugin.php:96`).
 
 Мета записи: у шести blueprints (`news`, `events`, `books`, `services`,
 `printing`, `collections`) есть `seo_title` и `seo_description`,

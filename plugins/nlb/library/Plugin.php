@@ -1,6 +1,7 @@
 <?php namespace Nlb\Library;
 
 use Nlb\Library\Classes\Content;
+use Nlb\Library\Classes\Http\SecurityHeaders;
 use Nlb\Library\Classes\Labels;
 use Nlb\Library\Classes\Media;
 use Nlb\Library\Classes\Seo;
@@ -97,6 +98,10 @@ class Plugin extends PluginBase
         $this->app
             ->make(\Illuminate\Contracts\Http\Kernel::class)
             ->pushMiddleware(\Nlb\Library\Classes\Http\LegacyRedirect::class);
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(SecurityHeaders::class);
     }
 
     public function registerMarkupTags()
@@ -180,6 +185,9 @@ class Plugin extends PluginBase
                 },
                 'nlb_canonical' => function () {
                     return Seo::canonical();
+                },
+                'nlb_csp_nonce' => function () {
+                    return SecurityHeaders::nonce();
                 },
                 'nlb_csrf' => function () {
                     return csrf_field();

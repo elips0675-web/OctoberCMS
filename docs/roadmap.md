@@ -17,7 +17,7 @@
 | Тезис оценки | Что в коде |
 |---|---|
 | «В репозитории уже есть `tools/gen-vapid.php`» | Файла нет: в `tools/` только `css-size.php` и `serve-static.php`. VAPID — план, M9 |
-| «Проект уже учитывает CSP» | CSP нет: `Plugin.php:95,99` подключает только сжатие и 301, в `nginx.conf` нет ни одного `add_header`. Открытый P1-4 |
+| «Проект уже учитывает CSP» | CSP не было: `Plugin.php:95,99` подключал только сжатие и 301, в `nginx.conf` не было ни одного `add_header`. Закрыто на Stage 10: `classes/Http/SecurityHeaders.php` + `nginx.conf` (P1-4) |
 | «Добавьте rate limiting на формы» | Уже есть: `plugins/nlb/library/routes.php:10` — `throttle:30,1` на `feedback`, `booking`, `order`, `subscribe` |
 | «О бэкапах ни слова» | Пункт P2-10 (переехал в P0-8) и `docs/security-performance.md:122`; скрипта нет — это верно, «ни слова» — нет |
 | «BM25 заявлен, проверьте, что не `LIKE`» | BM25 не портирован вообще: `plugins/nlb/library/classes/Search.php` отсутствует, M8 открыт |

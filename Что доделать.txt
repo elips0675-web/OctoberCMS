@@ -14,9 +14,9 @@
 > Плагин `nlb/library` версии **1.1.0**: 9 blueprints, команда
 > `nlb:import` перенесла 91 элемент и 12 разделов, Eloquent-таблицы заявок, броней,
 > заказов, слотов и подписчиков созданы, слоты — `nlb:slots-generate`; тесты
-> плагина — **150 зелёных** (`phpunit.nlb.xml`, 535 утверждений). Формы `/feedback/`, `/booking/`,
+> плагина — **162 зелёных** (`phpunit.nlb.xml`, 569 утверждений). Формы `/feedback/`, `/booking/`,
 > `/order/`, `/subscribe/` пишут в БД и ставят письма в очередь (Stage 5),
-> периметр SEO и микроразметка записи — Stage 7–9.
+> периметр SEO и микроразметка записи — Stage 7–9, CSP и заголовки — Stage 10.
 > Тема `nlb` — рабочая
 > (`ACTIVE_THEME=nlb`), демо-тема и демо-плагин удалены: 109 адресов отвечают
 > `200`, `/non-existent/` — `404` со страницей, DOM и текст совпадают с `preview/`
@@ -132,18 +132,6 @@ Winter CMS не берём: нет Tailor и Laravel 9 без security-фикс�
 ---
 
 ## P1 — качество и полнота
-
-### P1-4. CSP и заголовки: периметр, а не только middleware
-
-Источник: `nlb_security.php` (77 строк); на живом Битриксе CSP ставил PHP и не
-проверялся (`Что доделать.txt` источника, P1-4). В October заголовки нужны в
-двух местах: middleware `Security\Headers` и конфиг сервера (статика и ассеты).
-Решение по `style-src` зафиксировано в `docs/security-performance.md:19`:
-`'unsafe-inline'` для стилей (инлайн-блок формирует сервер), `script-src` — без
-`'unsafe-inline'`.
-
-Приёмка: `curl -I` на HTML и на статике показывает ровно один полный набор;
-CSP не ломает инлайн-CSS и не даёт console-ошибок; админка работает.
 
 ### P1-5. Доступность: аудит на живом сайте October
 
@@ -321,8 +309,9 @@ MySQL — SQLite `lockForUpdate` не держит.
 записи, описание из `seo_description` с откатом на `excerpt`, canonical с
 хвостовым слэшем. Этап 9 (11.11.2026): **150 тестов** — `SeoTest` (50) на
 микроразметку: `Article`, `Event`, `Product`, `Service`, цена и наличие,
-формат события, пустые поля, `og:image` из записи. Осталось: тесты поиска и
-чата (этапы 10+).
+формат события, пустые поля, `og:image` из записи. Этап 10 (11.11.2026):
+**162 теста** — `SecurityHeadersTest` (12) на CSP, nonce, `X-Frame-Options`,
+HSTS и исключение админки. Осталось: тесты поиска и чата (этапы 11+).
 
 ### M21. Отзывов нет: нужна своя `nlb_reviews`
 
@@ -681,3 +670,11 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
   `twitter:image` (`layouts/default.htm:27-35`), бренд `Product` — библиотека,
   а не упаковка. Проверено 150 тестами (`SeoTest` — 50) и расширенным
   `tools/check-seo.mjs`; остаток расширенного SEO — P2-22.
+- **P1-4** (CSP и заголовки) — закрыт на Stage 10: middleware
+  `classes/Http/SecurityHeaders.php:27` ставит CSP с одноразовым nonce,
+  `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), `Referrer-Policy`,
+  `Permissions-Policy`, HSTS только на HTTPS; инлайновый скрипт фильтров
+  подписан `nonce="{{ nlb_csp_nonce() }}"`; статические заголовки дублирует
+  `nginx.conf` (с `fastcgi_hide_header` от дублей). Проверено 162 тестами
+  (`SecurityHeadersTest` — 12) и гейтом `tools/check-headers.mjs` (12 страниц,
+  уникальный nonce, админка без CSP, 404 с заголовками).
