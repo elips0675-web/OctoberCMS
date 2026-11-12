@@ -6,6 +6,7 @@ description = "Основной макет сайта: шапка, подвал 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b1220">
+    <link rel="manifest" href="{{ url('/manifest.webmanifest') }}">
 
     <title>{{ this.page.seo_title ?: this.page.title }}</title>
     {% if this.page.seo_description %}
@@ -60,5 +61,6 @@ description = "Основной макет сайта: шапка, подвал 
 
 <script src="{{ 'assets/vendor/bootstrap.bundle.min.js'|theme }}"></script>
 <script src="{{ 'assets/js/script.js'|theme }}"></script>
+<script src="{{ 'assets/js/pwa.js'|theme }}" defer></script>
 </body>
 </html>

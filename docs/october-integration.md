@@ -26,7 +26,7 @@
 | ссылки «О библиотеке … Контакты» | `footer.php:5-101` | `Footer` (навигация `bottom` — 5 пунктов) |
 | форма подписки | `footer.php:92` | компонент `Subscribe` → `nlb_subscribers` |
 | копирайт, правовые ссылки, Cookie | `footer.php:105-116` | `Footer` + `consent.js` |
-| баннеры cookie и PWA | `footer.php:118-167` | partial + `consent.js`, `pwa.js` |
+| баннеры cookie и PWA | `footer.php:118-167` | partial + `consent.js`, `pwa.js`; cookie — P1-22, баннер установки — M22 |
 | FAB (Telegram, WhatsApp, звонок, mail, форма, ИИ) | `footer.php:169-199` | partial |
 | чат-виджет | `footer.php:208-244` | компонент `Chat` |
 | «наверх» | `footer.php:246-248` | partial |
@@ -107,8 +107,8 @@
 | `/sitemap/` (HTML) | страница | CMS-страница |
 | `robots.txt` | корень | маршрут `Seo::robots()`: домен из запроса, а не статический файл |
 | 301 со старых адресов | `urlrewrite.php` | `classes/Http/LegacyRedirect.php` |
-| `manifest.webmanifest`, `sw.js`, `offline.html` | корень | корень веб-корня (пути не менять) |
-| версия SW | `sw.js` | поднимается при изменении ассетов |
+| `manifest.webmanifest`, `sw.js`, `offline.html` | корень | `classes/Pwa.php` + маршруты с корня (`routes.php:24-26`) — файлы лежат в `themes/nlb/assets/pwa/` |
+| версия SW | `sw.js` | `Pwa::version()` — восемь hex из `mtime` файлов `SHELL`, руками не правится |
 
 Состояние 11.11.2026 (Stage 9): meta, OG, Twitter и canonical отдаёт layout,
 у записи своя мета (`Seo::applyRecord()`, `classes/Seo.php:169`) — `seo_title`
@@ -128,11 +128,24 @@ JSON-LD `Library` + `WebSite` подключён в `<head>` через `nlb_jso
 Canonical совпадает с `<loc>` карты побайтово (`Seo::canonical()`,
 `classes/Seo.php:52`).
 Проверка — `node tools/check-seo.mjs` (гейт: карта, robots, 301, узел записи,
-`og:image`, `/rss.xml`) и `tests/SeoTest.php` (50 тестов) + `tests/RssTest.php`
+`og:image`, `/rss.xml`) и `tests/SeoTest.php` (51 тест) + `tests/RssTest.php`
 (9 тестов).
 Осталось: `BreadcrumbList`, FAQ-разметка и CWV — P2-22;
 валюта цен (₽ в шаблонах и `RUB` в JSON-LD) — P1-24; валидация на живом
 домене — M17.
+
+PWA (Stage 12): `/manifest.webmanifest` (200 `application/manifest+json`),
+`/sw.js` (200, `Service-Worker-Allowed: /`) и `/offline.html` отдаются с корня,
+а не из `themes/nlb/assets/pwa/`, — иначе область service worker ограничилась
+бы каталогом темы (`Pwa::SHELL`, `classes/Pwa.php:22`). В `SHELL` входят
+страница, CSS, `pwa.js` и офлайн-файл: версия кеша — `mtime` этих файлов
+(`Pwa::version()`, `:72`), поэтому после правки вёрстки старый кеш вытесняется
+без ручной правки `sw.js`. Из перехвата исключены `/admin/`, `/api/` и
+`/vendor/`; `/offline.html` без инлайнового JS, чтобы его не заблокировал CSP
+Stage 10, кнопка «обновить» — ссылка `href=""`. Регистрация — `assets/js/pwa.js`
+из layout. Проверка — `node tools/check-pwa.mjs` (manifest, иконки, shortcuts,
+версия и плейсхолдеры, каждый адрес `SHELL`, отсутствие `<script>` на офлайн-
+странице) + `tests/PwaTest.php` (9 тестов).
 
 ## 9. Безопасность
 

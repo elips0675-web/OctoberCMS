@@ -36,6 +36,10 @@ const scanRoots = [path.join(root, 'themes/nlb'), path.join(root, 'plugins/nlb/l
 // поэтому классы `btn btn-primary` из index/update.htm не должны тянуть
 // правила Bootstrap в файл, который встраивается в публичные страницы.
 const skipDirs = new Set(['node_modules', 'vendor', 'storage', 'tests', 'lang', 'controllers']);
+// `assets/pwa/offline.html` — самостоятельная страница со своими инлайн-стилями:
+// Bootstrap в неё не подключается, и её классы (`card`, `mark`, `hint`)
+// не должны тянуть правила в файл, который встраивается в публичные страницы.
+const skipPaths = new Set([path.join(root, 'themes/nlb/assets/pwa')]);
 const scanExt = /\.(htm|php|html|js|json)$/i;
 
 function walk(dir, out) {
@@ -49,7 +53,9 @@ function walk(dir, out) {
     for (const entry of entries) {
         if (entry.isDirectory()) {
             if (skipDirs.has(entry.name)) continue;
-            walk(path.join(dir, entry.name), out);
+            const full = path.join(dir, entry.name);
+            if (skipPaths.has(full)) continue;
+            walk(full, out);
             continue;
         }
         if (scanExt.test(entry.name)) out.push(path.join(dir, entry.name));

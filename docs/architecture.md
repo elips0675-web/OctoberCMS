@@ -231,6 +231,7 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Nlb\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
+| PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/nlb/`; версия кеша — `mtime` файлов, восемь hex |
 | Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
 
 Карта сайта собирается из тех же записей, что показывает тема: отключённая или

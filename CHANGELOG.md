@@ -41,6 +41,15 @@
   разметки, отключённая запись не попадает, `<link rel="alternate">` в layout;
   `tests/RssTest.php` (9 тестов), `tools/check-seo.mjs` проверяет ленту.
   В плагине 171 тест, 616 утверждений.
+- Этап 12: PWA — `manifest.webmanifest`, `sw.js` и `offline.html` отдаются с
+  корня маршрутами (`classes/Http/PwaController.php`), файлы лежат в
+  `themes/nlb/assets/pwa/`, чтобы область service worker не сузилась до каталога
+  темы; версия кеша — восемь hex из `mtime` файлов `SHELL` (`Pwa::version()`),
+  `/admin/` из перехвата исключён, офлайн-страница без инлайнового JS.
+  `tests/PwaTest.php` (9 тестов), гейт `tools/check-pwa.mjs`; попутно исправлен
+  `Sitemap::themePath()` (в October 4 `Theme::getPath()` принимает имя каталога,
+  из-за чего `lastmod` текстовых страниц молча подменялся текущей датой).
+  В плагине 181 тест, 684 утверждения.
 
 ### Планируется
 

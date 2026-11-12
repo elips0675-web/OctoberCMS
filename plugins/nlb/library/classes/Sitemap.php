@@ -204,7 +204,7 @@ class Sitemap
     {
         $theme = \Cms\Classes\Theme::getActiveTheme();
 
-        return $theme ? $theme->getPath($relative) : null;
+        return $theme ? rtrim($theme->getPath(), '/\\') . '/' . ltrim($relative, '/') : null;
     }
 
     /**

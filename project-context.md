@@ -25,7 +25,7 @@
 | Поиск | свой Okapi BM25, индекс в БД, команда переиндексации | `plugins/nlb/library/classes/Search` |
 | БД | MySQL 8.4.3, `127.0.0.1:3306`, БД `nlb_october` | `.env` |
 | Письма | `Mail` + `ShouldQueue`; SMTP у владельца нет → `MAIL_MAILER=log` | `.env` |
-| PWA | `manifest.webmanifest`, `sw.js`, `offline.html` | корень веб-корня (не `public/`) |
+| PWA | `manifest.webmanifest`, `sw.js`, `offline.html` — файлы в `themes/nlb/assets/pwa/`, маршруты с корня | `classes/Pwa.php`, `classes/Http/PwaController.php` |
 | Сборка | `tools/*` (purge-css, build-image-variants, гейты) | `tools/` |
 | Тесты | PHPUnit + `RefreshDatabase` | `plugins/nlb/library/tests/` |
 
@@ -81,9 +81,9 @@ themes/nlb/
   pages/                 # CMS-страницы: index, about, contacts, 404, ...
   partials/              # списки, карточки, крошки
   assets/                # картинки, шрифты, js темы
+  assets/pwa/            # manifest.webmanifest, sw.js, offline.html — отдаются с корня маршрутом
 index.php, .htaccess     # корень проекта = веб-корень (public/ в 4.x нет)
-sw.js, manifest.webmanifest, offline.html  # в корне веб-корня
-                         # robots.txt и sitemap.xml — маршруты плагина, не файлы
+                         # robots.txt и sitemap.xml — тоже маршруты плагина, не файлы
 tools/                   # purge-css.mjs, build-image-variants.php, гейты
 docs/                    # документация (карта — docs/README.md)
 ```
@@ -137,8 +137,8 @@ docs/                    # документация (карта — docs/README.
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 171 зелёный
-  (`phpunit.nlb.xml`, 616 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 181 зелёный
+  (`phpunit.nlb.xml`, 684 утверждения). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
   `/sitemap.xml` (106 адресов), `/robots.txt`, 301 и JSON-LD — `tools/check-seo.mjs`;

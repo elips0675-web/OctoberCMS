@@ -73,6 +73,18 @@ node tools/check-clean-tree.mjs
 - [ ] 404 получает тот же набор, статика на проде — от nginx (`nginx.conf`).
 - [ ] `node tools/check-headers.mjs` — exit 0.
 
+## B4. PWA (этап 12)
+
+- [ ] `/manifest.webmanifest` — 200 `application/manifest+json`, JSON разбирается,
+      `name`/`short_name`/`start_url`/`scope: "/"`/`display`, ≥2 иконки и shortcuts
+      отвечают 200; на главной есть `<link rel="manifest">`.
+- [ ] `/sw.js` — 200 `application/javascript`, `Service-Worker-Allowed: /`,
+      в списке `SHELL` нет плейсхолдеров, версия — восемь hex, каждый адрес
+      оболочки отвечает 200, `/admin/` не перехватывается.
+- [ ] `/offline.html` — 200 `text/html`, без `<script>` и `onclick=` (их
+      заблокирует CSP), ссылка на главную работает.
+- [ ] `node tools/check-pwa.mjs` — exit 0.
+
 ## C. Lighthouse (этап 8)
 
 - [ ] Три прогона подряд через gzip-сервер, мобильный профиль: 100/100/100/100.

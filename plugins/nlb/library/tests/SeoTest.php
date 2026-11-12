@@ -97,6 +97,21 @@ class SeoTest extends PluginTestCase
         $this->assertSame($expected, $listed);
     }
 
+    public function testStaticPageLastmodComesFromThemeFile()
+    {
+        $file = base_path('themes/nlb/pages/about.htm');
+        $this->assertFileExists($file);
+
+        $lastmod = null;
+        foreach (Sitemap::urls() as $url) {
+            if ($url['loc'] === '/about/') {
+                $lastmod = $url['lastmod'];
+            }
+        }
+
+        $this->assertSame(date('Y-m-d', (int) filemtime($file)), $lastmod);
+    }
+
     public function testSitemapExcludesClosedPaths()
     {
         foreach (Sitemap::urls() as $url) {

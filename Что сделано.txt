@@ -6,6 +6,95 @@
 
 ---
 
+(Stage 12 — 12.11.2026) — **PWA-оболочка: manifest, service worker и офлайн-страница
+отдаются с корня.**
+
+Повод: M10. В источнике `manifest.webmanifest`, `sw.js` и `offline.html` лежали
+в корне и работали; в October этих файлов не было — 404 на все три адреса, а из
+папки темы service worker получил бы область `/themes/nlb/` и не перехватывал
+страницы сайта.
+
+Сделано:
+
+- `classes/Pwa.php:22` — `SHELL`: один список файлов оболочки (офлайн-страница,
+  manifest, `bootstrap.bundle.min.js`, `script.js`, `pwa.js`, четыре иконки).
+  Из него же собирается список кеша в `sw.js`, поэтому «что кешируется» и «что
+  считается версией» не расходятся.
+- `classes/Pwa.php:72` — `version()`: восемь hex от `sha1` списка `URL:mtime`.
+  Правка любого файла оболочки меняет версию, старый кеш вытесняется
+  (`sw.js:40-43`), руками номер не поднимается.
+- `classes/Pwa.php:88` — `pathFor()`: адрес оболочки → файл на диске
+  (`/offline.html` и `/manifest.webmanifest` — в теме, `/themes/…` — от корня).
+  `themePath()` (`:122`) собран как `rtrim($theme->getPath(),'/\\').'/'.$relative`,
+  потому что в October 4 `Theme::getPath()` возвращает каталог темы, а не файл.
+- `classes/Http/PwaController.php:19`, `:30`, `:42` — три ответа с явными
+  типами: `application/manifest+json`, `application/javascript` +
+  `Service-Worker-Allowed: /` + `no-cache`, `text/html`; `routes.php:24-26`
+  поднимает их с корня.
+- `themes/nlb/assets/pwa/manifest.webmanifest` — `id`, `name`, `short_name`,
+  `lang: ru`, `start_url: /?utm_source=pwa`, `scope: /`, `display: standalone`,
+  четыре иконки (192, 512, maskable, svg) и три shortcut: каталог, афиша, печать.
+- `themes/nlb/assets/pwa/sw.js` — cache-first для оболочки, network-first для
+  страниц с откатом на `/offline.html`, `/admin/` из перехвата исключён,
+  `activate` чистит `nlb-*` кроме текущего кеша; push-обработчики оставлены
+  точкой подключения для M9.
+- `themes/nlb/assets/pwa/offline.html` — без `<script>` и `onclick=`, чтобы
+  страницу не заблокировал CSP Stage 10; «обновить» — ссылка `href=""`
+  (перезагрузка текущего адреса).
+- `themes/nlb/assets/js/pwa.js` (22 строки) — регистрация после `load`,
+  только если браузер поддерживает service worker; `layouts/default.htm:9`
+  — `<link rel="manifest">`, `:64` — сам скрипт.
+- `tests/PwaTest.php` — 9 тестов: список `SHELL` и его файлы, версия из `mtime`
+  и её изменение, подстановка `__VERSION__`/`__SHELL__`, типы и заголовки трёх
+  ответов, офлайн без инлайнового JS, исключение админки в `sw.js`.
+- `tools/check-pwa.mjs` — гейт на живом сервере: manifest (тип, JSON, поля,
+  `scope`, иконки и shortcuts по 200), `sw.js` (тип, `Service-Worker-Allowed`,
+  плейсхолдеры, версия 8 hex, каждый адрес `SHELL` по 200, `/admin/`
+  исключён), `/offline.html` (тип, нет `<script>`/`onclick=`, ссылка на
+  главную), главная (`rel="manifest"`, `pwa.js`).
+- `tools/purge-css.mjs:38` — из обхода исключён `themes/nlb/assets/pwa`:
+  офлайн-страница стилизуется своим инлайн-CSS, Bootstrap в неё не
+  подключается, а её классы (`card`, `mark`, `hint`) попадали в safelist и
+  ломали `--check` (226 классов вместо 222).
+- Попутный дефект: `Sitemap::themePath()` (`classes/Sitemap.php:203`) звал
+  `$theme->getPath($relative)` — October 4 игнорирует аргумент, путь указывал на
+  каталог, `filemtime` падал в `date()` от каталога, и `lastmod` текстовых
+  страниц молча становился сегодняшним. Теперь путь собирается из каталога
+  темы; добавлен тест `testStaticPageLastmodComesFromThemeFile`.
+- Документация: `docs/architecture.md` §6.4 (строка PWA),
+  `docs/october-integration.md` §8, `docs/qa-checklist.md` B4,
+  `project-context.md`, `README.md`, `AGENTS.md` §5, `CHANGELOG.md`.
+
+Проверено:
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **181 тест,
+  684 утверждения**, 0 упавших (было 171/616).
+- `node tools/check-pwa.mjs` — manifest (4 иконки, 3 shortcut), версия
+  `0a27a146`, все 9 адресов `SHELL` по 200, офлайн-страница, регистрация.
+- `node tools/check-urls.mjs` — 109×200 + 404, документ 187 999 знаков,
+  инлайн CSS 57 795 байт; `check-dom-parity` — 110/110; `check-seo` — 106
+  адресов и лента; `check-headers` — 12 страниц; `purge-css --check` —
+  без расхождений; `php -l` — 0 ошибок.
+
+Не проверено:
+
+- Установка приложения и офлайн-режим в реальном браузере: service worker
+  требует secure context, а живого HTTPS-домена нет — M17.
+- Push-уведомления: обработчики в `sw.js` — точка подключения, ключей и
+  подписки нет — M9.
+- Lighthouse-аудит PWA (installability) — часть протокола Lighthouse, но
+  прогон на домене, не на `artisan serve`.
+- Safari/iOS: `beforeinstallprompt` не используется, поведение «Добавить на
+  экран Домой» не измерялось.
+- Баннер «Установить приложение» не перенесён — новый пункт M22. Прежний
+  `themes/nlb/assets/js/pwa.js` (206 строк из источника) был мёртвым кодом:
+  разметки `#nlbInstallBanner` в теме нет, `window.NLB_PWA` не объявлялся,
+  поэтому условие `config.sw` не выполнялось и service worker не регистрировался
+  вовсе. Файл заменён регистратором на 22 строки; логика баннера восстанавливается
+  вместе с M22, а не копией, которая молча ничего не делает.
+
+---
+
 (Stage 11 — 11.11.2026) — **Лента новостей `/rss.xml` в формате RSS 2.0.**
 
 Повод: P2-6. Источник отдавал `/news/rss/`, в October `GET /rss.xml` отвечал

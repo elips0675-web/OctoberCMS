@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Nlb\Library\Classes\Http\BookingController;
 use Nlb\Library\Classes\Http\FeedbackController;
 use Nlb\Library\Classes\Http\OrderController;
+use Nlb\Library\Classes\Http\PwaController;
 use Nlb\Library\Classes\Http\SeoController;
 use Nlb\Library\Classes\Http\SubscriberController;
 
@@ -20,4 +21,7 @@ Route::middleware('web')->group(function () {
     Route::get('sitemap.xml', [SeoController::class, 'sitemap']);
     Route::get('rss.xml', [SeoController::class, 'rss']);
     Route::get('robots.txt', [SeoController::class, 'robots']);
+    Route::get('manifest.webmanifest', [PwaController::class, 'manifest']);
+    Route::get('sw.js', [PwaController::class, 'serviceWorker']);
+    Route::get('offline.html', [PwaController::class, 'offline']);
 });
