@@ -5,8 +5,11 @@ use Nlb\Library\Classes\Http\BookingController;
 use Nlb\Library\Classes\Http\FeedbackController;
 use Nlb\Library\Classes\Http\OrderController;
 use Nlb\Library\Classes\Http\PwaController;
+use Nlb\Library\Classes\Http\HealthController;
 use Nlb\Library\Classes\Http\SeoController;
 use Nlb\Library\Classes\Http\SubscriberController;
+
+Route::get('health', [HealthController::class, 'index']);
 
 Route::middleware(['web', 'throttle:30,1'])->group(function () {
     Route::post('feedback', [FeedbackController::class, 'store']);

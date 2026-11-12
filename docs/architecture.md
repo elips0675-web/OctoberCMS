@@ -265,8 +265,9 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `OrderNotification` | `Mailable` в очереди | письмо сотрудникам о заказе сувенира |
 | `SubscriptionConfirmation` | `Mailable` в очереди | double opt-in и ссылка отписки |
 | `NotifyStaffPush` | план | Web Push персоналу о брони |
-| `nlb:slots-generate` | schedule (ежедневно) | генерация слотов из расписания услуг |
-| `nlb:search-index` | schedule + хуки `saved`/`deleted` | переиндексация BM25 |
+| `nlb:health-report` | schedule (ежечасно) | JSON-строка состояния: ответ БД, очередь, диск, компоненты |
+| `nlb:slots-generate` | schedule (ежедневно, 03:10) | генерация слотов из расписания услуг |
+| `nlb:search-index` | план (M8) | переиндексация BM25 |
 | `ExpireUnconfirmedBookings` | план | снятие просроченных броней |
 
 Отдельных job-классов нет: письмо ставит в очередь контроллер формы

@@ -6,8 +6,71 @@
 
 ---
 
-(Stage 12 — 12.11.2026) — **PWA-оболочка: manifest, service worker и офлайн-страница
-отдаются с корня.**
+(Stage 13 — 12.11.2026) — **Health-check `/health`, часовой отчёт и планировщик:
+прод перестаёт быть слепым.**
+
+Повод: P1-21. Health-эндпоинта не было, ошибки видны только в
+`storage/logs/laravel.log`, а планировщик не был зарегистрирован вовсе — при
+этом `docs/architecture.md` §7 уже называл `nlb:slots-generate` ежедневной
+задачей. Слоты в проде кончились бы через 30 дней после `--days`, и бронь
+начала бы отвечать «нет свободного времени».
+
+Сделано:
+
+- `classes/Health.php:26` — `check()` по трём компонентам: БД (`SELECT 1`),
+  кэш (запись и чтение ключа), очередь (`Queue::connection()->size()`, `sync`
+  пропускается). Исключение ловится внутри, наружу отдаётся только «да/нет»,
+  причина — `Log::warning` (`:157`).
+- `classes/Health.php:52` — `metrics()`: `db_ms`, `queue_size`,
+  `disk_free_bytes` и те же `checks` — числа для отчёта, без ПДн.
+- `classes/Http/HealthController.php:18` — `200`/`503`, JSON
+  `{status, checks, time}`, `Cache-Control: no-store`; маршрут `health`
+  объявлен вне группы `web` (`routes.php:11`), поэтому сессия не создаётся.
+- `console/HealthReport.php:20` — `nlb:health-report`: JSON-строка
+  (`at`, `db_ms`, `queue_size`, `disk_free_bytes`, `checks`) дописывается в
+  `storage/logs/health.log` (или `--path`), код возврата `1`, если БД не
+  ответила.
+- `Plugin.php:27` — `registerSchedule()`: `nlb:health-report` ежечасно,
+  `nlb:slots-generate` ежедневно в 03:10, оба `withoutOverlapping()`.
+  Проверено `php artisan schedule:list` — обе задачи в расписании.
+- `tests/HealthTest.php` — 12 тестов: 200 на живых компонентах, 503 при отказе
+  каждого по отдельности, отсутствие `Set-Cookie`, отсутствие `SQLSTATE`/DSN/
+  путей в теле, числа в `metrics()`, запись и дописывание отчёта, код возврата
+  команды, `sync`-очередь, битое соединение очереди, регистрация расписания.
+- `tools/check-health.mjs` — гейт на живом сервере: 200, `application/json`,
+  `status: "ok"`, три `true`, `no-store`, нет cookie и внутренних деталей.
+- Документация: `docs/installation.md` §9 (мониторинг, cron `schedule:run`,
+  logrotate), `docs/architecture.md` §7 (расписание и план `nlb:search-index`),
+  `docs/security-performance.md` §1 (почему `/health` не отдаёт детали),
+  `docs/qa-checklist.md` B5, `project-context.md`, `README.md`, `AGENTS.md` §5,
+  `CHANGELOG.md`.
+
+Проверено:
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **193 теста,
+  724 утверждения**, 0 упавших (было 181/684).
+- `node tools/check-health.mjs` — 200, `db`/`cache`/`queue` живы, `no-store`,
+  без cookie и утечек; `php artisan nlb:health-report` — строка
+  `{"at":…,"db_ms":8.7,"queue_size":0,"disk_free_bytes":…,"checks":{…}}`,
+  exit 0; `schedule:list` — обе задачи.
+- `check-urls` — 109×200 + 404, документ 187 999 знаков, CSS 57 795 байт;
+  `check-dom-parity` — 110/110; `check-seo` — 106 адресов и лента;
+  `check-headers` — 12 страниц; `check-pwa` — manifest, `sw.js` версии
+  `0a27a146`, офлайн-страница; `purge-css --check` и бюджет CSS — без
+  расхождений; `php -l` — 0 ошибок.
+
+Не проверено:
+
+- `503` на остановленной БД под живым сервером: путь закрыт тестом с подменой
+  проверки, останавливать MySQL под работающим сайтом нельзя.
+- Внешняя проба и трекер ошибок: аккаунтов и домена нет — P1-21 остался
+  открытым только этой частью, infra — M17.
+- Cron `schedule:run` на сервере: локально проверен только `schedule:list`.
+- Ротация `health.log` — задача хостинга, не кода.
+
+---
+
+
 
 Повод: M10. В источнике `manifest.webmanifest`, `sw.js` и `offline.html` лежали
 в корне и работали; в October этих файлов не было — 404 на все три адреса, а из

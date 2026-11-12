@@ -85,6 +85,21 @@ node tools/check-clean-tree.mjs
       заблокирует CSP), ссылка на главную работает.
 - [ ] `node tools/check-pwa.mjs` — exit 0.
 
+## B5. Health-check и мониторинг (этап 13)
+
+- [ ] `/health` — 200 `application/json`, `status: "ok"`, все три компонента
+      (`db`, `cache`, `queue`) — `true`.
+- [ ] Ответ с `Cache-Control: no-store` и без `Set-Cookie` (проба не создаёт
+      сессию).
+- [ ] В теле нет `SQLSTATE`, DSN, паролей и путей — только имена компонентов.
+- [ ] Остановить MySQL → `/health` отдаёт 503 с `db: false`; поднять → снова 200
+      (проверяется на стенде, не под живой базой).
+- [ ] `php artisan nlb:health-report` пишет JSON-строку в `storage/logs/health.log`
+      (`at`, `db_ms`, `queue_size`, `disk_free_bytes`, `checks`), exit 0.
+- [ ] `php artisan schedule:list` показывает `nlb:health-report` раз в час;
+      внешняя проба на `/health` заведена (владелец, M17).
+- [ ] `node tools/check-health.mjs` — exit 0.
+
 ## C. Lighthouse (этап 8)
 
 - [ ] Три прогона подряд через gzip-сервер, мобильный профиль: 100/100/100/100.

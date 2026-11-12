@@ -178,7 +178,36 @@ php artisan october:passwd admin
 | композер падает на `ext-zip` | `;extension=zip` | раскомментировать, `php -m | findstr zip` |
 | 404 на всех страницах | нет rewrite | `php artisan serve` либо vhost на корень проекта |
 
-## 9. Удаление
+## 9. Мониторинг
+
+`GET /health` — единственная точка, по которой видно, жив ли сайт
+(`classes/Health.php`, `classes/Http/HealthController.php`):
+
+- `200` — `{"status":"ok","checks":{"db":true,"cache":true,"queue":true}}`;
+- `503` — тот же JSON со `status: "fail"` и `false` у отказавшего компонента;
+  текст исключения уходит в лог, в ответе только имя компонента;
+- `Cache-Control: no-store`, сессия не создаётся — частые пробы не плодят
+  файлы сессий.
+
+Внешняя проба (UptimeRobot, Healthchecks, Zabbix) настраивается на этот адрес:
+интервал 60 с, тревога при `503` или таймауте. Проба живёт вне репозитория —
+её включает владелец вместе с доменом (M17, P1-21).
+
+Часовой отчёт пишет команда `php artisan nlb:health-report`: JSON-строку с
+временем, ответом БД в миллисекундах, размером очереди, свободным местом на
+диске и состоянием компонентов. По умолчанию — `storage/logs/health.log`,
+другой файл задаётся `--path`. Строку ставит планировщик
+(`Plugin::registerSchedule()`, `hourly()`), поэтому на сервере нужен cron:
+
+```cron
+* * * * * cd /path/to/site && php artisan schedule:run >> /dev/null 2>&1
+```
+
+`health.log` растёт по строке в час — его включает общий logrotate или
+`storage/logs` чистится вместе с остальными логами. ПДн и секретов в строке нет:
+только числа и «да/нет».
+
+## 10. Удаление
 
 Каталог — целиком, база — `DROP DATABASE nlb_october`. Источник
 `D:\nlbbootstrap-main` не затрагивается.

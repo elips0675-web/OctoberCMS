@@ -24,6 +24,12 @@ class Plugin extends PluginBase
         $this->discoverConsoleCommands();
     }
 
+    public function registerSchedule($schedule)
+    {
+        $schedule->command('nlb:health-report')->hourly()->withoutOverlapping();
+        $schedule->command('nlb:slots-generate')->dailyAt('03:10')->withoutOverlapping();
+    }
+
     public function registerPermissions()
     {
         return [

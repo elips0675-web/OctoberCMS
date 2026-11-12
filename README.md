@@ -57,7 +57,7 @@ php artisan serve --host=127.0.0.1 --port=8080
 | Команда | Что делает |
 |---|---|
 | `php vendor/phpunit/phpunit/phpunit` | PHPUnit ядра на реальной БД (`artisan test` в 4.x нет) |
-| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на живой MySQL (181 тест) |
+| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на живой MySQL (192 теста) |
 | `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
 | `php artisan october:fresh` | **сносит контент**: схема + демо с нуля; для этапа 4 не использовался |
 | `php artisan migrate:fresh` | схема с нуля |
@@ -71,6 +71,8 @@ php artisan serve --host=127.0.0.1 --port=8080
 | `node tools/check-seo.mjs` | robots.txt, sitemap.xml (106 адресов), 301, JSON-LD на живом `serve` |
 | `node tools/check-headers.mjs` | CSP с nonce, `X-Frame-Options`, админка без CSP на живом `serve` |
 | `node tools/check-pwa.mjs` | manifest, версия и `SHELL` в `sw.js`, офлайн-страница на живом `serve` |
+| `node tools/check-health.mjs` | `/health` 200, `no-store`, без cookie и текста исключений |
+| `php artisan nlb:health-report` | JSON-строка состояния в `storage/logs/health.log` |
 | `php tools/build-image-variants.php` | WebP/AVIF, 480/960/1280 |
 
 ## Документация
