@@ -14,7 +14,11 @@
  *     валидный JSON, а не «почти JSON»;
  *   - на детальной странице узел своего вида (`Article`, `Event`, `Product`,
  *     `Service`), у подборки — только общие узлы, у всех — `og:image`
- *     и `twitter:image` (P2-4, Stage 9).
+ *     и `twitter:image` (P2-4, Stage 9);
+ *   - `/rss.xml` — 200 `application/rss+xml`, RSS 2.0, ссылка канала на
+ *     `/news/`, у каждой записи `title`, абсолютный `link`, `guid` и
+ *     разбираемый `pubDate`, число записей совпадает с числом новостей
+ *     в карте, на главной есть `<link rel="alternate">` (P2-6, Stage 11).
  *
  *   node tools/check-seo.mjs [--base=http://127.0.0.1:8080]
  *
@@ -302,6 +306,60 @@ async function main() {
         }
     }
 
+    const rss = await fetch(base + '/rss.xml');
+    const rssBody = await rss.text();
+
+    if (rss.status !== 200) {
+        failures.push(`/rss.xml: HTTP ${rss.status}`);
+    }
+    if (!/application\/rss\+xml/.test(rss.headers.get('content-type') || '')) {
+        failures.push(`/rss.xml: тип ${rss.headers.get('content-type')}`);
+    }
+    if (!rssBody.startsWith('<?xml version="1.0" encoding="UTF-8"?>')) {
+        failures.push('/rss.xml: нет XML-пролога');
+    }
+    if (!/<rss version="2\.0"/.test(rssBody)) {
+        failures.push('/rss.xml: корневой элемент не RSS 2.0');
+    }
+
+    const channelLink = /<channel>[\s\S]*?<link>([^<]+)<\/link>/.exec(rssBody);
+    if (!channelLink || channelLink[1] !== base + '/news/') {
+        failures.push(`/rss.xml: ссылка канала «${channelLink ? channelLink[1] : 'нет'}», ожидалась «${base}/news/»`);
+    }
+
+    const rssItems = [...rssBody.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => match[1]);
+    const expectedNews = expected.filter((url) => /^\/news\/[a-z0-9-]+\/$/.test(url)).length;
+    const expectedItems = Math.min(expectedNews, 20);
+
+    if (rssItems.length !== expectedItems) {
+        failures.push(`/rss.xml: записей ${rssItems.length}, ожидалось ${expectedItems} (новостей ${expectedNews})`);
+    }
+
+    for (const item of rssItems) {
+        const title = /<title>([^<]*)<\/title>/.exec(item);
+        const link = /<link>([^<]+)<\/link>/.exec(item);
+        const guid = /<guid[^>]*>([^<]+)<\/guid>/.exec(item);
+        const pubDate = /<pubDate>([^<]+)<\/pubDate>/.exec(item);
+
+        if (!title || title[1].trim() === '') {
+            failures.push('/rss.xml: у записи нет title');
+        }
+        if (!link || !link[1].startsWith(base + '/news/')) {
+            failures.push(`/rss.xml: ссылка записи «${link ? link[1] : 'нет'}» не на этом сайте`);
+        }
+        if (!guid || !link || guid[1] !== link[1]) {
+            failures.push('/rss.xml: guid расходится со ссылкой');
+        }
+        if (!pubDate || Number.isNaN(Date.parse(pubDate[1]))) {
+            failures.push(`/rss.xml: pubDate «${pubDate ? pubDate[1] : 'нет'}» не разбирается`);
+        }
+    }
+
+    const alternate = /<link[^>]*rel="alternate"[^>]*type="application\/rss\+xml"[^>]*href="([^"]+)"[^>]*>/.exec(home);
+    if (!alternate || !alternate[1].endsWith('/rss.xml')) {
+        failures.push('главная: нет <link rel="alternate"> на /rss.xml');
+    }
+
     for (const rule of redirects) {
         const response = await fetch(base + rule.from, { redirect: 'manual' });
         const location = response.headers.get('location') || '';
@@ -338,7 +396,7 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), 301 со старых адресов, JSON-LD Library + WebSite + узел записи (Article/Event/Product/Service)`);
+    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), /rss.xml (${rssItems.length} записей), 301 со старых адресов, JSON-LD Library + WebSite + узел записи (Article/Event/Product/Service)`);
 }
 
 main().catch((error) => {

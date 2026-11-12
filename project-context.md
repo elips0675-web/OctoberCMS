@@ -130,15 +130,15 @@ docs/                    # документация (карта — docs/README.
 | Скрипты | `footer.php:308-321` | layout: bundle, script.js, pwa.js, push.js, consent.js |
 | Правила чата | `script.js:169` (11 правил), `script.js:281` (10 подсказок) | данные в плагине, не `if` в JS |
 | Чат-эндпоинт | `script.js:155-156` (`USE_REAL_AI=false`, `/api/chat`) | контроллер `/api/chat` (правила + оператор) |
-| SEO | `nlb_seo.php` | `classes/Seo.php` + layout: meta, OG/Twitter, canonical, JSON-LD `Library`/`WebSite` + узел записи |
+| SEO | `nlb_seo.php` | `classes/Seo.php` + layout: meta, OG/Twitter, canonical, JSON-LD `Library`/`WebSite` + узел записи; `/rss.xml` — `classes/Rss.php` (Stage 11) |
 | Заголовки | `nlb_security.php` | `classes/Http/SecurityHeaders.php`: CSP с nonce, `X-Frame-Options`, HSTS; статические — ещё и `nginx.conf` (Stage 10) |
 
 ## 8. Ограничения и что ещё не проверено
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 162 зелёных
-  (`phpunit.nlb.xml`, 569 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 171 зелёный
+  (`phpunit.nlb.xml`, 616 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
   `/sitemap.xml` (106 адресов), `/robots.txt`, 301 и JSON-LD — `tools/check-seo.mjs`;

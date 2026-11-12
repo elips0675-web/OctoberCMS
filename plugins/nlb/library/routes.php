@@ -18,5 +18,6 @@ Route::middleware('web')->group(function () {
     Route::get('subscribe/confirm/{token}', [SubscriberController::class, 'confirm']);
     Route::get('unsubscribe/{token}', [SubscriberController::class, 'unsubscribe']);
     Route::get('sitemap.xml', [SeoController::class, 'sitemap']);
+    Route::get('rss.xml', [SeoController::class, 'rss']);
     Route::get('robots.txt', [SeoController::class, 'robots']);
 });

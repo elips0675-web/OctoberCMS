@@ -228,6 +228,7 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | Мета записи | `classes/Seo.php:169` | `applyRecord()`: `seo_title`/`seo_description` записи перекрывают имя и `excerpt`, пустые — прежнее поведение; картинка → `seo_image`; зовётся из шести `*-detail.htm:14` |
 | JSON-LD | `classes/Seo.php:74` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction` + узел записи (`Article`/`Event`/`Product`/`Service`, `recordNode` §211); на всех страницах через `nlb_jsonld()` |
 | `robots.txt` | `classes/Seo.php:472` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
+| `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Nlb\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
 | Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |

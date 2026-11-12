@@ -128,8 +128,9 @@ JSON-LD `Library` + `WebSite` подключён в `<head>` через `nlb_jso
 Canonical совпадает с `<loc>` карты побайтово (`Seo::canonical()`,
 `classes/Seo.php:52`).
 Проверка — `node tools/check-seo.mjs` (гейт: карта, robots, 301, узел записи,
-`og:image`) и `tests/SeoTest.php` (50 тестов).
-Осталось: `/rss.xml` — P2-6; `BreadcrumbList`, FAQ-разметка и CWV — P2-22;
+`og:image`, `/rss.xml`) и `tests/SeoTest.php` (50 тестов) + `tests/RssTest.php`
+(9 тестов).
+Осталось: `BreadcrumbList`, FAQ-разметка и CWV — P2-22;
 валюта цен (₽ в шаблонах и `RUB` в JSON-LD) — P1-24; валидация на живом
 домене — M17.
 

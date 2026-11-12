@@ -15,6 +15,7 @@ description = "Основной макет сайта: шапка, подвал 
         <meta name="robots" content="{{ this.page.seo_robots }}">
     {% endif %}
     <link rel="canonical" href="{{ nlb_canonical() }}">
+    <link rel="alternate" type="application/rss+xml" title="Новости — Библиотека 2026" href="{{ url('/rss.xml') }}">
     <script type="application/ld+json">{{ nlb_jsonld()|raw }}</script>
 
     <meta property="og:type" content="website">

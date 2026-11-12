@@ -55,6 +55,9 @@ node tools/check-clean-tree.mjs
 - [ ] `canonical` совпадает с `<loc>` карты побайтово (хвостовой слэш),
   `og:image` и `twitter:image` — абсолютные и из записи, если картинка есть.
 - [ ] `node tools/check-seo.mjs` — exit 0.
+- [ ] `/rss.xml` — 200 `application/rss+xml`, RSS 2.0, 20 свежих новостей,
+  у каждой `title`/`link`/`guid`/`pubDate`; отключённая новость в ленту не
+  попадает; на главной есть `<link rel="alternate" type="application/rss+xml">`.
 
 ## B3. Заголовки безопасности (этап 10)
 

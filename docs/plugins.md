@@ -132,9 +132,9 @@ Winter оправдан, только если сайт форкается и п
 
 | Домен | Состояние 11.11.2026 | Пункт бэклога |
 |---|---|---|
-| **Блог** | есть `Nlb\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url`, разделами (`section.yaml`, `type: structure`) и мета-полями `seo_title`/`seo_description`; нет RSS | P2-6 (RSS) |
+| **Блог** | есть `Nlb\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url`, разделами (`section.yaml`, `type: structure`) и мета-полями `seo_title`/`seo_description`; лента `/rss.xml` — `classes/Rss.php` (Stage 11) | — |
 | **Отзывы** | blueprint'а нет; `type: submission` пишет в `tailor_*` и навязывает разметку | M21 — своя `nlb_reviews` + привязка к брони |
-| **SEO** | canonical, OG, Twitter и robots — в `themes/nlb/layouts/default.htm:10-35`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:74`); `/sitemap.xml` (106 адресов) и `/robots.txt` — 200, 301 со старых адресов (Stage 7); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:169`, Stage 8); микроразметка записи `Article`/`Event`/`Product`/`Service` — `Seo::recordNode()` (`classes/Seo.php:211`, Stage 9). Нет `/rss.xml` | P2-6 (RSS), P2-22 (BreadcrumbList, FAQ, CWV) |
+| **SEO** | canonical, OG, Twitter и robots — в `themes/nlb/layouts/default.htm:10-35`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:74`); `/sitemap.xml` (106 адресов), `/robots.txt` и `/rss.xml` — 200, 301 со старых адресов (Stage 7, 11); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:169`, Stage 8); микроразметка записи `Article`/`Event`/`Product`/`Service` — `Seo::recordNode()` (`classes/Seo.php:211`, Stage 9). Остаток — P2-22 | P2-22 (BreadcrumbList, FAQ, CWV) |
 | **Формы** | разметка и клиентская валидация 1:1, согласие на обработку есть в `feedback.htm:51` и `services-detail.htm:184`; серверные `POST` пишут в `nlb_*` и ставят письма в очередь, статусы меняются в админке (Stage 5–6) | SMTP — M14 |
 | **Почта** | `MAIL_MAILER=log`, живого SMTP нет | M14 |
 | **Инфраструктура** | нет staging, хостинга, бэкапов и мониторинга; `QUEUE_CONNECTION=database`, но воркера и cron нет | M17, P0-8 (бэкапы), P0-9 (CI), P1-21 (мониторинг) |
