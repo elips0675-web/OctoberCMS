@@ -174,5 +174,7 @@ docs/                    # документация (карта — docs/README.
   `services`, `printing`.
 - Blade-компоненты — `nlb:*` (`<x-nlb::picture>`), partials — `partials/`.
 - Миграции — `updates/YYYY_MM_DD_NNNN_<name>.php`, forward-only.
+- Запуск локально — `запуск.bat` в корне (PHP 8.3, MySQL 3306, `artisan serve`
+  8080, ожидание `/health`, браузер); ключ `/nobrowser` — без браузера.
 - Комментарии в коде — по-русски, блоками с номерами разделов.
 - CSS-классы не переименовываются: `nlb-`, `.hero`, `.print-card` остаются как в источнике.

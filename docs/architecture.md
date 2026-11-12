@@ -18,24 +18,31 @@ nginx/apache → index.php (корень проекта) → October bootstrap �
 
 ```
 plugins/nlb/library/
-  Plugin.php               # регистрация компонентов, маршрутов, консольных команд, хуков
+  Plugin.php               # регистрация прав, навигации, расписания, тегов разметки, middleware
   blueprints/              # 6 контентных сущностей Tailor (YAML)
   models/                  # Eloquent: Request, Booking, Order, Slot, Service, Subscriber
   updates/                 # миграции (forward-only)
   classes/
-    Search.php             # порт BM25 (источник: nlb_search.php, 1 272 строки)
-    TextFilter.php         # порт фильтра чата (nlb_text_filter.php, 176 строк)
-    Seo.php                # порт nlb_seo.php (229 строк)
-    Security/Headers.php   # порт nlb_security.php (77 строк)
-    Media.php              # nlb_picture(), nlb_minify_css() (268 строк)
+    Content.php            # выборки Tailor-записей и разделов
+    Seo.php                # мета, canonical, JSON-LD, robots (источник nlb_seo.php)
+    Sitemap.php            # sitemap.xml, lastmod из mtime текстовых страниц
+    Rss.php                # /rss.xml
+    Pwa.php                # manifest, sw.js с версией, SHELL, offline
+    Health.php             # /health: БД, кэш, очередь
     BookingService.php     # слоты: генерация, занятость, транзакция
-    Push.php               # порт nlb_push.php (769 строк)
-  components/              # Header, Footer, Menu, Breadcrumbs, Picture, Form, Search, Chat
-  console/                 # nlb:import, nlb:search-index, nlb:slots-generate
-  http/                    # контроллеры Search, Chat, Api\Booking
-  routes.php               # web + ajax + api
+    Labels.php, Media.php, FormFields.php
+    Http/                  # SecurityHeaders, CompressResponse, LegacyRedirect,
+                           # SeoController, PwaController, HealthController, формы
+    Search.php             # план (M8): порт BM25 из nlb_search.php (1 272 строки)
+    TextFilter.php         # план (M8): фильтр чата
+    Push.php               # план (M9): порт nlb_push.php (769 строк)
+  console/                 # nlb:import, nlb:slots-generate, nlb:health-report
+  routes.php               # формы, SEO, PWA, health
   tests/                   # PHPUnit + RefreshDatabase
 ```
+
+Компонентов темы (`components/`) нет: разметка собрана в `themes/nlb/partials`
+и тегах `{{ nlb_*() }}`, зарегистрированных в `Plugin::registerMarkupTags()`.
 
 ## 3. Tailor или Eloquent: правило разделения
 

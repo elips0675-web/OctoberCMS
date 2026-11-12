@@ -57,6 +57,12 @@
   свободный диск) в `storage/logs/health.log`, `registerSchedule()` ставит её и
   ежедневную генерацию слотов; `tests/HealthTest.php` (12 тестов), гейт
   `tools/check-health.mjs`; в плагине 193 теста, 724 утверждения.
+- Этап 14: `запуск.bat` — запуск в один щелчок (PHP из PATH или Laragon,
+  проверка/подъём MySQL, `artisan serve` на 8080, ожидание `/health`, браузер;
+  ключ `/nobrowser`), CRLF закреплён в `.gitattributes`. README: таблица
+  статуса приведена к факту (этапы 3–5 и 8 закрыты), убрана несуществующая
+  `nlb:search-index`; `docs/architecture.md` §2 — реальные классы плагина,
+  `Search`/`TextFilter`/`Push` помечены планом (M8/M9).
 
 ### Планируется
 
