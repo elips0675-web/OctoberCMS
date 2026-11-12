@@ -76,6 +76,14 @@
   имена и последнюю крошку. `FAQPage` отклонён: на сайте нет видимого блока
   «вопрос-ответ». `tests/SeoTest.php` 51 → 67, в плагине 209 тестов,
   780 утверждений.
+- Этап 17: публичный JSON контента — `GET /api/v1/{handle}` и
+  `/api/v1/{handle}/{slug}` (`classes/Http/ApiController.php`): 6 разделов из
+  `Sitemap::SECTIONS`, поля `id/slug/title/excerpt/image/url/updated_at`,
+  только опубликованные записи, `limit` до 100, `throttle:60,1`,
+  `Cache-Control: public, max-age=60`; 404 в JSON на чужой раздел и slug,
+  422 на негодный `limit`. Гейт `tools/check-api.mjs` (91 запись, каждая
+  `url` открывается 200), `tests/ApiTest.php` (7 тестов); в плагине 216
+  тестов, 832 утверждения.
 
 ### Планируется
 

@@ -46,7 +46,7 @@
 
 | Тема | Решение | Где |
 |---|---|---|
-| API-first JSON для контента Tailor | Принято, P2 | `Что доделать.txt`, P2-14 |
+| API-first JSON для контента Tailor | Сделано (Stage 17): `GET /api/v1/{handle}` и `/{handle}/{slug}`, гейт `tools/check-api.mjs` | `Что сделано.txt`, Stage 17 |
 | Настройки темы (`theme.yaml`) и CSS-переменные | Принято, P2 | `Что доделать.txt`, P2-15 |
 | E2E Playwright, visual regression, axe | Принято, P2 | `Что доделать.txt`, P2-16 |
 | Feature flags и kill switch | Принято, P2 | `Что доделать.txt`, P2-17 |

@@ -137,14 +137,17 @@ docs/                    # документация (карта — docs/README.
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 209 зелёных
-  (`phpunit.nlb.xml`, 780 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 216 зелёных
+  (`phpunit.nlb.xml`, 832 утверждения). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
   `/sitemap.xml` (106 адресов), `/robots.txt`, 301, JSON-LD и `BreadcrumbList` —
   `tools/check-seo.mjs`, входящие ссылки — `tools/check-orphans.mjs`;
   мета записи и микроразметка `Article`/`Event`/`Product`/`Service` —
-  `tests/SeoTest.php` (67 тестов).
+  `tests/SeoTest.php` (67 тестов). Публичный JSON контента —
+  `GET /api/v1/{handle}` и `/api/v1/{handle}/{slug}`
+  (`plugins/nlb/library/classes/Http/ApiController.php`, гейт
+  `tools/check-api.mjs`): 6 разделов, 91 запись, только опубликованное.
 - **Формы, админка, SEO и заголовки подключены** (этапы 5–10): `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; админка
   «Библиотека» со статусами и освобождением слота; sitemap, robots, 301,

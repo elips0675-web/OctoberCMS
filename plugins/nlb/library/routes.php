@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Nlb\Library\Classes\Http\ApiController;
 use Nlb\Library\Classes\Http\BookingController;
 use Nlb\Library\Classes\Http\FeedbackController;
 use Nlb\Library\Classes\Http\OrderController;
@@ -10,6 +11,11 @@ use Nlb\Library\Classes\Http\SeoController;
 use Nlb\Library\Classes\Http\SubscriberController;
 
 Route::get('health', [HealthController::class, 'index']);
+
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('api/v1/{handle}', [ApiController::class, 'index']);
+    Route::get('api/v1/{handle}/{slug}', [ApiController::class, 'show']);
+});
 
 Route::middleware(['web', 'throttle:30,1'])->group(function () {
     Route::post('feedback', [FeedbackController::class, 'store']);

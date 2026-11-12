@@ -66,7 +66,7 @@ php artisan serve --host=127.0.0.1 --port=8080
 | Команда | Что делает |
 |---|---|
 | `php vendor/phpunit/phpunit/phpunit` | PHPUnit ядра на реальной БД (`artisan test` в 4.x нет) |
-| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на живой MySQL (209 тестов) |
+| `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` | тесты плагина на живой MySQL (216 тестов) |
 | `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
 | `php artisan october:fresh` | **сносит контент**: схема + демо с нуля; для этапа 4 не использовался |
 | `php artisan migrate:fresh` | схема с нуля |
@@ -78,6 +78,7 @@ php artisan serve --host=127.0.0.1 --port=8080
 | `node tools/check-dom-parity.mjs` | сверка title/h1/h2/карточек/текста с `preview/` |
 | `node tools/check-seo.mjs` | robots.txt, sitemap.xml (106 адресов), 301, JSON-LD и `BreadcrumbList` на живом `serve` |
 | `node tools/check-orphans.mjs` | у каждого адреса карты сайта есть входящая ссылка (`--self-test` — самопроверка) |
+| `node tools/check-api.mjs` | `/api/v1/*`: 6 разделов, 91 запись, поля контракта, страницы записей 200, 404/422 |
 | `node tools/check-headers.mjs` | CSP с nonce, `X-Frame-Options`, админка без CSP на живом `serve` |
 | `node tools/check-pwa.mjs` | manifest, версия и `SHELL` в `sw.js`, офлайн-страница на живом `serve` |
 | `node tools/check-health.mjs` | `/health` 200, `no-store`, без cookie и текста исключений |

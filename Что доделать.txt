@@ -527,20 +527,6 @@ Brevo Free (300 писем/день) — лимиты и антиспам-пол
 (`AUTO_INCREMENT` больше `MAX(ID)`, но строк 0). Переносить нечего; при
 желании владельца — отдельная задача с выгрузкой из его базы.
 
-### P2-14. API-first: JSON для контента Tailor
-
-Публичных JSON-эндпоинтов нет: в `plugins/nlb/library/routes.php` только формы,
-`sitemap.xml`, `robots.txt` и подтверждение подписки; `POST /api/bookings` —
-ещё пункт P1-16. Мобильное приложение или Telegram-бот упрутся в HTML.
-
-Нужно: `GET /api/v1/{handle}` и `GET /api/v1/{handle}/{slug}` — только
-опубликованные записи, поля `id`, `slug`, `title`, `excerpt`, `image`, `url`,
-`updated_at`; отдельный `throttle`, без правки ядра; контракт в
-`docs/architecture.md`.
-
-Приёмка: `/api/v1/books` — 200 и 24 записи, неизвестный handle — 404,
-отключённая запись не отдаётся; тесты на оба ответа.
-
 ### P2-15. Настройки темы и CSS-переменные
 
 Контакты захардкожены в трёх местах (`Seo::CONTACTS`, `partials/footer.htm`,

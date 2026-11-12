@@ -183,10 +183,27 @@ plugins/nlb/library/
 | `GET /unsubscribe/{token}` | отписка | `200` страница «Вы отписались», повторный переход безопасен |
 | `POST /booking/` | бронь услуги (P1-9) | `nlb_bookings` + слот + два письма; `409 SLOT_UNAVAILABLE` на занятое время, `422` вне окна слотов |
 | `POST /order/` | заказ сувенира (P1-12) | `nlb_orders` + письмо; `422` на `QTY < 1` и отрицательную цену |
-| `GET /ajax/search` | мгновенная выдача | `?q=`, `&limit=`; коды `200/400/405/503` (как `local/ajax/search.php`) |
-| `POST /api/chat` | проверка сообщения чата | `200/400/403/405/413/422/503`, `{ok, verdict, error}` |
-| `POST /api/bookings` | REST для Telegram-бота (P1-16) | `Bearer`-токен, идемпотентность по `external_id`, `200/201/400/401/409/422/429` |
-| `POST /ajax/push/subscribe`, `POST /ajax/push/unsubscribe` | Web Push | VAPID из `.env` |
+| `GET /ajax/search` — **план (M8)** | мгновенная выдача | `?q=`, `&limit=`; коды `200/400/405/503` (как `local/ajax/search.php`); маршрута пока нет |
+| `POST /api/chat` — **план (P1-17)** | проверка сообщения чата | `200/400/403/405/413/422/503`, `{ok, verdict, error}`; маршрута пока нет |
+| `POST /api/bookings` — **план (P1-16)** | REST для Telegram-бота | `Bearer`-токен, идемпотентность по `external_id`, `200/201/400/401/409/422/429`; маршрута пока нет |
+| `POST /ajax/push/subscribe`, `POST /ajax/push/unsubscribe` — **план (M9)** | Web Push | VAPID из `.env`; маршрутов пока нет |
+| `GET /api/v1/{handle}` | JSON контента для приложения и бота (P2-14) | `200` `{data, meta:{section,count}}`, `404` JSON для чужого раздела, `422` для `limit` вне 1…100 |
+| `GET /api/v1/{handle}/{slug}` | одна запись | `200` `{data}`, `404` для отключённой и несуществующей |
+
+REST API контента (`classes/Http/ApiController.php`) отдаёт поля
+`id, slug, title, excerpt, image, url, updated_at` (константа `ApiController::FIELDS`
+— это и есть контракт). `handle` — префикс адреса из `Sitemap::SECTIONS`
+(`books`, `printing`, `news`, `services`, `events`, `collections`), поэтому
+API и карта сайта не могут разойтись: список разделов один. Выборка идёт через
+`Content::records()`/`Content::record()`, то есть с тем же фильтром
+`applyVisibleFrontend()`: отключённая запись не попадает ни в список, ни в
+`{slug}`. `url` и `image` абсолютные (картинка строится через
+`Media::themeUrl()`), `excerpt` — из анонса или из текста без разметки (до 200
+символов), `limit` по умолчанию не ограничен, потолок —
+`ApiController::MAX_LIMIT` (100). Группа без `web`: сессия и CSRF API не нужны,
+лимит запросов — `throttle:60,1`, ответы кешируются на минуту
+(`Cache-Control: public, max-age=60`).
+
 
 Формы (`plugins/nlb/library/routes.php`) сидят в группе `web`: обязателен
 `_token` (в шаблоне — `{{ nlb_csrf()|raw }}`), лимит `throttle:30,1`.

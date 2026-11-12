@@ -6,6 +6,55 @@
 
 ---
 
+(Stage 17 — 12.11.2026) — **P2-14: публичный JSON контента (`/api/v1/...`).**
+
+Повод: бэклог фиксировал, что публичных JSON-эндпоинтов нет — мобильное
+приложение и Telegram-бот упрутся в HTML. Контент при этом уже собран в
+`Content` (`classes/Content.php:36`), и отдельная выборка в контроллере была бы
+вторым источником правды.
+
+Сделано:
+
+- `ApiController` (`plugins/nlb/library/classes/Http/ApiController.php`):
+  `index()` — список раздела, `show()` — одна запись по slug. Разделы берутся
+  из `Sitemap::SECTIONS` (`classes/Sitemap.php:21`), поэтому API и карта сайта
+  не могут разойтись; выборка — через `Content::records()`/`Content::record()`
+  с тем же `applyVisibleFrontend()`: отключённая запись не попадает ни в
+  список, ни в `{slug}` (проверено живьём: `/api/v1/books` — 24 записи).
+- контракт — константа `ApiController::FIELDS` (`id`, `slug`, `title`,
+  `excerpt`, `image`, `url`, `updated_at`); `url` и `image` абсолютные
+  (картинка — через `Media::themeUrl()`), `excerpt` — анонс или текст без
+  разметки до 200 символов.
+- маршруты (`routes.php`) в группе без `web` (сессии и CSRF у API нет):
+  `throttle:60,1`, ответы кешируются на минуту; `404` в JSON на чужой handle и
+  чужой slug, `422` на `limit` вне 1…100 (`limit` по умолчанию не ограничен,
+  потолок — `ApiController::MAX_LIMIT` = 100).
+- гейт `tools/check-api.mjs`: 6 разделов, 91 запись, поля контракта,
+  `meta.count` = длина `data`, **каждая `url` из списка открывается 200**
+  (иначе API отдаёт то, чего нет в вёрстке), `404`/`422` на ошибки.
+- тесты `plugins/nlb/library/tests/ApiTest.php` (7): контракт и типы полей,
+  исключение отключённой записи в списке и в `{slug}`, `limit`, чужой handle,
+  все шесть разделов карты сайта.
+
+Попутно в `docs/architecture.md` §6.2 приведены к факту четыре маршрута,
+которые в таблице выглядели существующими: `GET /ajax/search` (M8),
+`POST /api/chat` (P1-17), `POST /api/bookings` (P1-16) и
+`POST /ajax/push/*` (M9) помечены планом — в `routes.php` их нет.
+
+Проверено: тесты плагина 216/832 (было 209/780), `php -l` по четырём файлам;
+живой прогон `/api/v1/books` (24 записи, `Content-Type: application/json`),
+`/api/v1/news?limit=2`, `/api/v1/books/{slug}` (200), `/api/v1/unknown` (404
+JSON), `/api/v1/books/net-takogo-sluga` (404 JSON), картинка отдаётся
+абсолютным адресом `/themes/nlb/assets/images/news-1.jpg`. Ломка гейта: поле
+`excerpt` убрано из `payload()` — `check-api` упал с «в записи нет поля
+excerpt» по каждому разделу, после возврата снова зелёный.
+
+Не проверено: пагинация (`offset`/`page`) — в контракт не входила; клиентское
+потребление API (приложения пока нет); `nginx`-лимиты для `/api/` — появятся
+вместе с хостингом (M17).
+
+---
+
 (Stage 16 — 12.11.2026) — **P2-22: хлебные крошки в JSON-LD и гейт сирот.**
 
 Повод: пункт P2-22 просил `BreadcrumbList` «из `partials/breadcrumbs`», но
