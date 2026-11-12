@@ -224,10 +224,10 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 
 | Что | Где | Как работает |
 |---|---|---|
-| Мета страницы | `themes/nlb/layouts/default.htm:10-18` | `seo_title`/`seo_description` страницы → `<title>`, description, OG, Twitter, canonical |
-| Мета записи | `classes/Seo.php:126` | `applyRecord()`: `seo_title`/`seo_description` записи перекрывают имя и `excerpt`, пустые — прежнее поведение; зовётся из шести `*-detail.htm:14` |
-| JSON-LD | `classes/Seo.php:44` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction`; на всех страницах через `nlb_jsonld()` |
-| `robots.txt` | `classes/Seo.php:122` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
+| Мета страницы | `themes/nlb/layouts/default.htm:10-35` | `seo_title`/`seo_description` страницы → `<title>`, description, OG, Twitter, canonical, `og:image` |
+| Мета записи | `classes/Seo.php:169` | `applyRecord()`: `seo_title`/`seo_description` записи перекрывают имя и `excerpt`, пустые — прежнее поведение; картинка → `seo_image`; зовётся из шести `*-detail.htm:14` |
+| JSON-LD | `classes/Seo.php:74` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction` + узел записи (`Article`/`Event`/`Product`/`Service`, `recordNode` §211); на всех страницах через `nlb_jsonld()` |
+| `robots.txt` | `classes/Seo.php:472` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
 
@@ -243,11 +243,13 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 
 Мета записи: у шести blueprints (`news`, `events`, `books`, `services`,
 `printing`, `collections`) есть `seo_title` и `seo_description`,
-`Seo::applyRecord()` (`classes/Seo.php:126`) выставляет их в `<head>`, пустые
+`Seo::applyRecord()` (`classes/Seo.php:169`) выставляет их в `<head>`, пустые
 поля откатываются на имя записи и `excerpt` (обрезка 160 знаков). Canonical
-собирается как `getSchemeAndHttpHost() . $path` (`Plugin.php:187`), иначе
-`url('/x/')` срезает хвостовой слэш и адрес расходится с `<loc>` карты.
-Расширения микроразметки (`Event`, `Product`, `Article`) — P2-4.
+собирается как `getSchemeAndHttpHost() . $path` (`Seo::canonical()`,
+`classes/Seo.php:52`), иначе `url('/x/')` срезает хвостовой слэш и адрес
+расходится с `<loc>` карты. Микроразметка записи (`Article`, `Event`,
+`Product`, `Service`) — `Seo::recordNode()` (`classes/Seo.php:211`), Stage 9;
+остаток расширенного SEO (BreadcrumbList, FAQ, CWV) — P2-22.
 
 ## 7. Очереди и планировщик
 

@@ -101,8 +101,8 @@
 
 | Что | Источник | Цель |
 |---|---|---|
-| meta, OG, canonical | `nlb_seo.php` (229 строк) | layout `themes/nlb/layouts/default.htm:10-18` |
-| JSON-LD | `nlb_seo.php` | `Seo::jsonld()` (`plugins/nlb/library/classes/Seo.php:44`) |
+| meta, OG, canonical | `nlb_seo.php` (229 строк) | layout `themes/nlb/layouts/default.htm:10-35` |
+| JSON-LD | `nlb_seo.php` | `Seo::jsonld()` (`plugins/nlb/library/classes/Seo.php:74`) |
 | `/sitemap.xml` | `sitemap.php` | `Sitemap::xml()` — 106 адресов (15 статических + 91 детальная) с `lastmod` |
 | `/sitemap/` (HTML) | страница | CMS-страница |
 | `robots.txt` | корень | маршрут `Seo::robots()`: домен из запроса, а не статический файл |
@@ -110,19 +110,28 @@
 | `manifest.webmanifest`, `sw.js`, `offline.html` | корень | корень веб-корня (пути не менять) |
 | версия SW | `sw.js` | поднимается при изменении ассетов |
 
-Состояние 11.11.2026 (Stage 8): meta, OG и canonical отдаёт layout, у записи
-своя мета (`Seo::applyRecord()`, `classes/Seo.php:126`) — `seo_title` и
-`seo_description` из blueprints перекрывают имя и `excerpt`; JSON-LD
-`Library` + `WebSite` подключён в `<head>` через `nlb_jsonld()`;
+Состояние 11.11.2026 (Stage 9): meta, OG, Twitter и canonical отдаёт layout,
+у записи своя мета (`Seo::applyRecord()`, `classes/Seo.php:169`) — `seo_title`
+и `seo_description` из blueprints перекрывают имя и `excerpt`; картинка записи
+уходит в `og:image` и `twitter:image` (`seo_image`), без неё остаётся hero.
+JSON-LD `Library` + `WebSite` подключён в `<head>` через `nlb_jsonld()`, а
+детальная страница добавляет свой узел: `Article` (новость, автор и даты),
+`Event` (начало, место, формат, цена), `Product` (SKU, цена, наличие) и
+`Service` (подзаголовок, «от» цена, город); у подборки узла нет — только общая
+связка. `price` приводит «1 490 ₽» и «Бесплатно» к числу, `withoutEmpty`
+не отдаёт пустые ключи, `reset()` сбрасывает узел между запросами.
 `/sitemap.xml` — 200 `application/xml`, 106 `<loc>` с `lastmod` (110 из
 инвентаря минус `/404` и три закрытых в robots адреса: `/auth/`,
 `/personal/`, `/search/`); `/robots.txt` — 200 `text/plain` с `Sitemap:`
 текущего хоста; `/index.php`, `/sitemap.php`, `/{section}/index.php` и
 `/{section}/detail.php?CODE=…` — 301 на новые адреса с сохранением `utm_*`.
-Canonical совпадает с `<loc>` карты побайтово (`Plugin.php:187`).
-Проверка — `node tools/check-seo.mjs` (гейт) и `tests/SeoTest.php` (27 тестов).
-Осталось: `/rss.xml` — P2-6; расширения микроразметки (`Event`, `Product`,
-`Article`) — P2-4; валидация на живом домене — M17.
+Canonical совпадает с `<loc>` карты побайтово (`Seo::canonical()`,
+`classes/Seo.php:52`).
+Проверка — `node tools/check-seo.mjs` (гейт: карта, robots, 301, узел записи,
+`og:image`) и `tests/SeoTest.php` (50 тестов).
+Осталось: `/rss.xml` — P2-6; `BreadcrumbList`, FAQ-разметка и CWV — P2-22;
+валюта цен (₽ в шаблонах и `RUB` в JSON-LD) — P1-24; валидация на живом
+домене — M17.
 
 ## 9. Безопасность
 

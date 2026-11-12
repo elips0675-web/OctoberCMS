@@ -134,10 +134,10 @@ Winter оправдан, только если сайт форкается и п
 |---|---|---|
 | **Блог** | есть `Nlb\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url`, разделами (`section.yaml`, `type: structure`) и мета-полями `seo_title`/`seo_description`; нет RSS | P2-6 (RSS) |
 | **Отзывы** | blueprint'а нет; `type: submission` пишет в `tailor_*` и навязывает разметку | M21 — своя `nlb_reviews` + привязка к брони |
-| **SEO** | canonical, OG, robots — в `themes/nlb/layouts/default.htm:10-18`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:44`); `/sitemap.xml` (106 адресов) и `/robots.txt` — 200, 301 со старых адресов (Stage 7); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:126`, Stage 8). Нет `/rss.xml` | P2-4 (Event/Product), P2-6 (RSS) |
+| **SEO** | canonical, OG, Twitter и robots — в `themes/nlb/layouts/default.htm:10-35`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:74`); `/sitemap.xml` (106 адресов) и `/robots.txt` — 200, 301 со старых адресов (Stage 7); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:169`, Stage 8); микроразметка записи `Article`/`Event`/`Product`/`Service` — `Seo::recordNode()` (`classes/Seo.php:211`, Stage 9). Нет `/rss.xml` | P2-6 (RSS), P2-22 (BreadcrumbList, FAQ, CWV) |
 | **Формы** | разметка и клиентская валидация 1:1, согласие на обработку есть в `feedback.htm:51` и `services-detail.htm:184`; серверные `POST` пишут в `nlb_*` и ставят письма в очередь, статусы меняются в админке (Stage 5–6) | SMTP — M14 |
 | **Почта** | `MAIL_MAILER=log`, живого SMTP нет | M14 |
-| **Инфраструктура** | нет staging, хостинга, бэкапов и мониторинга; `QUEUE_CONNECTION=database`, но воркера и cron нет | M17, P2-2 (CI) |
+| **Инфраструктура** | нет staging, хостинга, бэкапов и мониторинга; `QUEUE_CONNECTION=database`, но воркера и cron нет | M17, P0-8 (бэкапы), P0-9 (CI), P1-21 (мониторинг) |
 | **Контент** | 59 из 91 позиции без фото; контакты и реквизиты — заглушки; права на демо-фото не зафиксированы | P1-11, P0-6, P0-7 |
 
 Порядок работ: формы и письма (этап 5), админка (этап 6), SEO-периметр

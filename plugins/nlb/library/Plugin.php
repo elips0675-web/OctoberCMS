@@ -179,12 +179,7 @@ class Plugin extends PluginBase
                     return \Nlb\Library\Models\Slot::jsonOccupiedMap((string) $serviceCode, (int) $days);
                 },
                 'nlb_canonical' => function () {
-                    $path = '/' . ltrim((string) request()->path(), '/');
-                    if ($path !== '/') {
-                        $path .= '/';
-                    }
-
-                    return request()->getSchemeAndHttpHost() . $path;
+                    return Seo::canonical();
                 },
                 'nlb_csrf' => function () {
                     return csrf_field();

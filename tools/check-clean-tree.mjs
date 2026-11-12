@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const OWNER_DRAFTS = ['Архитектура', 'Продажа шаблона'];
+const OWNER_DRAFTS = ['Архитектура', 'Продажа шаблона', 'Оценка'];
 
 function git(...args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' });

@@ -47,11 +47,13 @@ class SeoTest extends PluginTestCase
         Config::set('cms.active_theme', 'nlb');
         Theme::resetCache();
         Content::flush();
+        Seo::reset();
     }
 
     public function tearDown(): void
     {
         Content::flush();
+        Seo::reset();
         Config::set('cms.active_theme', $this->previousTheme);
         Theme::resetCache();
 
@@ -369,6 +371,334 @@ class SeoTest extends PluginTestCase
 
         $this->assertSame('Коворкинг в библиотеке', $page->seo_title);
         $this->assertFalse(property_exists($page, 'seo_description'));
+    }
+
+    public function testDetailPageGraphCarriesRecordType()
+    {
+        $this->importFixture();
+
+        $expected = [
+            '/news/cifrovoy-chitalnyy-zal/' => 'Article',
+            '/events/vecher-poezii/' => 'Event',
+            '/books/krzhka-biblioteka/' => 'Product',
+            '/services/obzornaya-ploshchadka/' => 'Service',
+            '/printing/pechat-a4/' => 'Product',
+        ];
+
+        foreach ($expected as $url => $type) {
+            $graph = $this->graphFromHtml($this->get($url)->getContent());
+            $types = array_map(static function (array $node) {
+                return $node['@type'];
+            }, $graph);
+
+            $this->assertContains($type, $types, 'нет узла ' . $type . ' на ' . $url);
+        }
+    }
+
+    public function testRecordPageWithoutSchemaKeepsCommonGraph()
+    {
+        $this->importFixture();
+
+        $graph = $this->graphFromHtml($this->get('/collections/nabor-chitatelya/')->getContent());
+
+        $this->assertCount(2, $graph);
+        $this->assertSame(['Library', 'WebSite'], array_column($graph, '@type'));
+    }
+
+    public function testArticleNodeHasAuthorAndPublicationDate()
+    {
+        $node = $this->recordNode('article', [
+            'title' => 'Новость',
+            'seo_description' => '',
+            'excerpt' => 'Анонс новости.',
+            'author' => 'Иван Петров',
+            'published_at' => '2026-11-02 10:00:00',
+            'updated_at' => '2026-11-03 12:30:00',
+            'image' => null,
+        ]);
+
+        $this->assertSame('Article', $node['@type']);
+        $this->assertSame('Новость', $node['headline']);
+        $this->assertSame('Иван Петров', $node['author']['name']);
+        $this->assertStringStartsWith('2026-11-02T10:00', $node['datePublished']);
+        $this->assertStringStartsWith('2026-11-03T12:30', $node['dateModified']);
+        $this->assertSame('http://localhost:8080/#library', $node['publisher']['@id']);
+    }
+
+    public function testArticleWithoutAuthorFallsBackToSiteName()
+    {
+        $node = $this->recordNode('article', [
+            'title' => 'Новость',
+            'seo_description' => '',
+            'excerpt' => '',
+            'author' => ' ',
+            'published_at' => '',
+            'updated_at' => null,
+            'image' => null,
+        ]);
+
+        $this->assertSame(Seo::SITE_NAME, $node['author']['name']);
+        $this->assertArrayNotHasKey('datePublished', $node);
+        $this->assertArrayNotHasKey('image', $node);
+    }
+
+    public function testEventNodeCarriesPlaceAndFormat()
+    {
+        $node = $this->recordNode('event', [
+            'title' => 'Вечер поэзии',
+            'seo_description' => '',
+            'excerpt' => 'Читаем стихи.',
+            'event_date' => '2026-11-06 18:30:00',
+            'format' => 'hybrid',
+            'place' => 'Зал «Диалог»',
+            'price' => 'Бесплатно',
+            'image' => null,
+        ]);
+
+        $this->assertSame('Event', $node['@type']);
+        $this->assertSame('Зал «Диалог»', $node['location']['name']);
+        $this->assertSame('Минск', $node['location']['address']['addressLocality']);
+        $this->assertSame('https://schema.org/MixedEventAttendanceMode', $node['eventAttendanceMode']);
+        $this->assertSame('https://schema.org/EventScheduled', $node['eventStatus']);
+        $this->assertSame('0', $node['offers']['price']);
+        $this->assertStringStartsWith('2026-11-06T18:30', $node['startDate']);
+    }
+
+    public function testEventWithoutPlaceFallsBackToSiteName()
+    {
+        $node = $this->recordNode('event', [
+            'title' => 'Онлайн-встреча',
+            'seo_description' => '',
+            'excerpt' => '',
+            'event_date' => '',
+            'format' => 'online',
+            'place' => '',
+            'price' => '',
+            'image' => null,
+        ]);
+
+        $this->assertSame(Seo::SITE_NAME, $node['location']['name']);
+        $this->assertSame('https://schema.org/OnlineEventAttendanceMode', $node['eventAttendanceMode']);
+        $this->assertArrayNotHasKey('offers', $node);
+        $this->assertArrayNotHasKey('startDate', $node);
+    }
+
+    public function testProductNodeUsesSiteBrandAndSku()
+    {
+        $node = $this->recordNode('product', [
+            'title' => 'Кружка',
+            'seo_description' => '',
+            'excerpt' => '',
+            'price' => '590',
+            'price_from' => '',
+            'available' => 'reserved',
+            'isbn' => 'MG-003',
+            'xml_id' => 'nlb-book-001',
+            'publisher' => 'Картонная коробка',
+            'image' => null,
+        ]);
+
+        $this->assertSame('Product', $node['@type']);
+        $this->assertSame('MG-003', $node['sku']);
+        $this->assertSame(Seo::SITE_NAME, $node['brand']['name'], 'упаковка не должна становиться брендом');
+        $this->assertSame('590', $node['offers']['price']);
+        $this->assertSame('https://schema.org/PreOrder', $node['offers']['availability']);
+    }
+
+    public function testProductWithoutIsbnUsesXmlIdAsSku()
+    {
+        $node = $this->recordNode('product', [
+            'title' => 'Печать',
+            'seo_description' => '',
+            'excerpt' => '',
+            'price' => '',
+            'price_from' => '150',
+            'available' => 'unavailable',
+            'isbn' => '',
+            'xml_id' => 'nlb-prn-001',
+            'publisher' => '',
+            'image' => null,
+        ]);
+
+        $this->assertSame('nlb-prn-001', $node['sku']);
+        $this->assertSame('150', $node['offers']['price']);
+        $this->assertSame(
+            'https://schema.org/InStock',
+            $node['offers']['availability'],
+            'цена «от» не бывает «нет в наличии»'
+        );
+    }
+
+    public function testServiceNodeCarriesSubtitleAndArea()
+    {
+        $node = $this->recordNode('service', [
+            'title' => 'Обзорная площадка',
+            'seo_description' => '',
+            'excerpt' => '',
+            'subtitle' => 'Панорамный вид на город',
+            'price_from' => '200',
+            'image' => null,
+        ]);
+
+        $this->assertSame('Service', $node['@type']);
+        $this->assertSame('Панорамный вид на город', $node['serviceType']);
+        $this->assertSame('Минск', $node['areaServed']);
+        $this->assertSame('200', $node['offers']['price']);
+    }
+
+    public function testServiceWithoutSubtitleFallsBackToTitle()
+    {
+        $node = $this->recordNode('service', [
+            'title' => 'Коворкинг',
+            'seo_description' => '',
+            'excerpt' => '',
+            'subtitle' => '',
+            'price_from' => '',
+            'image' => null,
+        ]);
+
+        $this->assertSame('Коворкинг', $node['serviceType']);
+        $this->assertArrayNotHasKey('offers', $node);
+    }
+
+    /**
+     * @dataProvider productPrices
+     */
+    public function testProductPriceIsNormalizedForSchema(string $raw, string $expected)
+    {
+        $node = $this->recordNode('product', [
+            'title' => 'Сувенир',
+            'seo_description' => '',
+            'excerpt' => '',
+            'price' => $raw,
+            'price_from' => '',
+            'available' => 'available',
+            'isbn' => '',
+            'xml_id' => 'nlb-book-001',
+            'publisher' => '',
+            'image' => null,
+        ]);
+
+        if ($expected === '') {
+            $this->assertArrayNotHasKey('offers', $node);
+
+            return;
+        }
+
+        $this->assertSame($expected, $node['offers']['price']);
+    }
+
+    public static function productPrices(): array
+    {
+        return [
+            'число' => ['890', '890'],
+            'пробелы и знак' => ['1 490 ₽', '1490'],
+            'неразрывный пробел' => ["1\u{00A0}490 Br", '1490'],
+            'дробь с запятой' => ['12,50', '12.50'],
+            'слово «бесплатно»' => ['Бесплатно', '0'],
+            'пустая строка' => ['', ''],
+            'текст без числа' => ['по запросу', ''],
+        ];
+    }
+
+    /**
+     * @dataProvider availabilityValues
+     */
+    public function testAvailabilityMapsToSchemaOrg(string $value, string $expected)
+    {
+        $node = $this->recordNode('product', [
+            'title' => 'Сувенир',
+            'seo_description' => '',
+            'excerpt' => '',
+            'price' => '100',
+            'price_from' => '',
+            'available' => $value,
+            'isbn' => '',
+            'xml_id' => 'nlb-book-001',
+            'publisher' => '',
+            'image' => null,
+        ]);
+
+        $this->assertSame($expected, $node['offers']['availability']);
+    }
+
+    public static function availabilityValues(): array
+    {
+        return [
+            'в наличии' => ['available', 'https://schema.org/InStock'],
+            'забронировано' => ['reserved', 'https://schema.org/PreOrder'],
+            'нет в наличии' => ['unavailable', 'https://schema.org/OutOfStock'],
+            'пусто' => ['', 'https://schema.org/InStock'],
+        ];
+    }
+
+    public function testResetDropsRecordNodeBetweenRequests()
+    {
+        $this->recordNode('article', [
+            'title' => 'Новость',
+            'seo_description' => '',
+            'excerpt' => '',
+            'author' => '',
+            'published_at' => '',
+            'updated_at' => '',
+            'image' => null,
+        ]);
+
+        $before = json_decode(Seo::jsonld(), true);
+        $this->assertCount(3, $before['@graph']);
+
+        Seo::reset();
+
+        $after = json_decode(Seo::jsonld(), true);
+        $this->assertCount(2, $after['@graph']);
+    }
+
+    public function testDetailPageOpenGraphImageComesFromRecord()
+    {
+        $this->importFixture();
+
+        $event = EntryRecord::inSection('Nlb\Event')
+            ->where('xml_id', 'nlb-evt-001')
+            ->first();
+
+        $this->assertNotNull($event);
+
+        $event->image = 'assets/images/event.jpg';
+        $event->save();
+        Content::flush();
+
+        $html = $this->get('/events/vecher-poezii/')->getContent();
+
+        $image = 'http://localhost:8080/themes/nlb/assets/images/event.jpg';
+        $this->assertStringContainsString('<meta property="og:image" content="' . $image . '">', $html);
+        $this->assertStringContainsString('<meta name="twitter:image" content="' . $image . '">', $html);
+        $this->assertStringContainsString('"image":"' . $image . '"', $html);
+    }
+
+    /**
+     * recordNode собирает узел записи так же, как детальная страница.
+     */
+    protected function recordNode(string $schema, array $fields): array
+    {
+        Seo::applyRecord(new \stdClass, (object) $fields, $schema);
+
+        $graph = json_decode(Seo::jsonld(), true)['@graph'];
+
+        return end($graph);
+    }
+
+    /**
+     * graphFromHtml достаёт `@graph` из отрендеренного `<head>`.
+     */
+    protected function graphFromHtml(string $html): array
+    {
+        $matched = preg_match('~<script type="application/ld\+json">(.*?)</script>~s', $html, $match);
+        $this->assertSame(1, $matched, 'в <head> нет JSON-LD');
+
+        $data = json_decode(str_replace('<\/', '</', $match[1]), true);
+        $this->assertIsArray($data, 'JSON-LD не разбирается');
+
+        return $data['@graph'];
     }
 
     /**

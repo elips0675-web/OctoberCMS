@@ -43,6 +43,19 @@ node tools/check-clean-tree.mjs
 - [ ] DOM-сверка с `preview/`: те же заголовки, порядок блоков, число карточек в списках.
 - [ ] Сверка геометрии: 0 расхождений (P2-12 — purge-CSS на живых страницах).
 
+## B2. SEO и микроразметка (этапы 7–9)
+
+- [ ] `/sitemap.xml` — 200 `application/xml`, 106 `<loc>` с `lastmod`;
+  `/robots.txt` — 200 `text/plain` с `Sitemap:` текущего хоста.
+- [ ] Старые адреса (`/index.php`, `/sitemap.php`, `/{section}/index.php`,
+  `/{section}/detail.php?CODE=…`) отвечают `301`, `CODE` отброшен, `utm_*` цел.
+- [ ] JSON-LD в `<head>` разбирается как JSON: `Library` + `WebSite` с
+  `SearchAction` на всех страницах; на детальной — свой узел (`Article`,
+  `Event`, `Product`, `Service`), у подборки — только общие два.
+- [ ] `canonical` совпадает с `<loc>` карты побайтово (хвостовой слэш),
+  `og:image` и `twitter:image` — абсолютные и из записи, если картинка есть.
+- [ ] `node tools/check-seo.mjs` — exit 0.
+
 ## C. Lighthouse (этап 8)
 
 - [ ] Три прогона подряд через gzip-сервер, мобильный профиль: 100/100/100/100.

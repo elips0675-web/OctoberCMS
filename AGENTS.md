@@ -47,6 +47,7 @@
 | приёмка перед закрытием этапа | `docs/qa-checklist.md` |
 | токены, типографика, компоненты | `docs/design-system.md` |
 | какие страницы и какой контент | `docs/content.md` |
+| внешняя оценка: принято/отложено/отклонено | `docs/roadmap.md` |
 
 Не читать целиком: `preview/**` источника, `styles.css` (81 179 байт), `script.js`
 (75 359 байт), `Что доделать.txt` источника (58 КБ). Открывать диапазоном строк.
@@ -158,3 +159,30 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 - Ссылки на файлы — от корня этого каталога, например `plugins/nlb/library/Plugin.php:18`.
 - «Не найдено» — только со списком проверенных файлов.
 - Не предлагать «переписать на React/Vue/Tailwind»: стек зафиксирован.
+
+## 9. Карта кода
+
+Чтобы не читать весь репозиторий: бюджет запроса (§3) — ≤ 3 файла и ≤ 60 КБ
+на шаг. Ищите точку входа по таблице, а не «по всему проекту».
+
+| Задача | Файл |
+|---|---|
+| выборка записей Tailor для темы | `plugins/nlb/library/classes/Content.php` |
+| мета, canonical, JSON-LD, robots | `plugins/nlb/library/classes/Seo.php` |
+| `sitemap.xml` | `plugins/nlb/library/classes/Sitemap.php` |
+| картинки, `<picture>`, инлайн-CSS | `plugins/nlb/library/classes/Media.php` |
+| формы (заявка, бронь, заказ, подписка) | `classes/Http/*Controller.php`, `classes/FormFields.php` |
+| бронь и гонка слота | `classes/BookingService.php`, `models/Slot.php` |
+| Eloquent-модели заявок | `plugins/nlb/library/models/*.php` |
+| маршруты и регистрация middleware | `plugins/nlb/library/routes.php`, `Plugin.php` |
+| контент Tailor (поля, blueprints) | `plugins/nlb/library/blueprints/*/item.yaml` |
+| шапка, подвал, меню, карточки | `themes/nlb/partials/` |
+| страницы 110 адресов | `themes/nlb/pages/*.htm` |
+| `<head>`, инлайн CSS, JSON-LD в разметке | `themes/nlb/layouts/default.htm` |
+| тесты плагина | `plugins/nlb/library/tests/` |
+| гейты | `tools/*.mjs` |
+| схема и индексы | `docs/db.md` |
+| инвентарь адресов и контента | `docs/content.md` |
+
+Запреты (negative prompts) не дублируются здесь: они в разделе 4, правила 4–7.
+Новое правило пишется в один документ, а не в третий (`docs/README.md`, §2).

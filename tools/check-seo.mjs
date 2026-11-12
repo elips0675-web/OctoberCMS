@@ -11,7 +11,10 @@
  *   - старые адреса 1С-Битрикс отдают 301 на новые (детальная — с сохранением
  *     `utm_*`, без `CODE`);
  *   - на главной есть JSON-LD `Library` + `WebSite` с `SearchAction`, и это
- *     валидный JSON, а не «почти JSON».
+ *     валидный JSON, а не «почти JSON»;
+ *   - на детальной странице узел своего вида (`Article`, `Event`, `Product`,
+ *     `Service`), у подборки — только общие узлы, у всех — `og:image`
+ *     и `twitter:image` (P2-4, Stage 9).
  *
  *   node tools/check-seo.mjs [--base=http://127.0.0.1:8080]
  *
@@ -27,6 +30,14 @@ const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
 const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
 
 const closed = ['/auth/', '/personal/', '/search/'];
+
+const recordTypes = {
+    news: 'Article',
+    events: 'Event',
+    books: 'Product',
+    printing: 'Product',
+    services: 'Service',
+};
 
 const sections = {
     2: { prefix: 'books', count: 24 },
@@ -98,6 +109,71 @@ function detailSlug(url) {
     const match = /^\/([a-z]+)\/([a-z0-9-]+)\/$/.exec(url);
 
     return match ? { prefix: match[1], slug: match[2] } : null;
+}
+
+/**
+ * checkDetailPage проверяет микроразметку и карточку шеринга детальной страницы.
+ */
+function checkDetailPage(url, html) {
+    const failures = [];
+    const prefix = url.split('/')[1];
+    const expected = recordTypes[prefix];
+
+    const match = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
+    if (!match) {
+        return [`${url}: нет <script type="application/ld+json">`];
+    }
+
+    let graph = [];
+    try {
+        const data = JSON.parse(match[1]);
+        graph = Array.isArray(data['@graph']) ? data['@graph'] : [];
+    }
+    catch (error) {
+        return [`${url}: JSON-LD не разбирается (${error.message})`];
+    }
+
+    const types = graph.map((node) => node['@type']);
+
+    if (expected) {
+        const node = graph.find((item) => item['@type'] === expected);
+
+        if (!node) {
+            failures.push(`${url}: нет узла ${expected} (есть ${types.join(', ') || 'ничего'})`);
+        }
+        else if (expected === 'Article' && (!node.headline || !node.datePublished)) {
+            failures.push(`${url}: у Article нет headline или datePublished`);
+        }
+        else if (expected === 'Event' && (!node.startDate || !node.location)) {
+            failures.push(`${url}: у Event нет startDate или location`);
+        }
+        else if (expected === 'Product' && !node.sku) {
+            failures.push(`${url}: у Product нет sku`);
+        }
+        else if (expected === 'Service' && !node.serviceType) {
+            failures.push(`${url}: у Service нет serviceType`);
+        }
+    }
+    else if (types.join(',') !== 'Library,WebSite') {
+        failures.push(`${url}: у подборки лишние узлы (${types.join(', ')})`);
+    }
+
+    if (!/<meta property="og:image" content="https?:\/\/[^"]+">/.test(html)) {
+        failures.push(`${url}: нет абсолютного og:image`);
+    }
+    if (!/<meta name="twitter:image" content="https?:\/\/[^"]+">/.test(html)) {
+        failures.push(`${url}: нет абсолютного twitter:image`);
+    }
+
+    const canonical = /<link rel="canonical" href="([^"]+)">/.exec(html);
+    if (!canonical) {
+        failures.push(`${url}: нет canonical`);
+    }
+    else if (canonical[1] !== base + url) {
+        failures.push(`${url}: canonical «${canonical[1]}», ожидался «${base}${url}»`);
+    }
+
+    return failures;
 }
 
 async function main() {
@@ -180,6 +256,12 @@ async function main() {
         const response = await fetch(base + url, { redirect: 'manual' });
         if (response.status !== 200) {
             failures.push(`/sitemap.xml: ${url} отвечает ${response.status}`);
+            continue;
+        }
+
+        const detail = /^\/([a-z]+)\/[a-z0-9-]+\/$/.exec(url);
+        if (detail) {
+            failures.push(...checkDetailPage(url, await response.text()));
         }
     }
 
@@ -256,7 +338,7 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), 301 со старых адресов, JSON-LD Library + WebSite`);
+    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), 301 со старых адресов, JSON-LD Library + WebSite + узел записи (Article/Event/Product/Service)`);
 }
 
 main().catch((error) => {

@@ -6,6 +6,71 @@
 
 ---
 
+(Stage 9 — 11.11.2026) — **Микроразметка записи: `Article`, `Event`, `Product`,
+`Service` в JSON-LD, картинка записи в `og:image` и `twitter:image`.**
+
+Повод: Stage 8 закрыл мету, но детальная страница отдавала только общую связку
+`Library` + `WebSite`. Сниппет новости не получал ни даты, ни автора, событие —
+места и формата, сувенир — цены и наличия, услуга — города. Пункт P2-4 из
+бэклога плюс `Open Graph` для карточек из внешней оценки (`docs/roadmap.md`).
+
+Сделано:
+
+- `classes/Seo.php:169` — `applyRecord($page, $record, $schema)` принимает вид
+  узла; картинка записи уходит в `seo_image`; `seo_title`/`seo_description`
+  читаются через `?? ''`, чтобы запись без полей не роняла страницу.
+- `classes/Seo.php:211` — `recordNode()` и четыре сборщика: `articleNode()`
+  (`:225`, автор, даты, издатель), `eventNode()` (`:250`, начало, место,
+  формат, цена), `productNode()` (`:288`, SKU, цена, наличие),
+  `serviceNode()` (`:317`, подзаголовок, «от» цена, город).
+- `classes/Seo.php:337` — `offer()`; `price()` (`:358`) приводит «Бесплатно»
+  к `0`, «1 490 ₽» к `1490`, «12,50» к `12.50`, текст без числа — к пустой
+  строке (тогда `offers` не выводится); `availability()` (`:380`),
+  `attendanceMode()` (`:392`), `isoDate()` (`:404`), `absoluteImage()`
+  (`:424`), `withoutEmpty()` (`:446`).
+- `classes/Seo.php:52` — `canonical()` вынесен из замыкания
+  `Plugin.php:181`; `reset()` (`:66`) сбрасывает узел между запросами.
+- `productNode`: `brand` — «Библиотека 2026», а не `publisher`. В blueprints
+  сувениров `publisher` — упаковка, и в сниппет уезжало «Бренд: Картонная
+  коробка» (`xc_…` записи «Кружка»).
+- `themes/nlb/pages/*-detail.htm:14` — вид узла: `news` → `article`,
+  `events` → `event`, `books` и `printing` → `product`, `services` →
+  `service`; `collections` остаётся без узла (нет ни цены, ни даты).
+- `themes/nlb/layouts/default.htm:27-35` — `og:image` и `twitter:image`
+  берутся из `seo_image`, иначе остаётся hero-картинка сайта.
+- `tools/check-seo.mjs` — на каждой детальной странице проверяет узел своего
+  вида (`Article` с `headline`/`datePublished`, `Event` с
+  `startDate`/`location`, `Product` с `sku`, `Service` с `serviceType`),
+  `og:image`, `twitter:image` и canonical; у подборки — ровно два общих узла.
+- `tests/SeoTest.php` — 27 → 50 тестов (+23): типы узлов на шести страницах,
+  автор и даты статьи, место и формат события, SKU и бренд товара, подзаголовок
+  услуги, разбор цены (7 кейсов), наличие (4), формат события (3), пустые поля,
+  `reset()`, `og:image` из записи.
+
+Проверено:
+
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **150 тестов,
+  535 утверждений**, 0 упавших (было 127/462).
+- `node tools/check-seo.mjs` — 106 адресов, все 200, узел записи и карточка
+  шеринга на месте; `check-urls` — 109×200 + `/non-existent/` 404;
+  `check-dom-parity` — 110/110 (title, h1, h2, карточки, текст); CSS-бюджет
+  57 795 ≤ 57 856, purge-CSS зелёный; `php -l` — 0 ошибок;
+  `october:migrate` — nothing to migrate.
+- Живой ответ (`http://127.0.0.1:8080`): новость → `Article`, событие →
+  `Event`, книга и печать → `Product`, услуга → `Service`, подборка → только
+  `Library` + `WebSite`; `brand` — «Библиотека 2026»; JSON разбирается.
+
+Не проверено:
+
+- Rich Results Test на реальном домене — M17: локальный JSON валиден, но
+  Google и Яндекс его ещё не видели.
+- `priceCurrency` — `RUB`, шаблоны печатают `₽`; для Минска это заглушка
+  источника, решение о BYN — P1-24.
+- Картинки у 59 позиций из 91 отсутствуют (P1-11), поэтому `image` в узле не
+  выводится — это честный пропуск, а не дефект сборки.
+
+---
+
 (Stage 8 — 11.11.2026) — **Мета записи: `seo_title`/`seo_description` в
 blueprints, детальная страница выводит их в `<head>`, canonical совпал с
 `<loc>` карты сайта.**

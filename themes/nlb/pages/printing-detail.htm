@@ -11,7 +11,7 @@ function onStart()
         $this->page->title = 'Страница не найдена — Библиотека 2026';
     }
     else {
-        \Nlb\Library\Classes\Seo::applyRecord($this->page, $record);
+        \Nlb\Library\Classes\Seo::applyRecord($this->page, $record, 'product');
     }
 
     $this['record'] = $record;

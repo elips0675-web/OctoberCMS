@@ -86,3 +86,5 @@ package-lock.json
 # не должен пачкать `git status`.
 /Архитектура*.html
 /Продажа шаблона*.txt
+/Оценка*.html
+/Оценка*.txt
