@@ -102,7 +102,7 @@
 | Что | Источник | Цель |
 |---|---|---|
 | meta, OG, canonical | `nlb_seo.php` (229 строк) | layout `themes/nlb/layouts/default.htm:10-35` |
-| JSON-LD | `nlb_seo.php` | `Seo::jsonld()` (`plugins/nlb/library/classes/Seo.php:74`) |
+| JSON-LD | `nlb_seo.php` | `Seo::jsonld()` (`plugins/nlb/library/classes/Seo.php:255`) |
 | `/sitemap.xml` | `sitemap.php` | `Sitemap::xml()` — 106 адресов (15 статических + 91 детальная) с `lastmod` |
 | `/sitemap/` (HTML) | страница | CMS-страница |
 | `robots.txt` | корень | маршрут `Seo::robots()`: домен из запроса, а не статический файл |
@@ -111,11 +111,13 @@
 | версия SW | `sw.js` | `Pwa::version()` — восемь hex из `mtime` файлов `SHELL`, руками не правится |
 
 Состояние 11.11.2026 (Stage 9): meta, OG, Twitter и canonical отдаёт layout,
-у записи своя мета (`Seo::applyRecord()`, `classes/Seo.php:169`) — `seo_title`
+у записи своя мета (`Seo::applyRecord()`, `classes/Seo.php:356`) — `seo_title`
 и `seo_description` из blueprints перекрывают имя и `excerpt`; картинка записи
 уходит в `og:image` и `twitter:image` (`seo_image`), без неё остаётся hero.
-JSON-LD `Library` + `WebSite` подключён в `<head>` через `nlb_jsonld()`, а
-детальная страница добавляет свой узел: `Article` (новость, автор и даты),
+JSON-LD `Library` + `WebSite` подключён в `<head>` через `nlb_jsonld(this.page)`,
+и к ним добавляется `BreadcrumbList` («Главная → раздел → страница», `breadcrumbs`,
+`classes/Seo.php:118`): на главной и на странице 404 крошек нет. Детальная
+страница добавляет свой узел: `Article` (новость, автор и даты),
 `Event` (начало, место, формат, цена), `Product` (SKU, цена, наличие) и
 `Service` (подзаголовок, «от» цена, город); у подборки узла нет — только общая
 связка. `price` приводит «1 490 ₽» и «Бесплатно» к числу, `withoutEmpty`
@@ -126,11 +128,14 @@ JSON-LD `Library` + `WebSite` подключён в `<head>` через `nlb_jso
 текущего хоста; `/index.php`, `/sitemap.php`, `/{section}/index.php` и
 `/{section}/detail.php?CODE=…` — 301 на новые адреса с сохранением `utm_*`.
 Canonical совпадает с `<loc>` карты побайтово (`Seo::canonical()`,
-`classes/Seo.php:52`).
+`classes/Seo.php:84`).
 Проверка — `node tools/check-seo.mjs` (гейт: карта, robots, 301, узел записи,
-`og:image`, `/rss.xml`) и `tests/SeoTest.php` (51 тест) + `tests/RssTest.php`
+`og:image`, `/rss.xml`) и `tests/SeoTest.php` (67 тестов) + `tests/RssTest.php`
 (9 тестов).
-Осталось: `BreadcrumbList`, FAQ-разметка и CWV — P2-22;
+Осталось: FAQ-разметка отклонена (на сайте нет видимого блока «вопрос-ответ» —
+микроразметка описывала бы то, чего нет) и CWV (нужен живой домен, M17) — P2-22;
+`BreadcrumbList` закрыт Stage 16 (`tools/check-seo.mjs` проверяет
+`position`/имена/последнюю крошку, `tools/check-orphans.mjs` — входящие ссылки);
 валюта цен (₽ в шаблонах и `RUB` в JSON-LD) — P1-24; валидация на живом
 домене — M17.
 

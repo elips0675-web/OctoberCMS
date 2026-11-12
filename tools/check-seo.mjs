@@ -116,6 +116,50 @@ function detailSlug(url) {
 }
 
 /**
+ * checkBreadcrumbs проверяет `BreadcrumbList` страницы раздела.
+ *
+ * Крошки собираются из адреса (P2-22): «Главная → раздел → страница».
+ * Гейт ловит не только отсутствие узла, но и `position` вне порядка,
+ * пустые имена, относительные `item` и последнюю крошку не на своём адресе.
+ */
+function checkBreadcrumbs(url, graph) {
+    const failures = [];
+    const node = graph.find((item) => item['@type'] === 'BreadcrumbList');
+
+    if (!node) {
+        return [`${url}: нет узла BreadcrumbList`];
+    }
+
+    const items = Array.isArray(node.itemListElement) ? node.itemListElement : [];
+
+    if (items.length < 2) {
+        return [`${url}: в BreadcrumbList ${items.length} элементов`];
+    }
+
+    items.forEach((item, index) => {
+        if (item.position !== index + 1) {
+            failures.push(`${url}: position ${item.position} на месте ${index + 1}`);
+        }
+
+        if (!item.name) {
+            failures.push(`${url}: крошка ${index + 1} без имени`);
+        }
+
+        if (!/^https?:\/\//.test(item.item || '')) {
+            failures.push(`${url}: крошка ${index + 1} без абсолютного адреса`);
+        }
+    });
+
+    const last = items[items.length - 1];
+
+    if (last.item !== base + url) {
+        failures.push(`${url}: последняя крошка ведёт на «${last.item}»`);
+    }
+
+    return failures;
+}
+
+/**
  * checkDetailPage проверяет микроразметку и карточку шеринга детальной страницы.
  */
 function checkDetailPage(url, html) {
@@ -158,9 +202,15 @@ function checkDetailPage(url, html) {
             failures.push(`${url}: у Service нет serviceType`);
         }
     }
-    else if (types.join(',') !== 'Library,WebSite') {
-        failures.push(`${url}: у подборки лишние узлы (${types.join(', ')})`);
+    else {
+        const allowed = ['Library', 'WebSite', 'BreadcrumbList'];
+
+        if (types.some((type) => !allowed.includes(type))) {
+            failures.push(`${url}: у подборки лишние узлы (${types.join(', ')})`);
+        }
     }
+
+    failures.push(...checkBreadcrumbs(url, graph));
 
     if (!/<meta property="og:image" content="https?:\/\/[^"]+">/.test(html)) {
         failures.push(`${url}: нет абсолютного og:image`);

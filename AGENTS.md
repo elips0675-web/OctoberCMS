@@ -91,7 +91,7 @@
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
-& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml  # тесты плагина: 192 теста, 0 упавших
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml  # тесты плагина: 209 тестов, 0 упавших
 & $php vendor/phpunit/phpunit/phpunit             # ядро October: 1171 тест, 0 упавших (artisan test в 4.x нет)
 & $php artisan october:migrate           # схема поднимается, 0 ошибок
 Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.php -File |
@@ -104,10 +104,12 @@ node tools/check-seo.mjs                  # robots.txt, sitemap.xml, 301, JSON-L
 node tools/check-headers.mjs              # CSP, X-Frame-Options, nonce, админка без CSP (нужен serve)
 node tools/check-pwa.mjs                  # manifest, sw.js с версией и SHELL, офлайн-страница (нужен serve)
 node tools/check-health.mjs               # /health 200, no-store, без cookie и внутренних деталей (нужен serve)
+node tools/check-orphans.mjs              # ни одной страницы без входящей ссылки (нужен serve)
 node tools/check-clean-tree.mjs           # дерево чистое, черновики владельца не в индексе
 ```
 
-`check-urls`, `check-dom-parity`, `check-seo`, `check-headers`, `check-pwa` и `check-health` работают по
+`check-urls`, `check-dom-parity`, `check-seo`, `check-headers`, `check-pwa`, `check-health` и
+`check-orphans` работают по
 запущенному `php artisan serve` (`--base=http://127.0.0.1:8080`); второй требует
 эталон `D:\nlbbootstrap-main\preview` (`--source=`), без него падает — сверять не с
 чем. Менять тексты можно только вместе с эталоном, иначе гейт красный и это

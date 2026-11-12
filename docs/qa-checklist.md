@@ -14,6 +14,7 @@ node tools/check-css-budget.mjs
 node tools/check-urls.mjs
 node tools/check-dom-parity.mjs
 node tools/check-seo.mjs
+node tools/check-orphans.mjs
 node tools/check-clean-tree.mjs
 ```
 
@@ -26,6 +27,8 @@ node tools/check-clean-tree.mjs
 - [ ] `check-dom-parity` — 0 расхождений с эталоном (title, h1, h2, карточки, текст).
 - [ ] `check-seo` — robots.txt, sitemap.xml на 106 адресов (все 200), 301 со
       старых адресов, JSON-LD `Library` + `WebSite` на главной.
+- [ ] `check-orphans` — у каждого адреса карты сайта есть входящая ссылка
+      (`--self-test` — самопроверка разбора ссылок и поиска сирот).
 - [ ] `check-clean-tree` — дерево чистое, черновики владельца не в индексе.
 - [ ] `git status` чистый, коммит поимённый, запись в журнале есть.
 
@@ -51,7 +54,10 @@ node tools/check-clean-tree.mjs
   `/{section}/detail.php?CODE=…`) отвечают `301`, `CODE` отброшен, `utm_*` цел.
 - [ ] JSON-LD в `<head>` разбирается как JSON: `Library` + `WebSite` с
   `SearchAction` на всех страницах; на детальной — свой узел (`Article`,
-  `Event`, `Product`, `Service`), у подборки — только общие два.
+  `Event`, `Product`, `Service`), у подборки — только общие узлы.
+- [ ] `BreadcrumbList` на всех страницах разделов и детальных:
+  «Главная → раздел → страница», `position` по порядку, `item` абсолютный,
+  последняя крошка — адрес самой страницы; на главной и на 404 крошек нет.
 - [ ] `canonical` совпадает с `<loc>` карты побайтово (хвостовой слэш),
   `og:image` и `twitter:image` — абсолютные и из записи, если картинка есть.
 - [ ] `node tools/check-seo.mjs` — exit 0.

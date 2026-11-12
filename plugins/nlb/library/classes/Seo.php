@@ -39,9 +39,41 @@ class Seo
     ];
 
     /**
+     * SECTIONS — подписи разделов для хлебных крошек (`BreadcrumbList`).
+     *
+     * Тексты совпадают с `<h1>` разделов в `themes/nlb/pages/*.htm`; сверку
+     * держит `tests/SeoTest.php` (меняется h1 — краснеет тест, а не молча
+     * расходится микроразметка). Раздел без подписи крошек не получает.
+     */
+    public const SECTIONS = [
+        'about' => 'Библиотека как пространство',
+        'auth' => 'Вход в личный кабинет',
+        'books' => 'Сувениры и подарки',
+        'collections' => 'Подарочные наборы',
+        'contacts' => 'Контакты',
+        'events' => 'События',
+        'feedback' => 'Обратная связь',
+        'news' => 'Новости',
+        'personal' => 'Личный кабинет',
+        'printing' => 'Каталог печатных услуг',
+        'privacy' => 'Политика конфиденциальности',
+        'rules' => 'Правила пользования',
+        'search' => 'Поиск по сайту',
+        'services' => 'Наши услуги',
+        'sitemap' => 'Карта сайта',
+        'subscribe' => 'Подписка на рассылку',
+        'terms' => 'Условия использования',
+    ];
+
+    /**
      * @var array|null узел микроразметки текущей записи
      */
     protected static $recordGraph = null;
+
+    /**
+     * @var string|null заголовок текущей записи для последней крошки
+     */
+    protected static $recordTitle = null;
 
     /**
      * canonical отдаёт адрес текущей страницы с хвостовым слэшем.
@@ -66,12 +98,161 @@ class Seo
     public static function reset(): void
     {
         static::$recordGraph = null;
+        static::$recordTitle = null;
     }
 
     /**
-     * jsonld отдаёт связку Library + WebSite для `<script type="application/ld+json">`.
+     * breadcrumbs собирает цепочку «Главная → раздел → страница» для крошек.
+     *
+     * Видимой навигационной цепочки в разметке нет (1:1 с эталоном), поэтому
+     * список строится из адреса запроса: первый сегмент ищется в SECTIONS,
+     * последняя крошка берёт заголовок записи (`applyRecord`) или заголовок
+     * страницы без суффикса сайта. Неизвестный раздел даёт пустой список:
+     * лучше без `BreadcrumbList`, чем с выдуманным названием. Страница ошибки
+     * крошек не получает — иначе у несуществующего адреса появился бы раздел
+     * и подпись «Страница не найдена».
+     *
+     * @param  \Cms\Classes\Page|null  $page
+     * @return array<int, array{name: string, url: string}>
      */
-    public static function jsonld(): string
+    public static function breadcrumbs($page = null): array
+    {
+        if ($page !== null && static::isNotFoundPage($page)) {
+            return [];
+        }
+
+        $controller = \Cms\Classes\Controller::getController();
+
+        if ($controller !== null && $controller->getStatusCode() === 404) {
+            return [];
+        }
+
+        $path = trim((string) request()->path(), '/');
+
+        if ($page !== null && !static::pageMatchesPath($page, $path)) {
+            return [];
+        }
+
+        if ($path === '') {
+            return [];
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), function ($part) {
+            return $part !== '';
+        }));
+
+        if ($segments === [] || !isset(static::SECTIONS[$segments[0]])) {
+            return [];
+        }
+
+        $base = rtrim(url('/'), '/');
+        $section = $segments[0];
+
+        $crumbs = [
+            ['name' => 'Главная', 'url' => $base . '/'],
+            ['name' => static::SECTIONS[$section], 'url' => $base . '/' . $section . '/'],
+        ];
+
+        if (count($segments) > 1) {
+            $name = static::currentName($page);
+
+            if ($name !== '') {
+                $crumbs[] = ['name' => $name, 'url' => static::canonical()];
+            }
+        }
+
+        return $crumbs;
+    }
+
+    /**
+     * isNotFoundPage — страница ошибки 404 крошек не получает.
+     */
+    protected static function isNotFoundPage($page): bool
+    {
+        if (method_exists($page, 'getBaseFileName') && $page->getBaseFileName() === '404') {
+            return true;
+        }
+
+        return (string) ($page->url ?? '') === '/404';
+    }
+
+    /**
+     * pageMatchesPath сверяет шаблон адреса страницы (`/books/:slug`) с путём запроса.
+     */
+    protected static function pageMatchesPath($page, string $path): bool
+    {
+        $pattern = trim((string) ($page->url ?? ''), '/');
+
+        if ($pattern === '') {
+            return true;
+        }
+
+        $pattern = preg_replace('~:[A-Za-z_]+~', '[^/]+', $pattern);
+
+        return (bool) preg_match('~^' . $pattern . '$~u', trim($path, '/'));
+    }
+
+    /**
+     * currentName — подпись последней крошки детальной страницы.
+     */
+    protected static function currentName($page = null): string
+    {
+        if (static::$recordTitle !== null && static::$recordTitle !== '') {
+            return static::$recordTitle;
+        }
+
+        if ($page === null) {
+            return '';
+        }
+
+        $seo = trim((string) ($page->seo_title ?? ''));
+
+        if ($seo !== '') {
+            return $seo;
+        }
+
+        $title = trim((string) ($page->title ?? ''));
+
+        if ($title === '') {
+            return '';
+        }
+
+        $suffix = ' — ' . static::SITE_NAME;
+
+        return str_ends_with($title, $suffix) ? substr($title, 0, -strlen($suffix)) : $title;
+    }
+
+    /**
+     * breadcrumbNode — узел `BreadcrumbList` из готовой цепочки.
+     *
+     * @param  array<int, array{name: string, url: string}>  $crumbs
+     */
+    protected static function breadcrumbNode(array $crumbs): array
+    {
+        $items = [];
+
+        foreach ($crumbs as $index => $crumb) {
+            $items[] = [
+                '@type' => 'ListItem',
+                'position' => $index + 1,
+                'name' => $crumb['name'],
+                'item' => $crumb['url'],
+            ];
+        }
+
+        return [
+            '@type' => 'BreadcrumbList',
+            '@id' => static::canonical() . '#breadcrumb',
+            'itemListElement' => $items,
+        ];
+    }
+
+    /**
+     * jsonld отдаёт связку Library + WebSite (+ крошки и запись) для `<script type="application/ld+json">`.
+     *
+     * @param  \Cms\Classes\Page|null  $page
+     */
+    public static function jsonld($page = null): string
     {
         $base = rtrim(url('/'), '/');
         $contacts = static::CONTACTS;
@@ -137,6 +318,12 @@ class Seo
             $data['@graph'][] = static::$recordGraph;
         }
 
+        $crumbs = static::breadcrumbs($page);
+
+        if (count($crumbs) > 1) {
+            $data['@graph'][] = static::breadcrumbNode($crumbs);
+        }
+
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         if ($json === false) {
@@ -189,6 +376,7 @@ class Seo
         }
 
         static::$recordGraph = static::recordNode($record, $schema);
+        static::$recordTitle = trim((string) $record->title);
     }
 
     /**

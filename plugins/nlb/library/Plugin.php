@@ -198,8 +198,8 @@ class Plugin extends PluginBase
                 'nlb_csrf' => function () {
                     return csrf_field();
                 },
-                'nlb_jsonld' => function () {
-                    return Seo::jsonld();
+                'nlb_jsonld' => function ($page = null) {
+                    return Seo::jsonld($page);
                 },
             ],
             'filters' => [

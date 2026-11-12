@@ -416,8 +416,12 @@ class SeoTest extends PluginTestCase
 
         $graph = $this->graphFromHtml($this->get('/collections/nabor-chitatelya/')->getContent());
 
-        $this->assertCount(2, $graph);
-        $this->assertSame(['Library', 'WebSite'], array_column($graph, '@type'));
+        $types = array_column($graph, '@type');
+
+        $this->assertContains('Library', $types);
+        $this->assertContains('WebSite', $types);
+        $this->assertContains('BreadcrumbList', $types);
+        $this->assertSame(['Library', 'WebSite', 'BreadcrumbList'], $types);
     }
 
     public function testArticleNodeHasAuthorAndPublicationDate()
@@ -688,6 +692,117 @@ class SeoTest extends PluginTestCase
         $this->assertStringContainsString('<meta property="og:image" content="' . $image . '">', $html);
         $this->assertStringContainsString('<meta name="twitter:image" content="' . $image . '">', $html);
         $this->assertStringContainsString('"image":"' . $image . '"', $html);
+    }
+
+    public function testBreadcrumbListIsAbsentOnHomePage()
+    {
+        $graph = $this->graphFromHtml($this->get('/')->getContent());
+
+        $this->assertNull($this->breadcrumbFromGraph($graph));
+    }
+
+    public function testSectionPageCarriesBreadcrumbList()
+    {
+        $graph = $this->graphFromHtml($this->get('/books/')->getContent());
+
+        $node = $this->breadcrumbFromGraph($graph);
+
+        $this->assertNotNull($node, 'раздел без BreadcrumbList');
+        $this->assertSame('http://localhost:8080/books/#breadcrumb', $node['@id']);
+
+        $this->assertSame(['Главная', 'Сувениры и подарки'], array_column($node['itemListElement'], 'name'));
+        $this->assertSame(
+            ['http://localhost:8080/', 'http://localhost:8080/books/'],
+            array_column($node['itemListElement'], 'item')
+        );
+        $this->assertSame([1, 2], array_column($node['itemListElement'], 'position'));
+    }
+
+    public function testDetailPageBreadcrumbEndsWithRecordTitle()
+    {
+        $this->importFixture();
+
+        $graph = $this->graphFromHtml($this->get('/books/krzhka-biblioteka/')->getContent());
+        $node = $this->breadcrumbFromGraph($graph);
+
+        $this->assertNotNull($node, 'детальная без BreadcrumbList');
+        $this->assertSame(
+            ['Главная', 'Сувениры и подарки', 'Кружка «Библиотека»'],
+            array_column($node['itemListElement'], 'name')
+        );
+
+        $last = end($node['itemListElement']);
+        $this->assertSame('http://localhost:8080/books/krzhka-biblioteka/', $last['item']);
+    }
+
+    public function testUnknownSectionGetsNoBreadcrumbs()
+    {
+        $graph = $this->graphFromHtml($this->get('/404')->getContent());
+
+        $this->assertNull($this->breadcrumbFromGraph($graph), 'раздел вне SECTIONS не должен обзаводиться крошками');
+    }
+
+    public function testNotFoundPageOfKnownSectionGetsNoBreadcrumbs()
+    {
+        $response = $this->get('/events/nesushchestvuyushchiy-slug/');
+
+        $this->assertSame(404, $response->getStatusCode());
+
+        $graph = $this->graphFromHtml($response->getContent());
+
+        $this->assertNull($this->breadcrumbFromGraph($graph), '404 внутри раздела не должен получать крошки');
+    }
+
+    public function testBreadcrumbsAreEmptyForUnknownPath()
+    {
+        $this->assertSame([], Seo::breadcrumbs());
+    }
+
+    /**
+     * @dataProvider sectionHeadings
+     */
+    public function testSectionBreadcrumbNamesMatchThemeHeadings(string $slug, string $expected)
+    {
+        $this->assertArrayHasKey($slug, Seo::SECTIONS);
+        $this->assertSame($expected, Seo::SECTIONS[$slug]);
+
+        $html = file_get_contents(base_path('themes/nlb/pages/' . $slug . '.htm'));
+
+        $this->assertMatchesRegularExpression(
+            '~<h1[^>]*>\s*' . preg_quote($expected, '~') . '\s*</h1>~u',
+            $html,
+            'h1 раздела ' . $slug . ' разошёлся с Seo::SECTIONS'
+        );
+    }
+
+    public static function sectionHeadings(): array
+    {
+        return [
+            'books' => ['books', 'Сувениры и подарки'],
+            'collections' => ['collections', 'Подарочные наборы'],
+            'events' => ['events', 'События'],
+            'news' => ['news', 'Новости'],
+            'services' => ['services', 'Наши услуги'],
+            'printing' => ['printing', 'Каталог печатных услуг'],
+            'contacts' => ['contacts', 'Контакты'],
+            'about' => ['about', 'Библиотека как пространство'],
+            'privacy' => ['privacy', 'Политика конфиденциальности'],
+            'sitemap' => ['sitemap', 'Карта сайта'],
+        ];
+    }
+
+    /**
+     * breadcrumbFromGraph достаёт узел `BreadcrumbList` из `@graph`.
+     */
+    protected function breadcrumbFromGraph(array $graph): ?array
+    {
+        foreach ($graph as $node) {
+            if (($node['@type'] ?? '') === 'BreadcrumbList') {
+                return $node;
+            }
+        }
+
+        return null;
     }
 
     /**
