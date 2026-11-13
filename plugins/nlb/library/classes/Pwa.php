@@ -36,7 +36,11 @@ class Pwa
      */
     public static function manifest(): string
     {
-        return (string) file_get_contents(static::themeFile('assets/pwa/manifest.webmanifest'));
+        return str_replace(
+            ['__BRAND__', '__DESCRIPTION__'],
+            [Brand::get('name'), Brand::get('description')],
+            (string) file_get_contents(static::themeFile('assets/pwa/manifest.webmanifest'))
+        );
     }
 
     /**
@@ -55,8 +59,8 @@ class Pwa
         $template = (string) file_get_contents(static::themeFile('assets/pwa/sw.js'));
 
         return str_replace(
-            ['__VERSION__', '__SHELL__'],
-            [static::version(), (string) json_encode(static::SHELL, JSON_UNESCAPED_SLASHES)],
+            ['__VERSION__', '__SHELL__', '__BRAND__'],
+            [static::version(), (string) json_encode(static::SHELL, JSON_UNESCAPED_SLASHES), Brand::get('name')],
             $template
         );
     }

@@ -16,7 +16,7 @@ class SubscriptionConfirmation extends Mailable
 
     public function build()
     {
-        return $this->subject('Подтвердите подписку на новости библиотеки')
+        return $this->subject('Подтвердите подписку на новости')
             ->view('nlb.library::mail.subscribe-confirm')
             ->with([
                 'email' => $this->email,

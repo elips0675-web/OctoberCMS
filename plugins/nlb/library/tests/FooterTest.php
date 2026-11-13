@@ -2,6 +2,7 @@
 
 use Cms\Classes\Theme;
 use Config;
+use Nlb\Library\Classes\Brand;
 use PluginTestCase;
 
 /**
@@ -50,9 +51,9 @@ class FooterTest extends PluginTestCase
     {
         $html = $this->get('/')->getContent();
 
-        $copyright = '© ' . date('Y') . ' Библиотека 2026. Все права защищены.';
+        $copyright = '© ' . date('Y') . ' ' . Brand::get('name') . '. Все права защищены.';
         $this->assertSame(1, substr_count($html, $copyright));
 
-        $this->assertStringContainsString('Библиотека 2026', $html);
+        $this->assertStringContainsString(Brand::get('name'), $html);
     }
 }

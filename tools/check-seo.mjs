@@ -10,7 +10,8 @@
  *     и **все** адреса инвентаря `docs/content.md` (кроме закрытых) в карте есть;
  *   - старые адреса 1С-Битрикс отдают 301 на новые (детальная — с сохранением
  *     `utm_*`, без `CODE`);
- *   - на главной есть JSON-LD `Library` + `WebSite` с `SearchAction`, и это
+ *   - на главной есть JSON-LD организации (`Organization` или его подтип,
+ *     задаётся настройкой темы) + `WebSite` с `SearchAction`, и это
  *     валидный JSON, а не «почти JSON»;
  *   - на детальной странице узел своего вида (`Article`, `Event`, `Product`,
  *     `Service`), у подборки — только общие узлы, у всех — `og:image`
@@ -34,6 +35,21 @@ const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
 const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
 
 const closed = ['/auth/', '/personal/', '/search/'];
+
+const orgTypes = [
+    'Organization',
+    'Library',
+    'LocalBusiness',
+    'Store',
+    'Corporation',
+    'NGO',
+    'GovernmentOrganization',
+    'EducationalOrganization',
+    'MedicalOrganization',
+    'SportsOrganization',
+];
+
+const isOrgType = (type) => orgTypes.includes(type);
 
 const recordTypes = {
     news: 'Article',
@@ -203,9 +219,7 @@ function checkDetailPage(url, html) {
         }
     }
     else {
-        const allowed = ['Library', 'WebSite', 'BreadcrumbList'];
-
-        if (types.some((type) => !allowed.includes(type))) {
+        if (types.some((type) => !isOrgType(type) && type !== 'WebSite' && type !== 'BreadcrumbList')) {
             failures.push(`${url}: у подборки лишние узлы (${types.join(', ')})`);
         }
     }
@@ -335,18 +349,18 @@ async function main() {
 
         if (data) {
             const graph = Array.isArray(data['@graph']) ? data['@graph'] : [];
-            const library = graph.find((node) => node['@type'] === 'Library');
+            const org = graph.find((node) => isOrgType(node['@type']));
             const website = graph.find((node) => node['@type'] === 'WebSite');
 
-            if (!library) {
-                failures.push('главная: в JSON-LD нет Library');
+            if (!org) {
+                failures.push('главная: в JSON-LD нет узла организации (Organization)');
             }
             else {
-                if (!library.address || !library.address.streetAddress) {
-                    failures.push('главная: в JSON-LD Library нет адреса');
+                if (!org.address || !org.address.streetAddress) {
+                    failures.push('главная: в JSON-LD организации нет адреса');
                 }
-                if (!library.openingHoursSpecification) {
-                    failures.push('главная: в JSON-LD Library нет часов работы');
+                if (!org.openingHoursSpecification) {
+                    failures.push('главная: в JSON-LD организации нет часов работы');
                 }
             }
 
@@ -446,7 +460,7 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), /rss.xml (${rssItems.length} записей), 301 со старых адресов, JSON-LD Library + WebSite + узел записи (Article/Event/Product/Service)`);
+    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), /rss.xml (${rssItems.length} записей), 301 со старых адресов, JSON-LD организации + WebSite + узел записи (Article/Event/Product/Service)`);
 }
 
 main().catch((error) => {

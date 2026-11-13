@@ -1,6 +1,6 @@
-name: Библиотека
+name: 'Универсальный шаблон'
 code: nlb
-description: 'Тема сайта библиотеки: Bootstrap 5, инлайн CSS, контент из Tailor-записей.'
+description: 'Универсальная тема: услуги, каталог, события, брони и заказы; контент из Tailor-записей.'
 author: NLB
 homepage: 'https://github.com/elips0675-web/OctoberCMS'
 form:
@@ -14,3 +14,103 @@ form:
             label: 'Описание для поисковиков'
             type: textarea
             size: small
+        brand_name:
+            label: 'Название организации'
+            commentAbove: 'Шапка, подвал, <title>, письма и микроразметка.'
+            type: text
+            default: 'Ваша организация'
+            span: left
+        brand_tagline:
+            label: 'Подпись под названием'
+            type: text
+            default: 'Центр услуг'
+            span: right
+        brand_legal_name:
+            label: 'Юридическое наименование'
+            commentAbove: 'Для реквизитов и микроразметки.'
+            type: text
+            default: 'Ваша организация'
+            span: left
+        brand_kind:
+            label: 'Тип организации'
+            commentAbove: 'Строка над заголовком на главной: «Организация · Город».'
+            type: text
+            default: 'Организация'
+            span: right
+        brand_description:
+            label: 'Описание для микроразметки'
+            type: textarea
+            size: small
+            default: 'Сайт организации: услуги, события и контакты.'
+        brand_phone:
+            label: 'Телефон'
+            type: text
+            default: '+375 (00) 000-00-00'
+            span: left
+        brand_email:
+            label: 'E-mail'
+            type: text
+            default: 'info@example.com'
+            span: right
+        brand_postal_code:
+            label: 'Индекс'
+            type: text
+            default: '000000'
+            span: left
+        brand_city:
+            label: 'Город'
+            type: text
+            default: 'Город'
+            span: right
+        brand_street:
+            label: 'Улица и дом'
+            type: text
+            default: 'ул. Примерная, 1'
+        brand_country:
+            label: 'Код страны'
+            commentAbove: 'Двухбуквенный код для schema.org, например BY.'
+            type: text
+            default: 'BY'
+            span: left
+        brand_hours:
+            label: 'Часы работы'
+            type: text
+            default: 'Ежедневно 10:00–22:00'
+            span: right
+        brand_opens:
+            label: 'Открытие'
+            type: text
+            default: '10:00'
+            span: left
+        brand_closes:
+            label: 'Закрытие'
+            type: text
+            default: '22:00'
+            span: right
+        brand_schema_type:
+            label: 'Тип в микроразметке'
+            commentAbove: 'Organization — универсально; Library, Store, LocalBusiness — если подходит.'
+            type: dropdown
+            default: Organization
+            options:
+                Organization: Organization
+                LocalBusiness: LocalBusiness
+                Library: Library
+                Store: Store
+        brand_social_telegram:
+            label: 'Telegram'
+            commentAbove: 'Полная ссылка, например https://t.me/your_channel. Пусто — кнопка скрыта.'
+            type: text
+            span: left
+        brand_social_whatsapp:
+            label: 'WhatsApp'
+            commentAbove: 'Номер в международном формате. Пусто — кнопка скрыта.'
+            type: text
+            span: right
+        brand_social_vk:
+            label: 'ВКонтакте'
+            type: text
+            span: right
+        brand_social_youtube:
+            label: 'YouTube'
+            type: text

@@ -17,7 +17,7 @@ class Labels
         'events' => 'События',
         'kids' => 'Дети',
         'science' => 'Наука',
-        'library' => 'Библиотека',
+        'library' => 'О нас',
     ];
 
     /**

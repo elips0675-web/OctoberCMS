@@ -1,5 +1,6 @@
 <?php namespace Nlb\Library;
 
+use Nlb\Library\Classes\Brand;
 use Nlb\Library\Classes\Content;
 use Nlb\Library\Classes\Http\SecurityHeaders;
 use Nlb\Library\Classes\Labels;
@@ -13,7 +14,7 @@ class Plugin extends PluginBase
     {
         return [
             'name' => 'NLB Library',
-            'description' => 'Контент библиотеки, заявки, слоты услуг и поиск.',
+            'description' => 'Контент сайта, заявки, слоты услуг и поиск.',
             'author' => 'NLB',
             'icon' => 'icon-book'
         ];
@@ -56,7 +57,7 @@ class Plugin extends PluginBase
     {
         return [
             'library' => [
-                'label' => 'Библиотека',
+                'label' => 'Контент',
                 'url' => \Backend::url('nlb/library/requests'),
                 'icon' => 'icon-book',
                 'order' => 400,
@@ -200,6 +201,12 @@ class Plugin extends PluginBase
                 },
                 'nlb_jsonld' => function ($page = null) {
                     return Seo::jsonld($page);
+                },
+                'nlb_brand' => function ($key = 'name') {
+                    return Brand::get((string) $key);
+                },
+                'nlb_brand_text' => function ($text) {
+                    return Brand::replace((string) $text);
                 },
             ],
             'filters' => [

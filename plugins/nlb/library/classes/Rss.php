@@ -40,9 +40,9 @@ class Rss
         $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">' . "\n";
         $out .= "  <channel>\n";
-        $out .= '    <title>' . static::escape(Seo::SITE_NAME . ' — новости') . "</title>\n";
+        $out .= '    <title>' . static::escape(Seo::siteName() . ' — новости') . "</title>\n";
         $out .= '    <link>' . static::escape($base . static::PREFIX) . "</link>\n";
-        $out .= '    <description>' . static::escape('Новости библиотеки: книги, встречи, выставки.') . "</description>\n";
+        $out .= '    <description>' . static::escape('Новости: услуги, встречи и события.') . "</description>\n";
         $out .= "    <language>ru</language>\n";
         $out .= '    <lastBuildDate>' . date(DATE_RSS) . "</lastBuildDate>\n";
         $out .= '    <atom:link href="' . static::escape($base . '/rss.xml') . '" rel="self" type="application/rss+xml"/>' . "\n";

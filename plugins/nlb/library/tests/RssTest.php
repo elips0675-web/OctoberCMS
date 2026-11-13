@@ -52,7 +52,7 @@ class RssTest extends PluginTestCase
 
         $channel = $this->parse(Rss::xml('http://localhost'))->channel;
 
-        $this->assertSame(Seo::SITE_NAME . ' — новости', (string) $channel->title);
+        $this->assertSame(Seo::siteName() . ' — новости', (string) $channel->title);
         $this->assertSame('http://localhost/news/', (string) $channel->link);
         $this->assertSame('ru', (string) $channel->language);
         $this->assertSame('http://localhost/rss.xml', (string) $channel->children('http://www.w3.org/2005/Atom')->link->attributes()['href']);

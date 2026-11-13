@@ -1,5 +1,5 @@
 /*!
- * Service worker приложения «Библиотека 2026».
+ * Service worker приложения.
  *
  * Стратегия:
  *  - оболочка (CSS/JS/иконки/manifest/offline) — cache-first, обновляется
@@ -124,7 +124,7 @@ self.addEventListener('push', (event) => {
         }
     }
 
-    const title = payload.title || 'Библиотека 2026';
+    const title = payload.title || '__BRAND__';
     const options = {
         body: payload.body || '',
         icon: payload.icon || NOTIFICATION_ICON,

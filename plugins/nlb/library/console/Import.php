@@ -11,7 +11,7 @@ class Import extends Command
         {--source= : Каталог с data/*.php (по умолчанию выгрузка источника)}
         {--dry-run : Только посчитать, ничего не записывать}';
 
-    protected $description = 'Импорт контента библиотеки (идемпотентно по xml_id)';
+    protected $description = 'Импорт контента (идемпотентно по xml_id)';
 
     /**
      * @var array<int, string> repeaterFields хранятся в отдельной таблице связи

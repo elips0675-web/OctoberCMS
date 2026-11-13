@@ -5,38 +5,42 @@
  *
  * Мета-теги страницы (title, description, canonical, OG, Twitter) отдаёт макет
  * (`themes/nlb/layouts/default.htm`), здесь — то, что одинаково для всего
- * сайта: организация «Библиотека» и сайт с поиском (JSON-LD), а также
+ * сайта: организация и сайт с поиском (JSON-LD), а также
  * директивы обхода.
  */
 class Seo
 {
     /**
-     * SITE_NAME — название сайта в микроразметке и og:site_name макета.
+     * siteName — название организации из настроек темы.
      */
-    public const SITE_NAME = 'Библиотека 2026';
+    public static function siteName(): string
+    {
+        return Brand::get('name');
+    }
 
     /**
-     * CONTACTS — демо-контакты из подвала.
-     *
-     * Дублируют `themes/nlb/partials/footer.htm` и `pages/contacts.htm`
-     * (в источнике было так же: `nlb_seo.php` и `footer.php`). При смене
-     * реальных контактов (P0-6) правьте все три места сразу.
+     * contacts — контакты из настроек темы для schema.org.
      */
-    public const CONTACTS = [
-        'telephone' => '+375-17-300-00-00',
-        'email' => 'info@example.by',
-        'postalCode' => '220114',
-        'addressCountry' => 'BY',
-        'addressLocality' => 'Минск',
-        'streetAddress' => 'пр. Независимости, 116',
-        'opens' => '10:00',
-        'closes' => '22:00',
-        'sameAs' => [
-            'https://t.me/example',
-            'https://vk.com/example',
-            'https://youtube.com/@example',
-        ],
-    ];
+    public static function contacts(): array
+    {
+        $socials = array_values(array_filter([
+            Brand::get('social_telegram'),
+            Brand::get('social_vk'),
+            Brand::get('social_youtube'),
+        ]));
+
+        return [
+            'telephone' => str_replace(' ', '-', Brand::get('phone')),
+            'email' => Brand::get('email'),
+            'postalCode' => Brand::get('postal_code'),
+            'addressCountry' => Brand::get('country'),
+            'addressLocality' => Brand::get('city'),
+            'streetAddress' => Brand::get('street'),
+            'opens' => Brand::get('opens'),
+            'closes' => Brand::get('closes'),
+            'sameAs' => $socials,
+        ];
+    }
 
     /**
      * SECTIONS — подписи разделов для хлебных крошек (`BreadcrumbList`).
@@ -46,7 +50,7 @@ class Seo
      * расходится микроразметка). Раздел без подписи крошек не получает.
      */
     public const SECTIONS = [
-        'about' => 'Библиотека как пространство',
+        'about' => 'О центре',
         'auth' => 'Вход в личный кабинет',
         'books' => 'Сувениры и подарки',
         'collections' => 'Подарочные наборы',
@@ -217,7 +221,7 @@ class Seo
             return '';
         }
 
-        $suffix = ' — ' . static::SITE_NAME;
+        $suffix = ' — ' . static::siteName();
 
         return str_ends_with($title, $suffix) ? substr($title, 0, -strlen($suffix)) : $title;
     }
@@ -255,19 +259,19 @@ class Seo
     public static function jsonld($page = null): string
     {
         $base = rtrim(url('/'), '/');
-        $contacts = static::CONTACTS;
+        $contacts = static::contacts();
 
         $data = [
             '@context' => 'https://schema.org',
             '@graph' => [
                 [
-                    '@type' => 'Library',
-                    '@id' => $base . '/#library',
-                    'name' => static::SITE_NAME,
+                    '@type' => Brand::get('schema_type'),
+                    '@id' => $base . '/#organization',
+                    'name' => static::siteName(),
                     'url' => $base . '/',
                     'logo' => $base . '/themes/nlb/assets/icons/icon-512.png',
                     'image' => $base . '/themes/nlb/assets/images/hero-1.jpg',
-                    'description' => 'Библиотека 2026 — книги, события, услуги и пространства для работы и учёбы.',
+                    'description' => Brand::get('description'),
                     'telephone' => $contacts['telephone'],
                     'email' => $contacts['email'],
                     'address' => [
@@ -299,9 +303,9 @@ class Seo
                     '@type' => 'WebSite',
                     '@id' => $base . '/#website',
                     'url' => $base . '/',
-                    'name' => static::SITE_NAME,
+                    'name' => static::siteName(),
                     'inLanguage' => 'ru',
-                    'publisher' => ['@id' => $base . '/#library'],
+                    'publisher' => ['@id' => $base . '/#organization'],
                     'potentialAction' => [
                         '@type' => 'SearchAction',
                         'target' => [
@@ -337,7 +341,7 @@ class Seo
      * applyRecord проставляет мету и микроразметку детальной страницы.
      *
      * Пустые поля не затирают поведение по умолчанию: заголовок остаётся
-     * «Название — Библиотека 2026», описание берётся из анонса — ровно так
+     * «Название — {brand}», описание берётся из анонса — ровно так
      * страница выглядела до появления полей. Обрезка до 160 знаков держит
      * description в разумных рамках: из текста записи он не собирается.
      *
@@ -355,7 +359,7 @@ class Seo
      */
     public static function applyRecord($page, $record, string $schema = ''): void
     {
-        $page->title = $record->title . ' — ' . static::SITE_NAME;
+        $page->title = $record->title . ' — ' . static::siteName();
 
         $title = trim((string) ($record->seo_title ?? ''));
 
@@ -424,9 +428,9 @@ class Seo
             'dateModified' => static::isoDate($record->updated_at),
             'author' => [
                 '@type' => 'Person',
-                'name' => trim((string) $record->author) ?: static::SITE_NAME,
+                'name' => trim((string) $record->author) ?: static::siteName(),
             ],
-            'publisher' => ['@id' => static::siteBase() . '/#library'],
+            'publisher' => ['@id' => static::siteBase() . '/#organization'],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
             'url' => $url,
         ]);
@@ -438,7 +442,7 @@ class Seo
     protected static function eventNode($record): array
     {
         $url = static::canonical();
-        $contacts = static::CONTACTS;
+        $contacts = static::contacts();
 
         return static::withoutEmpty([
             '@type' => 'Event',
@@ -452,7 +456,7 @@ class Seo
             'eventStatus' => 'https://schema.org/EventScheduled',
             'location' => [
                 '@type' => 'Place',
-                'name' => trim((string) $record->place) ?: static::SITE_NAME,
+                'name' => trim((string) $record->place) ?: static::siteName(),
                 'address' => [
                     '@type' => 'PostalAddress',
                     'postalCode' => $contacts['postalCode'],
@@ -461,7 +465,7 @@ class Seo
                     'streetAddress' => $contacts['streetAddress'],
                 ],
             ],
-            'organizer' => ['@id' => static::siteBase() . '/#library'],
+            'organizer' => ['@id' => static::siteBase() . '/#organization'],
             'offers' => static::offer($url, static::price($record->price)),
         ]);
     }
@@ -470,7 +474,7 @@ class Seo
      * productNode — сувенир и печать как `Product` с ценой и наличием.
      *
      * `publisher` в blueprints сувениров — упаковка («Картонная коробка»),
-     * а не бренд, поэтому `brand` всегда название библиотеки: чужое значение
+     * а не бренд, поэтому `brand` всегда название организации: чужое значение
      * попадало в сниппет как «Бренд: Прозрачный пакет».
      */
     protected static function productNode($record): array
@@ -493,7 +497,7 @@ class Seo
             'sku' => trim((string) $record->isbn) ?: (string) $record->xml_id,
             'brand' => [
                 '@type' => 'Brand',
-                'name' => static::SITE_NAME,
+                'name' => static::siteName(),
             ],
             'offers' => static::offer($url, $price, $availability),
         ]);
@@ -513,8 +517,8 @@ class Seo
             'description' => static::recordDescription($record),
             'image' => static::absoluteImage($record->image),
             'serviceType' => trim((string) $record->subtitle) ?: (string) $record->title,
-            'provider' => ['@id' => static::siteBase() . '/#library'],
-            'areaServed' => static::CONTACTS['addressLocality'],
+            'provider' => ['@id' => static::siteBase() . '/#organization'],
+            'areaServed' => static::contacts()['addressLocality'],
             'offers' => static::offer($url, static::price($record->price_from)),
         ]);
     }
@@ -660,7 +664,7 @@ class Seo
     public static function robots(string $sitemapUrl): string
     {
         $lines = [
-            '# robots.txt — Библиотека 2026',
+            '# robots.txt — ' . static::siteName(),
             '',
             'User-agent: *',
             'Allow: /',

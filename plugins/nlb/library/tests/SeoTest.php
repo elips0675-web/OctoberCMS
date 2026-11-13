@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Nlb\Library\Classes\Content;
 use Nlb\Library\Classes\Http\LegacyRedirect;
 use Nlb\Library\Classes\PageBuilder;
+use Nlb\Library\Classes\Brand;
 use Nlb\Library\Classes\Seo;
 use Nlb\Library\Classes\Sitemap;
 use PluginTestCase;
@@ -293,12 +294,12 @@ class SeoTest extends PluginTestCase
             return $node['@type'];
         }, $data['@graph']);
 
-        $this->assertContains('Library', $types);
+        $this->assertContains(Brand::get('schema_type'), $types);
         $this->assertContains('WebSite', $types);
 
         $library = $data['@graph'][0];
-        $this->assertSame('+375-17-300-00-00', $library['telephone']);
-        $this->assertSame('пр. Независимости, 116', $library['address']['streetAddress']);
+        $this->assertSame(Seo::contacts()['telephone'], $library['telephone']);
+        $this->assertSame(Seo::contacts()['streetAddress'], $library['address']['streetAddress']);
         $this->assertNotEmpty($library['openingHoursSpecification']);
 
         $website = $data['@graph'][1];
@@ -311,7 +312,7 @@ class SeoTest extends PluginTestCase
         $html = $this->get('/')->getContent();
 
         $this->assertStringContainsString('<script type="application/ld+json">', $html);
-        $this->assertStringContainsString('"@type":"Library"', $html);
+        $this->assertStringContainsString('"@type":"' . Brand::get('schema_type') . '"', $html);
     }
 
     /**
@@ -323,7 +324,7 @@ class SeoTest extends PluginTestCase
 
         $html = $this->get($url)->getContent();
 
-        $this->assertStringContainsString('<title>' . $name . ' — Библиотека 2026</title>', $html);
+        $this->assertStringContainsString('<title>' . $name . ' — ' . Seo::siteName() . '</title>', $html);
         $this->assertStringContainsString(
             '<link rel="canonical" href="http://localhost:8080' . $url . '">',
             $html
@@ -348,7 +349,7 @@ class SeoTest extends PluginTestCase
 
         $html = $this->get('/news/cifrovoy-chitalnyy-zal/')->getContent();
 
-        $this->assertStringContainsString('<title>Цифровой читальный зал — Библиотека 2026</title>', $html);
+        $this->assertStringContainsString('<title>Цифровой читальный зал — ' . Seo::siteName() . '</title>', $html);
         $this->assertStringContainsString(
             '<meta name="description" content="Анонс первой новости.">',
             $html
@@ -403,7 +404,7 @@ class SeoTest extends PluginTestCase
 
         Seo::applyRecord($page, $record);
 
-        $this->assertSame('Новость — Библиотека 2026', $page->title);
+        $this->assertSame('Новость — ' . Seo::siteName(), $page->title);
         $this->assertFalse(property_exists($page, 'seo_title'));
         $this->assertSame(160, mb_strlen($page->seo_description));
         $this->assertStringNotContainsString('<p>', $page->seo_description);
@@ -455,10 +456,10 @@ class SeoTest extends PluginTestCase
 
         $types = array_column($graph, '@type');
 
-        $this->assertContains('Library', $types);
+        $this->assertContains(Brand::get('schema_type'), $types);
         $this->assertContains('WebSite', $types);
         $this->assertContains('BreadcrumbList', $types);
-        $this->assertSame(['Library', 'WebSite', 'BreadcrumbList'], $types);
+        $this->assertSame([Brand::get('schema_type'), 'WebSite', 'BreadcrumbList'], $types);
     }
 
     public function testArticleNodeHasAuthorAndPublicationDate()
@@ -478,7 +479,7 @@ class SeoTest extends PluginTestCase
         $this->assertSame('Иван Петров', $node['author']['name']);
         $this->assertStringStartsWith('2026-11-02T10:00', $node['datePublished']);
         $this->assertStringStartsWith('2026-11-03T12:30', $node['dateModified']);
-        $this->assertSame('http://localhost:8080/#library', $node['publisher']['@id']);
+        $this->assertSame('http://localhost:8080/#organization', $node['publisher']['@id']);
     }
 
     public function testArticleWithoutAuthorFallsBackToSiteName()
@@ -493,7 +494,7 @@ class SeoTest extends PluginTestCase
             'image' => null,
         ]);
 
-        $this->assertSame(Seo::SITE_NAME, $node['author']['name']);
+        $this->assertSame(Seo::siteName(), $node['author']['name']);
         $this->assertArrayNotHasKey('datePublished', $node);
         $this->assertArrayNotHasKey('image', $node);
     }
@@ -513,7 +514,7 @@ class SeoTest extends PluginTestCase
 
         $this->assertSame('Event', $node['@type']);
         $this->assertSame('Зал «Диалог»', $node['location']['name']);
-        $this->assertSame('Минск', $node['location']['address']['addressLocality']);
+        $this->assertSame(Seo::contacts()['addressLocality'], $node['location']['address']['addressLocality']);
         $this->assertSame('https://schema.org/MixedEventAttendanceMode', $node['eventAttendanceMode']);
         $this->assertSame('https://schema.org/EventScheduled', $node['eventStatus']);
         $this->assertSame('0', $node['offers']['price']);
@@ -533,7 +534,7 @@ class SeoTest extends PluginTestCase
             'image' => null,
         ]);
 
-        $this->assertSame(Seo::SITE_NAME, $node['location']['name']);
+        $this->assertSame(Seo::siteName(), $node['location']['name']);
         $this->assertSame('https://schema.org/OnlineEventAttendanceMode', $node['eventAttendanceMode']);
         $this->assertArrayNotHasKey('offers', $node);
         $this->assertArrayNotHasKey('startDate', $node);
@@ -556,7 +557,7 @@ class SeoTest extends PluginTestCase
 
         $this->assertSame('Product', $node['@type']);
         $this->assertSame('MG-003', $node['sku']);
-        $this->assertSame(Seo::SITE_NAME, $node['brand']['name'], 'упаковка не должна становиться брендом');
+        $this->assertSame(Seo::siteName(), $node['brand']['name'], 'упаковка не должна становиться брендом');
         $this->assertSame('590', $node['offers']['price']);
         $this->assertSame('https://schema.org/PreOrder', $node['offers']['availability']);
     }
@@ -598,7 +599,7 @@ class SeoTest extends PluginTestCase
 
         $this->assertSame('Service', $node['@type']);
         $this->assertSame('Панорамный вид на город', $node['serviceType']);
-        $this->assertSame('Минск', $node['areaServed']);
+        $this->assertSame(Seo::contacts()['addressLocality'], $node['areaServed']);
         $this->assertSame('200', $node['offers']['price']);
     }
 
@@ -822,7 +823,7 @@ class SeoTest extends PluginTestCase
             'services' => ['services', 'Наши услуги'],
             'printing' => ['printing', 'Каталог печатных услуг'],
             'contacts' => ['contacts', 'Контакты'],
-            'about' => ['about', 'Библиотека как пространство'],
+            'about' => ['about', 'О центре'],
             'privacy' => ['privacy', 'Политика конфиденциальности'],
             'sitemap' => ['sitemap', 'Карта сайта'],
         ];

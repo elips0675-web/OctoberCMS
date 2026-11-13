@@ -4,21 +4,21 @@
             <div class="d-flex align-items-center gap-3">
                 <span class="d-inline-flex align-items-center gap-2">
                     <svg class="i"><use href="#i-pin"/></svg>
-                    Минск, пр. Независимости, 116
+                    {{ nlb_brand('postal_code') }}, {{ nlb_brand('city') }}, {{ nlb_brand('street') }}
                 </span>
                 <span class="sep"></span>
                 <span class="d-inline-flex align-items-center gap-2">
                     <svg class="i"><use href="#i-clock"/></svg>
-                    Ежедневно 10:00–22:00
+                    {{ nlb_brand('hours') }}
                 </span>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <a href="tel:+375173000000" class="d-inline-flex align-items-center gap-2">
+                <a href="tel:{{ nlb_brand('phone_href') }}" class="d-inline-flex align-items-center gap-2">
                     <svg class="i"><use href="#i-phone"/></svg>
-                    +375 (17) 300-00-00
+                    {{ nlb_brand('phone') }}
                 </a>
                 <span class="sep"></span>
-                <a href="mailto:info@example.by">info@example.by</a>
+                <a href="mailto:{{ nlb_brand('email') }}">{{ nlb_brand('email') }}</a>
             </div>
         </div>
     </div>
@@ -30,8 +30,8 @@
                     <svg class="i" aria-hidden="true"><use href="#i-book"/></svg>
                 </span>
                 <span>
-                    <span class="brand-name">Библиотека 2026</span>
-                    <span class="brand-tag">Центр знаний</span>
+                    <span class="brand-name">{{ nlb_brand('name') }}</span>
+                    <span class="brand-tag">{{ nlb_brand('tagline') }}</span>
                 </span>
             </a>
 

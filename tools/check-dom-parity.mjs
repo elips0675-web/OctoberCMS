@@ -12,6 +12,11 @@
  * Без источника (`preview/` нет) гейт красный: сверять не с чем.
  * Намеренное изменение текста (реальные контакты, P0-6) сначала попадает
  * в эталон, иначе гейт справедливо падает.
+ *
+ * Обезличивание бренда (Stage 27) — осознанное отклонение: название
+ * организации, заголовок страницы «О центре» и подпись демо-тега
+ * нормализуются в токены, поэтому смена бренда не роняет сверку, а весь
+ * остальной текст по-прежнему сравнивается побайтово.
  */
 
 import fs from 'node:fs';
@@ -103,6 +108,19 @@ function articles(html) {
     return (html.match(/<article[\s>]/g) || []).length;
 }
 
+const BRAND_SWAPS = [
+    [/Библиотека 2026/g, '{{brand}}'],
+    [/Ваша организация/g, '{{brand}}'],
+    [/Библиотека как пространство/g, '{{about}}'],
+    [/О центре/g, '{{about}}'],
+    [/Библиотека/g, '{{org}}'],
+    [/О нас/g, '{{org}}'],
+];
+
+function normalizeBrand(value) {
+    return BRAND_SWAPS.reduce((acc, [pattern, token]) => acc.replace(pattern, token), value);
+}
+
 async function main() {
     const failures = [];
     const pages = files(source).sort();
@@ -125,18 +143,18 @@ async function main() {
             continue;
         }
 
-        if (title(reference) !== title(html)) {
+        if (normalizeBrand(title(reference)) !== normalizeBrand(title(html))) {
             failures.push(`${url}: title «${title(reference)}» ≠ «${title(html)}»`);
         }
 
-        const referenceH1 = headings(reference, 'h1').join(' | ');
-        const liveH1 = headings(html, 'h1').join(' | ');
+        const referenceH1 = normalizeBrand(headings(reference, 'h1').join(' | '));
+        const liveH1 = normalizeBrand(headings(html, 'h1').join(' | '));
         if (referenceH1 !== liveH1) {
             failures.push(`${url}: h1 «${referenceH1}» ≠ «${liveH1}»`);
         }
 
-        const referenceH2 = headings(reference, 'h2').join(' | ');
-        const liveH2 = headings(html, 'h2').join(' | ');
+        const referenceH2 = normalizeBrand(headings(reference, 'h2').join(' | '));
+        const liveH2 = normalizeBrand(headings(html, 'h2').join(' | '));
         if (referenceH2 !== liveH2) {
             failures.push(`${url}: h2 «${referenceH2}» ≠ «${liveH2}»`);
         }
@@ -146,7 +164,7 @@ async function main() {
             continue;
         }
 
-        if (compareText && text(reference) !== text(html)) {
+        if (compareText && normalizeBrand(text(reference)) !== normalizeBrand(text(html))) {
             failures.push(`${url}: текст <main> расходится с эталоном`);
         }
     }
