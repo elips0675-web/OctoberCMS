@@ -1,4 +1,4 @@
-title = "Страница — Библиотека 2026"
+title = "Страница — {brand}"
 url = "/:slug"
 layout = "default"
 ==
@@ -12,7 +12,7 @@ function onStart()
 
     if (!$record) {
         $this->controller->setStatusCode(404);
-        $this->page->title = 'Страница не найдена — Библиотека 2026';
+        $this->page->title = 'Страница не найдена — ' . \Nlb\Library\Classes\Brand::get('name');
         $this->page->seo_description = 'Запрошенная страница не найдена.';
     }
     else {

@@ -1,4 +1,4 @@
-title = "Услуга — Библиотека 2026"
+title = "Услуга — {brand}"
 url = "/services/:slug"
 layout = "default"
 ==
@@ -8,7 +8,7 @@ function onStart()
     $record = \Nlb\Library\Classes\Content::record('Nlb\\Service', $this->param('slug'));
     if (!$record) {
         $this->controller->setStatusCode(404);
-        $this->page->title = 'Страница не найдена — Библиотека 2026';
+        $this->page->title = 'Страница не найдена — ' . \Nlb\Library\Classes\Brand::get('name');
     }
     else {
         \Nlb\Library\Classes\Seo::applyRecord($this->page, $record, 'service');

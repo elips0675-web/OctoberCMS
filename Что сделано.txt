@@ -6,6 +6,23 @@
 
 ---
 
+(Stage 27.1 — 13.11.2026) — **Заголовки страниц берут бренд из настроек.**
+
+25 файлов `themes/nlb/pages/*.htm`: `title = "Контакты — Библиотека 2026"` →
+`title = "Контакты — {brand}"` (подстановка — `nlb_brand_text()` в
+`themes/nlb/layouts/default.htm:11,24,33`); на главной — `{brand} — центр
+знаний`. Семь страниц с 404 (`books-detail`, `builder`, `collections-detail`,
+`events-detail`, `news-detail`, `printing-detail`, `services-detail`) вместо
+литерала ставят `Brand::get('name')`. `/personal/` — самостоятельный HTML без
+макета, поэтому заголовок проходит через `nlb_brand_text()` вручную
+(`themes/nlb/pages/personal.htm:12`).
+
+Проверено: `check-dom-parity` 110/110 (бренд в `<title>` нормализуется),
+`check-seo`, `check-urls` (109 × 200, 404 со страницей), PHPUnit 231/889.
+Не сделано: `seo_description` и тексты страниц — следующий блок.
+
+---
+
 (Stage 27 — 13.11.2026) — **Бренд и контакты ушли в настройки темы; слово «Библиотека» из шапки, подвала, макета и микроразметки убрано.**
 
 Первый блок исполнения P2-27 после решения Stage 26 («демо остаётся, бренд —
