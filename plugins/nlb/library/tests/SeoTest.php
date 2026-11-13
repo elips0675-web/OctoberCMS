@@ -1,15 +1,18 @@
 <?php namespace Nlb\Library\Tests;
 
 use Artisan;
+use Cms\Classes\Page;
 use Cms\Classes\Theme;
 use Config;
 use Illuminate\Http\Request;
 use Nlb\Library\Classes\Content;
 use Nlb\Library\Classes\Http\LegacyRedirect;
+use Nlb\Library\Classes\PageBuilder;
 use Nlb\Library\Classes\Seo;
 use Nlb\Library\Classes\Sitemap;
 use PluginTestCase;
 use Tailor\Models\EntryRecord;
+use Tailor\Models\StructureRecord;
 
 /**
  * SeoTest — карта сайта, robots.txt, 301, JSON-LD и мета записи.
@@ -47,12 +50,14 @@ class SeoTest extends PluginTestCase
         Config::set('cms.active_theme', 'nlb');
         Theme::resetCache();
         Content::flush();
+        PageBuilder::flush();
         Seo::reset();
     }
 
     public function tearDown(): void
     {
         Content::flush();
+        PageBuilder::flush();
         Seo::reset();
         Config::set('cms.active_theme', $this->previousTheme);
         Theme::resetCache();
@@ -63,10 +68,18 @@ class SeoTest extends PluginTestCase
     protected function themePages(): array
     {
         $dir = base_path('themes/nlb/pages');
+        $theme = Theme::getActiveTheme();
 
         $pages = [];
         foreach (glob($dir . '/*.htm') ?: [] as $file) {
-            $pages[] = basename($file, '.htm');
+            $name = basename($file, '.htm');
+            $page = Page::load($theme, $name);
+
+            if ($page && str_contains((string) $page->url, ':')) {
+                continue;
+            }
+
+            $pages[] = $name;
         }
 
         sort($pages);
@@ -119,6 +132,30 @@ class SeoTest extends PluginTestCase
         }
     }
 
+    public function testSitemapIncludesPublishedBuilderPages()
+    {
+        $page = StructureRecord::inSection(PageBuilder::SECTION);
+        $page->title = 'Собранная страница';
+        $page->slug = 'sobannaya-stranica';
+        $page->is_enabled = true;
+        $page->save();
+
+        $hidden = StructureRecord::inSection(PageBuilder::SECTION);
+        $hidden->title = 'Черновик';
+        $hidden->slug = 'chernovik';
+        $hidden->is_enabled = false;
+        $hidden->save();
+
+        PageBuilder::flush();
+
+        $locs = array_map(function (array $url) {
+            return $url['loc'];
+        }, Sitemap::urls());
+
+        $this->assertContains('/sobannaya-stranica/', $locs);
+        $this->assertNotContains('/chernovik/', $locs);
+    }
+
     public function testSitemapXmlIsWellFormedWithLastmod()
     {
         $xml = Sitemap::xml('https://example.by');
@@ -130,7 +167,7 @@ class SeoTest extends PluginTestCase
         $this->assertNotFalse($document, 'карта сайта не разбирается как XML');
 
         $urls = $document->url;
-        $this->assertSame(count(Sitemap::PAGES), count($urls));
+        $this->assertSame(count(Sitemap::PAGES) + count(PageBuilder::pages()), count($urls));
 
         foreach ($urls as $url) {
             $this->assertStringStartsWith('https://example.by/', (string) $url->loc);

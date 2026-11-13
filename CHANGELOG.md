@@ -11,6 +11,12 @@
 
 ### Добавлено
 
+- Этап 20: конструктор страниц — blueprint `Nlb\Page` и миксин `Nlb\Blocks`
+  (шесть блоков: текст, текст с картинкой, цитата, сетка записей, видео,
+  оглавление), класс `PageBuilder`, CMS-страница `/:slug` с 404-веткой,
+  страницы конструктора в `/sitemap.xml`, `tests/PageBuilderTest.php`
+  (12 тестов), документ `docs/theme-universality.md`.
+
 - Этап 5: формы обратной связи, брони, заказа и подписки — `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; записи в
   `nlb_*` и письма в очереди (`Mail::queue`); `tests/FormsTest.php` (25 тестов).

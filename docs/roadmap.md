@@ -144,3 +144,30 @@
 (шорткоды, конструктор шапки/подвала, кнопка «наверх» на текущих страницах,
 раздел «универсальных блоков» в `AGENTS.md`).
 
+## 9. Конструктор страниц Qwen: разбор черновика перед реализацией
+
+Третий черновик владельца (`конструктор страниц Qwen.html`, 12.11.2026, 12,4 КБ)
+описывает тот же конструктор, что и §8, но с готовым YAML. Подход совпал с
+принятым — Tailor `repeater` + `displayMode: builder` + партиал на группу, —
+поэтому черновик лёг в основу P2-24 (Stage 20). Отличия проверены по коду:
+
+| Тезис черновика | Что показала проверка |
+|---|---|
+| `blueprints/page.yaml`, `handle: Page` без `type` | **Не загрузится как есть.** Ядро отбрасывает blueprint без `type` (`modules/tailor/classes/Blueprint.php:458-467`), верификатор требует одно из поддерживаемых значений (`modules/tailor/classes/BlueprintVerifier.php:164-165`). Плоский файл в `blueprints/` ядро поддерживает (`modules/tailor/tests/classes/BlueprintDbLayerTest.php:239`), но конвенция плагина — каталог на blueprint: `blueprints/page/structure.yaml` |
+| `{% partial 'blocks/' ~ block._group %}` | **Ошибка имени поля.** В ядре группа называется `content_group` (`modules/tailor/models/RepeaterItem.php:48`, `:222`); `block._group` дал бы путь `blocks/` и ошибку Twig. В шаблоне — `block.group` из `PageBuilder::prepare()` |
+| `dropdown: optionsFrom: categories` | **Ключ не поддерживается в полях.** `optionsFrom` живёт только в фильтрах списков (`modules/backend/classes/FilterScope.php:24-51`), список разделов остался бы пустым. Разделы перечислены явно (`options:`), совпадение с белым списком кода проверяет тест |
+| `book_grid` с `category_id` | **Заменено на универсальную сетку:** источник — белый список разделов, лимит 1…12 (`PageBuilder::SOURCES`, `MAX_LIMIT`), выборка — `Content::records()`. Раздел `books` — «Сувениры и подарки» (см. §8), числовых `category_id` в данных нет |
+| `prompt:` у повторителя | **Поддерживается** — заголовок палитры блоков (`modules/backend/formwidgets/repeater/partials/_repeater_toolbar.php:8`) |
+| `displayMode: builder` + `groups` | **Поддерживается** — эталон ядра `modules/tailor/tests/fixtures/blueprints/landing/blockbuilder.yaml:9-13` |
+| «`check-dom-parity` контролирует разрастание DOM» | **Неверно для новых страниц.** Гейт сравнивает ровно 110 HTML эталона (`tools/check-dom-parity.mjs:108-111`); собранных страниц в нём нет и быть не может. Защиту держат `PageBuilderTest` (группы ↔ партиалы, разделы ↔ белый список, классы ↔ CSS) и бюджет CSS |
+| Адрес, 404, SEO, карта сайта | **В черновике отсутствуют вовсе** — это и есть недостающая часть: без wildcard-страницы запись из админки не открывается по адресу. Сделано: `themes/nlb/pages/builder.htm` (`url = "/:slug"`), `PageBuilder::find()` + `applyVisibleFrontend()`, 404-ветка, `Seo::applyRecord()`, `Sitemap::urls()` |
+| «Не плодите микро-SEO поля» | **Принято с оговоркой:** у собранной страницы нет своего текста, из которого можно вывести описание, поэтому `excerpt`/`seo_title`/`seo_description` — источник, а не дубль |
+| «CSS ≤ 56,4 КБ», «0,5 секунды» | Первое — наш бюджет (`tools/check-css-budget.mjs:32`), второе — непроверяемое обещание. Проверяемое требование этапа: один запрос к БД на блок, блоки без JavaScript |
+| Плагины `PageTree`/`Boxes`, лайтбокс, шорткоды, конструктор шапки | **Отклонено раньше** — §4 и §8 |
+
+Итог по 12 тезисам: подход совпал, три технические ошибки в YAML (нет `type`,
+`_group` вместо `content_group`, несуществующий `optionsFrom`) и один
+отсутствующий слой (маршрут, 404, SEO, карта сайта) — он и стал основной
+работой Stage 20. Принято в реализацию: `displayMode: builder`, `prompt`,
+группы блоков, документ для контент-менеджера.
+

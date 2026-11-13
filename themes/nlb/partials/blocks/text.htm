@@ -1,0 +1,6 @@
+{% if block.data.title %}
+    <h2 class="h3 mt-5 mb-3"{% if block.data.title_id %} id="{{ block.data.title_id }}"{% endif %}>{{ block.data.title }}</h2>
+{% endif %}
+{% if block.data.body %}
+    <div class="bitrix-content">{{ block.data.body|raw }}</div>
+{% endif %}

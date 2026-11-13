@@ -96,6 +96,15 @@ class Sitemap
             }
         }
 
+        foreach (PageBuilder::pages() as $page) {
+            $urls[] = [
+                'loc' => '/' . $page['slug'] . '/',
+                'lastmod' => $page['lastmod'],
+                'changefreq' => 'monthly',
+                'priority' => static::DETAIL_PRIORITY,
+            ];
+        }
+
         usort($urls, function (array $left, array $right) {
             return strcmp($left['loc'], $right['loc']);
         });

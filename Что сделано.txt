@@ -6,6 +6,59 @@
 
 ---
 
+(Stage 20 — 13.11.2026) — **P2-24: каркас конструктора страниц — запись Tailor, шесть блоков, маршрут, 404, карта сайта.**
+
+Повод: страницы сайта — файлы `themes/nlb/pages/*.htm` (26 шаблонов), Tailor
+хранил только контент (`type: stream` в `blueprints/*/item.yaml:5`). Собрать
+новую страницу без разработчика было нельзя: правка файла темы = деплой.
+
+Сделано:
+
+- модель: `blueprints/page/structure.yaml` (`Nlb\Page`, `structure.maxDepth: 1`,
+  поля `excerpt`/`seo_title`/`seo_description` + миксин `blocks`) и
+  `blueprints/blocks/builder.yaml` (`Nlb\Blocks`, `repeater` +
+  `displayMode: builder` + шесть групп: `text`, `text-image`, `quote`,
+  `records`, `video`, `toc`).
+- `classes/PageBuilder.php`: `find()` (опубликованная страница по slug,
+  `applyVisibleFrontend()`), `prepare()` → `rows` + `toc` (якоря `<h2>/<h3>` с
+  дедупом `-2`, `Str::slug`), `grid()` (белый список `SOURCES`, лимит 1…12,
+  через `Content::records()`), `fileUrl()` (внешние адреса отбрасываются — CSP
+  `default-src 'self'`), `pages()` для карты сайта.
+- шаблоны: `themes/nlb/pages/builder.htm` (`url = "/:slug"`, 404-ветка,
+  `Seo::applyRecord`), `partials/blocks/list.htm` + шесть партиалов блоков.
+  Новых стилей нет: только классы Bootstrap и темы, `purge-css` пересобран
+  (51,6 КБ; бюджет `styles.css` 56,4 КБ не тронут).
+- карта сайта: `Sitemap::urls()` добавляет опубликованные страницы
+  конструктора; перечень статических страниц по-прежнему сверяется с
+  `themes/nlb/pages/*.htm`, страницы с параметром в адресе из сверки исключены
+  (`SeoTest::themePages()` — `str_contains($page->url, ':')`).
+- тесты: `tests/PageBuilderTest.php` (12 тестов) + `SeoTest` (+1 тест: страница
+  в карте есть, выключенная — нет). Тесты плагина 231/889 (было 218/836).
+- документ для контент-менеджера: `docs/theme-universality.md` (создание
+  страницы, поля блоков, якоря, края, что проверяет приёмка, как добавить
+  блок). Разбор черновика владельца `конструктор страниц Qwen.html` — в
+  `docs/roadmap.md` §9 (три ошибки в его YAML: нет `type`, `_group` вместо
+  `content_group`, несуществующий `optionsFrom`; отсутствовали маршрут, 404,
+  SEO и карта сайта).
+
+Проверено: тесты плагина 231/889; ломки — убрал `applyVisibleFrontend()` из
+`find()` → `testDisabledPageIsHidden` упал; переименовал группу `video` в YAML →
+`testBlueprintGroupsAndSourcesMatchPartials` упал; заменил `fw-semibold` на
+несуществующий класс → `testBlockClassesExistInStylesheets` упал. Живые гейты:
+`check-urls` (109/200, `/non-existent/` — 404 со страницей), `check-dom-parity`
+110/110, `check-seo` (106 адресов), `check-headers`, `check-orphans`,
+`purge-css --check`, `check-css-budget` — зелёные. Живая проба: временная
+страница отдала 200 с текстом блока и ссылками `#podzagolovok`/`#tretii-uroven`,
+попала в `/sitemap.xml`; после удаления — 404, таблицы конструктора пусты
+(0 строк), мусора не осталось.
+
+Не проверено: инлайн-редактор блоков в браузере (бэкенд-UI Tailor не
+прогонялся Playwright'ом — E2E на админку в проекте нет); визуальная сверка
+блока «текст с картинкой» на мобильном (`order-lg-2`) — проверена только
+разметка.
+
+---
+
 (Stage 19 — 12.11.2026) — **P2-25: год в подвале берётся из часов, а не из литерала.**
 
 Повод: `themes/nlb/partials/footer.htm:76` печатал «© 2026» жёстко. В январе

@@ -137,8 +137,8 @@ docs/                    # документация (карта — docs/README.
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
   БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 218 зелёных
-  (`phpunit.nlb.xml`, 836 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 231 зелёный
+  (`phpunit.nlb.xml`, 889 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
   `/sitemap.xml` (106 адресов), `/robots.txt`, 301, JSON-LD и `BreadcrumbList` —

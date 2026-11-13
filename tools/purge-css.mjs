@@ -111,6 +111,7 @@ const safelist = [
     'book-cover--sky', 'book-cover--mint', 'book-cover--sand', 'book-cover--rose',
     'book-cover--violet', 'book-cover--slate',
     'is-available', 'is-reserved', 'is-unavailable',
+    'alert-info', 'alert-warning',
 ];
 
 const keep = new Set([...classAttr, ...fromJs, ...safelist].filter((c) => cssClasses.has(c)));

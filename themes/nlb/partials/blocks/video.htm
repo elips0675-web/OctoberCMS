@@ -1,0 +1,11 @@
+{% if block.data.src %}
+    <figure class="mt-4 mb-4">
+        {% if block.data.title %}
+            <h2 class="h3 mb-3"{% if block.data.title_id %} id="{{ block.data.title_id }}"{% endif %}>{{ block.data.title }}</h2>
+        {% endif %}
+        <video class="w-100 rounded" controls preload="metadata"{% if block.data.poster %} poster="{{ block.data.poster }}"{% endif %}>
+            <source src="{{ block.data.src }}" type="video/mp4">
+        </video>
+        {% if block.data.caption %}<figcaption class="text-muted small mt-2">{{ block.data.caption }}</figcaption>{% endif %}
+    </figure>
+{% endif %}

@@ -1,0 +1,11 @@
+{% set items = block.data.include_h3 ? toc : toc|filter(item => item.level == 2) %}
+{% if items|length %}
+    <nav class="mt-5 mb-4" aria-label="{{ block.data.title ?: 'Содержание' }}">
+        <p class="fw-semibold mb-2">{{ block.data.title ?: 'Содержание' }}</p>
+        <ol class="mb-0">
+            {% for item in items %}
+                <li><a href="#{{ item.id }}">{{ item.text }}</a></li>
+            {% endfor %}
+        </ol>
+    </nav>
+{% endif %}

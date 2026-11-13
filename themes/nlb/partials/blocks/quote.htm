@@ -1,0 +1,12 @@
+{% set kind = block.data.kind ?: 'quote' %}
+{% if kind == 'quote' %}
+    <figure class="mt-4 mb-4">
+        <blockquote class="blockquote mb-0"><p>{{ block.data.text }}</p></blockquote>
+        {% if block.data.author %}<figcaption class="blockquote-footer mb-0">{{ block.data.author }}</figcaption>{% endif %}
+    </figure>
+{% else %}
+    <div class="alert {{ block.data.kind_class }} mt-4" role="note">
+        {{ block.data.text }}
+        {% if block.data.author %}<div class="small mt-2">{{ block.data.author }}</div>{% endif %}
+    </div>
+{% endif %}

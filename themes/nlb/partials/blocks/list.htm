@@ -1,0 +1,4 @@
+{# Блоки собранной в админке страницы: партиал выбирается по группе повторителя. #}
+{% for block in rows %}
+    {% partial 'blocks/' ~ block.group block=block toc=toc %}
+{% endfor %}

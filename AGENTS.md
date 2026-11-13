@@ -91,7 +91,7 @@
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
-& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml  # тесты плагина: 218 тестов, 0 упавших
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml  # тесты плагина: 231 тест, 0 упавших
 & $php vendor/phpunit/phpunit/phpunit             # ядро October: 1171 тест, 0 упавших (artisan test в 4.x нет)
 & $php artisan october:migrate           # схема поднимается, 0 ошибок
 Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.php -File |
