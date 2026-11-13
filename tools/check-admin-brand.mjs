@@ -173,6 +173,10 @@ async function main() {
         if (!css.includes('--bs-primary')) {
             failures.push('brand_styles.css: нет --bs-primary — палитра не переопределена');
         }
+
+        if (!css.includes('7c3aed')) {
+            failures.push('brand_styles.css: нет градиента верхнего меню (#7c3aed)');
+        }
     }
 
     const expectedName = appName(block);
@@ -194,6 +198,10 @@ async function main() {
 
     if (!html.includes('2563eb')) {
         failures.push(`${adminUri}: нет акцентного цвета из brand_styles.css — настройки бренда не пересозданы`);
+    }
+
+    if (!html.includes('7c3aed')) {
+        failures.push(`${adminUri}: нет градиента меню — brand_styles.css не пересобран`);
     }
 
     for (const key of ['favicon_path', 'logo_path']) {

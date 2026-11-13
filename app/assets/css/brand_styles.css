@@ -30,3 +30,33 @@
     --oc-sidebar-active-bg: #3b82f6;
     --oc-settings-active-bg: #3b82f6;
 }
+
+// Полировка (Stage 23): верхнее меню в градиенте сайта, мягкие скругления
+// у кнопок и полей. Селекторы взяты из живой разметки бэкенда
+// (.main-menu-container .navbar.control-toolbar), цвета — из
+// themes/nlb/assets/css/styles.css:35 (--nlb-grad).
+
+.main-menu-container .navbar.control-toolbar {
+    background-color: #2563eb;
+    background-image: linear-gradient(135deg, #2563eb 0%, #7c3aed 55%, #9333ea 100%);
+    border-bottom: 0;
+}
+
+[data-bs-theme="dark"] .main-menu-container .navbar.control-toolbar {
+    background-color: #1e3a8a;
+    background-image: linear-gradient(135deg, #1e3a8a 0%, #5b21b6 60%, #7e22ce 100%);
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.btn-primary {
+    box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.8);
+}
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+}
+

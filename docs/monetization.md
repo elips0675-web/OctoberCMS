@@ -174,6 +174,14 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 Гейт `tools/check-admin-brand.mjs` ловит это по живому `/admin`: без сброса он
 сообщает «настройки бренда не пересозданы».
 
+Полировка (Stage 23) — тот же файл, без правки ядра: верхнее меню в градиенте
+сайта (`linear-gradient(135deg, #2563eb → #7c3aed → #9333ea)`, тёмная тема —
+`#1e3a8a → #5b21b6 → #7e22ce`), скругление кнопок и полей 8 px, тень у
+основной кнопки. Селектор меню взят из живой разметки
+(`.main-menu-container .navbar.control-toolbar`), а не выдуман: градиент
+проверен по вычисленным стилям. Гейт требует градиент и в файле, и в живом
+HTML — иначе правка файла без пересборки настроек проходит незамеченной.
+
 Глубже — скин бэкенда: `Backend\Classes\Skin` (`modules/backend/classes/Skin.php`)
 плюс `'skin' => MySkin::class` в `config/backend.php:26`. Скин перекрывает
 layouts и ассеты по путям (`Skin::getPath()`, `modules/backend/classes/Skin.php:72-95`),
