@@ -158,9 +158,21 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
   сейчас нет);
 - логин: тип фона, цвет, обои, картинка.
 
-Сейчас `brand.enabled = false` — админка работает на дефолте. Включение
-брендинга и один `brand_styles.css` в цветах сайта — это дешёвый и
-поддерживаемый способ «сделать админку приятнее».
+Сделано в Stage 22: `brand.enabled = true`, `app_name` из `APP_NAME`
+(«Библиотека 2026»), `tagline` — «Панель управления библиотекой», палитра
+`classic`, `color_mode: auto` (тёмная тема проверена: `data-bs-theme="dark"`,
+акцент `#3b82f6`), свои `logo.svg`, `menu-logo.svg`, `dashboard-icon.svg`,
+`favicon.svg` в `app/assets/images` и `brand_styles.css` в `app/assets/css`
+(акцент сайта `#2563eb`, выделение `#10b981` — токены
+`themes/nlb/assets/css/styles.css:13-21`).
+
+Ловушка ядра, которую надо знать при правке оформления: `custom_css`
+засевается из `brand_styles.css` **только при первом создании** настроек
+(`modules/backend/models/BrandSetting.php:102-106`). Если запись настроек уже
+существует, правка файла не видна, пока настройки не сброшены
+(`SettingModel::resetDefault()`, `modules/system/models/SettingModel.php:157-165`).
+Гейт `tools/check-admin-brand.mjs` ловит это по живому `/admin`: без сброса он
+сообщает «настройки бренда не пересозданы».
 
 Глубже — скин бэкенда: `Backend\Classes\Skin` (`modules/backend/classes/Skin.php`)
 плюс `'skin' => MySkin::class` в `config/backend.php:26`. Скин перекрывает

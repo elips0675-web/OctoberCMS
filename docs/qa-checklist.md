@@ -16,6 +16,7 @@ node tools/check-dom-parity.mjs
 node tools/check-seo.mjs
 node tools/check-orphans.mjs
 node tools/check-api.mjs
+node tools/check-admin-brand.mjs
 node tools/check-clean-tree.mjs
 ```
 
@@ -33,6 +34,9 @@ node tools/check-clean-tree.mjs
 - [ ] `check-api` — 6 разделов `/api/v1/*`, 91 запись, поля контракта,
       `404` на чужой handle, `422` на `limit` вне 1…100, каждая `url` из
       списка открывается `200`.
+- [ ] `check-admin-brand` — `brand.enabled` включён, палитра и режимы меню из
+      белых списков ядра, все файлы логотипа/иконок/CSS на месте, `/admin`
+      отдаёт имя приложения и скомпилированную палитру.
 - [ ] `check-clean-tree` — дерево чистое, черновики владельца не в индексе.
 - [ ] `git status` чистый, коммит поимённый, запись в журнале есть.
 

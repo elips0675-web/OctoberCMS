@@ -718,29 +718,25 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 зелёные; `check-dom-parity` 110/110 при дефолтах; выключение любого тумблера не
 даёт 500 и не ломает `check-headers`/`check-seo`.
 
-### P2-29. Брендинг админки и экраны плагина
+### P2-29. Экраны плагина: сводка и быстрые действия
 
-Источник — вопрос владельца «сделать админку как AdminLTE». Проверка: тема
-`baba-adminlte` на Marketplace — фронтенд-тема 2020 года (1.0.0, «v4.x not
-tested»), к бэкенду отношения не имеет. В нашем October 4.4 админка
-настраивается без правки ядра: `config/backend.php:45-62` (`menu_mode`,
-`color_mode` light/dark/auto, 6 палитр, логотип, `stylesheet_path`), глубже —
-скин `Backend\Classes\Skin` (`modules/backend/classes/Skin.php:72-95`) и
-`'skin' => …` в `config/backend.php:26`.
-
-Нужно: включить `brand`, положить `app/assets/css/brand_styles.css` в цветах
-сайта (`themes/nlb/assets/css/styles.css`, токены), логотип и иконки; привести
-четыре наших экрана (`plugins/nlb/library/controllers/{requests,bookings,orders,subscribers}`)
-к одному виду: сводка сверху, быстрые фильтры по статусу, бейджи, массовые
+Брендинг админки закрыт в Stage 22: `brand.enabled = true`, палитра `classic`,
+`color_mode: auto`, свои `logo.svg`/`menu-logo.svg`/`dashboard-icon.svg`/
+`favicon.svg` в `app/assets/images`, акцент сайта `#2563eb` в
+`app/assets/css/brand_styles.css`; проверка — `tools/check-admin-brand.mjs`
+(включая ловушку «настройки бренда не пересозданы»). Осталось: привести четыре
+экрана (`plugins/nlb/library/controllers/{requests,bookings,orders,subscribers}`)
+к одному виду — сводка сверху, быстрые фильтры по статусу, бейджи, массовые
 действия.
 
-Границы: ядро не правится; скин — только если возможностей `brand` не хватит;
-backend-CSS (205 КБ) вне бюджета фронтенда; E2E на бэкенд в проекте нет —
-проверка ручная плюс `check-health`.
+Границы: ядро не правится; скин `Backend\Classes\Skin` — только если
+возможностей `brand` не хватит; backend-CSS (205 КБ) вне бюджета фронтенда;
+E2E на бэкенд в проекте нет — проверка ручная плюс `check-admin-brand` и
+`check-health`.
 
-Приёмка: `brand.enabled = true` и `brand_styles.css` подключён; `/admin`
-отдаёт 200 с новым логотипом; тёмная и светлая темы админки переключаются;
-четыре экрана открываются, фильтры и действия работают.
+Приёмка: на каждом из четырёх экранов есть сводка (одним запросом, без N+1),
+фильтр по статусу и бейдж; списки и формы открываются без 500; тесты плагина
+зелёные; `check-admin-brand` и остальные гейты — exit 0.
 
 ---
 

@@ -1,0 +1,32 @@
+// Брендинг админки. Файл читается при первом создании настроек бренда
+// (modules/backend/models/BrandSetting.php:103-106) и компилируется вместе
+// с палитрой (BrandSetting::compileCss(), :310-346).
+// Цвета совпадают с токенами сайта: themes/nlb/assets/css/styles.css:13-21.
+
+:root, [data-bs-theme="light"] {
+    --bs-primary: #2563eb;
+    --bs-primary-rgb: 37, 99, 235;
+    --bs-link-color: #2563eb;
+    --bs-link-color-rgb: 37, 99, 235;
+    --bs-link-hover-color: #1d4ed8;
+    --bs-link-hover-color-rgb: 29, 78, 216;
+    --oc-primary-hover-bg: #1d4ed8;
+    --oc-primary-active-bg: #1e40af;
+    --oc-selection: #10b981;
+    --oc-sidebar-active-bg: #2563eb;
+    --oc-settings-active-bg: #2563eb;
+}
+
+[data-bs-theme="dark"] {
+    --bs-primary: #3b82f6;
+    --bs-primary-rgb: 59, 130, 246;
+    --bs-link-color: #93c5fd;
+    --bs-link-color-rgb: 147, 197, 253;
+    --bs-link-hover-color: #bfdbfe;
+    --bs-link-hover-color-rgb: 191, 219, 254;
+    --oc-primary-hover-bg: #2563eb;
+    --oc-primary-active-bg: #1d4ed8;
+    --oc-selection: #34d399;
+    --oc-sidebar-active-bg: #3b82f6;
+    --oc-settings-active-bg: #3b82f6;
+}
