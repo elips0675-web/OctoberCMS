@@ -1,16 +1,16 @@
 uuid: f92fe151-9985-42b9-b2a5-e77aed59abec
 handle: Nlb\Book
 type: stream
-name: Сувенир
+name: Товар
 drafts: false
 
 primaryNavigation:
-    label: Сувениры
+    label: Каталог
     icon: octo-icon-gift
     order: 120
 
 navigation:
-    label: Все сувениры
+    label: Все товары
     icon: octo-icon-gift
     order: 100
 

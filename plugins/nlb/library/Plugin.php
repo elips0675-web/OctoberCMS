@@ -43,7 +43,7 @@ class Plugin extends PluginBase
                 'tab' => 'Библиотека',
             ],
             'nlb.library.orders' => [
-                'label' => 'Заказы сувениров',
+                'label' => 'Заказы',
                 'tab' => 'Библиотека',
             ],
             'nlb.library.subscribers' => [

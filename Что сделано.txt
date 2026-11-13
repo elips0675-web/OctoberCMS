@@ -6,6 +6,24 @@
 
 ---
 
+(Stage 27.2 — 13.11.2026) — **В админке «Сувениры» стали «Каталогом».**
+
+Универсальный шаблон не должен называть раздел сувенирами: Tailor-блюпринт
+`plugins/nlb/library/blueprints/books/item.yaml` — `name: Товар`,
+`primaryNavigation.label: Каталог`, `navigation.label: Все товары`;
+`blueprints/books/section.yaml` — «Раздел каталога»;
+`blueprints/blocks/builder.yaml` — источник блоков `books: Каталог`;
+пункт меню «Заказы сувениров» → «Заказы» (`Plugin.php:46`); пустой список
+заказов — «форма на странице товара» (`controllers/orders/config_list.yaml:8`).
+
+Проверено: `tailor:migrate` — «Nothing to migrate» (YAML валиден),
+`tailor`-индекс отдаёт `Book: Товар`, `Primary nav: Каталог`; плагин PHPUnit
+231/889; `check-admin-brand` зелёный. На сайте раздел пока называется
+«Сувениры и подарки» (`Seo::SECTIONS`, `PageBuilder`, `pages/books.htm`,
+подвал и чип поиска) — это следующий блок, вместе с текстами страниц.
+
+---
+
 (Stage 27.1 — 13.11.2026) — **Заголовки страниц берут бренд из настроек.**
 
 25 файлов `themes/nlb/pages/*.htm`: `title = "Контакты — Библиотека 2026"` →

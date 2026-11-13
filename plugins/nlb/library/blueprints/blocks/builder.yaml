@@ -85,7 +85,7 @@ fields:
                         type: dropdown
                         required: true
                         options:
-                            books: Сувениры и подарки
+                            books: Каталог
                             collections: Подборки
                             events: События
                             news: Новости

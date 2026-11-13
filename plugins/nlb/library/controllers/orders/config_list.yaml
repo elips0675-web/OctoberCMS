@@ -5,7 +5,7 @@ recordUrl: nlb/library/orders/update/:id
 recordsPerPage: 20
 showSetup: true
 showCheckboxes: false
-noRecordsMessage: 'Заказов пока нет — форма на странице сувенира пишет сюда автоматически.'
+noRecordsMessage: 'Заказов пока нет — форма на странице товара пишет сюда автоматически.'
 defaultSort:
     column: id
     direction: desc
