@@ -6,6 +6,48 @@
 
 ---
 
+(Stage 30 — 14.11.2026) — **Ошибка счётчика не сходится: «стучалка» + лицензии.**
+
+Прочитаны два черновика: «Как сделать стучалку (счетчик) установок плагинов и
+шаблонов в October CMS deepseek.html» и парный `«Стучалка» установок с проверкой
+Ключа (License Key) Qwen.html`. Каждый тезис сверен с кодом.
+
+Главное: **счётчик на миграциях считает установки одного сайта**, не мира —
+таблица лежит в БД клиента, `count()` всегда 1. Доказательство в нашей же базе:
+`system_plugin_versions` — 1 строка (`Elv.Library 2.0.0`), `system_plugin_history`
+— 11 строк с типами `comment`/`script` (события `install` нет). Глобальная цифра
+возможна только пингом на центральный сервер, которого в черновике нет.
+
+Проверено (и опровергнуто):
+- события `cms.theme.activated` **нет**: в `modules/cms/classes/ThemeManager.php`
+  и `modules/system/classes/PluginManager.php` ни одного `fire(`; в `modules/`
+  нет `theme.activated`/`plugin.installed`; события CMS — только `cms.form.*`
+  (`modules/cms/behaviors/FormComponent.php:215`, `:229`);
+- класса `System\Models\Setting` **нет** (`modules/system/models/Setting.php`
+  отсутствует); есть `SettingModel` и `Parameter`
+  (`modules/system/classes/updatemanager/HasGatewayAccess.php:149`), настройки
+  плагина — через `plugin.yaml` (`PluginBase.php:143-164`);
+- `INSERT IGNORE … ON DUPLICATE KEY UPDATE install_count + 1` считает запросы:
+  `IGNORE` глушит вставку дубликата, но `UPDATE` выполняется; без `UNIQUE`-ключа
+  дедупликации нет;
+- `api_token` из `env` — не секрет в клиентском коде;
+- пинг из `boot()` с таймаутом 3 с и кэшем на год: сеть на фронтенде и в тестах,
+  отозванный ключ не перепроверяется;
+- у плагина сейчас **ни одного исходящего запроса** (`Http::`/`curl_` в
+  `plugins/elv` не встречаются) — офлайн-свойство сохраняем.
+
+Документация: `docs/roadmap.md` §12 (таблица из 14 тезисов), новый пункт
+**P2-32** в `Что доделать.txt` (клиент: ключ в `plugin.yaml`, `elv:license-ping`
+раз в неделю из `registerSchedule` рядом с `elv:health-report`,
+`Plugin.php:27-30`, таймаут 2 с, кэш 7 дней, off при `APP_ENV=local`, при 403 —
+предупреждение без блокировки фронта; сервер лицензий — вне репозитория),
+связка с моделью 4 в `docs/monetization.md` §7.
+
+Не проверено (внешние факты, помечены): статистика установок в панели автора
+Marketplace, существование и качество `SunLab.Measures` и `DashMetrics`.
+
+---
+
 (Stage 29 — 14.11.2026) — **Разбор трёх черновиков владельца: прайс, вердикты, фиксы фактов.**
 
 Прочитаны `Laravel + Filament.txt`, «October CMS для лендинга с бронированием,
