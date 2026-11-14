@@ -14,21 +14,21 @@ Tailor-записи поверх своих таблиц.
 
 Контентные таблицы создаёт **Tailor**, а не миграции плагина: имя строится из `uuid`
 blueprint-а (`EntryBlueprint::makeBlueprintTableName`) как `xc_<uuid без дефисов>c`.
-Поэтому таблиц `nlb_news`/`nlb_books` в этой схеме нет — есть таблица с uuid в имени.
-`uuid` живёт в `plugins/nlb/library/blueprints/**/*.yaml` и не меняется, иначе исчезнет
+Поэтому таблиц `elv_news`/`elv_books` в этой схеме нет — есть таблица с uuid в имени.
+`uuid` живёт в `plugins/elv/library/blueprints/**/*.yaml` и не меняется, иначе исчезнет
 связь с уже созданной таблицей.
 
 | Blueprint | `uuid` | Таблица | Источник | Записей |
 |---|---|---|---|---|
-| `Nlb\News` | `ffcc9263-f919-4cf3-8243-991793a60e9c` | `xc_ffcc9263f9194cf38243991793a60e9cc` | `news` | 10 |
-| `Nlb\NewsSection` | `7d052fe5-0e4b-4705-9aa3-a5f4c4cccb4f` | `xc_7d052fe50e4b47059aa3a5f4c4cccb4fc` | разделы `news` | 2 |
-| `Nlb\Event` | `824265df-14f0-48a1-b18e-3d1d4ff62f4e` | `xc_824265df14f048a1b18e3d1d4ff62f4ec` | `events` | 6 |
-| `Nlb\EventSection` | `5c9f95ad-7215-406f-9bf7-5be0aee76f30` | `xc_5c9f95ad7215406f9bf75be0aee76f30c` | разделы `events` | 4 |
-| `Nlb\Book` | `f92fe151-9985-42b9-b2a5-e77aed59abec` | `xc_f92fe151998542b9b2a5e77aed59abecc` | `books` | 24 |
-| `Nlb\BookSection` | `16285221-4859-451f-b8c6-f7f194b1ee73` | `xc_162852214859451fb8c6f7f194b1ee73c` | разделы `books` | 6 |
-| `Nlb\Collection` | `257f4b4d-a9b8-467a-8f53-1fba6d496a5b` | `xc_257f4b4da9b8467a8f531fba6d496a5bc` | `collections` | 6 |
-| `Nlb\Service` | `845567bb-fc03-453c-ab9a-e0988d992b44` | `xc_845567bbfc03453cab9ae0988d992b44c` | `services` | 8 |
-| `Nlb\Printing` | `ca04aafc-a5d3-41c8-b1e9-998c1cc4d475` | `xc_ca04aafca5d341c8b1e9998c1cc4d475c` | `printing` | 37 |
+| `Elv\News` | `ffcc9263-f919-4cf3-8243-991793a60e9c` | `xc_ffcc9263f9194cf38243991793a60e9cc` | `news` | 10 |
+| `Elv\NewsSection` | `7d052fe5-0e4b-4705-9aa3-a5f4c4cccb4f` | `xc_7d052fe50e4b47059aa3a5f4c4cccb4fc` | разделы `news` | 2 |
+| `Elv\Event` | `824265df-14f0-48a1-b18e-3d1d4ff62f4e` | `xc_824265df14f048a1b18e3d1d4ff62f4ec` | `events` | 6 |
+| `Elv\EventSection` | `5c9f95ad-7215-406f-9bf7-5be0aee76f30` | `xc_5c9f95ad7215406f9bf75be0aee76f30c` | разделы `events` | 4 |
+| `Elv\Book` | `f92fe151-9985-42b9-b2a5-e77aed59abec` | `xc_f92fe151998542b9b2a5e77aed59abecc` | `books` | 24 |
+| `Elv\BookSection` | `16285221-4859-451f-b8c6-f7f194b1ee73` | `xc_162852214859451fb8c6f7f194b1ee73c` | разделы `books` | 6 |
+| `Elv\Collection` | `257f4b4d-a9b8-467a-8f53-1fba6d496a5b` | `xc_257f4b4da9b8467a8f531fba6d496a5bc` | `collections` | 6 |
+| `Elv\Service` | `845567bb-fc03-453c-ab9a-e0988d992b44` | `xc_845567bbfc03453cab9ae0988d992b44c` | `services` | 8 |
+| `Elv\Printing` | `ca04aafc-a5d3-41c8-b1e9-998c1cc4d475` | `xc_ca04aafca5d341c8b1e9998c1cc4d475c` | `printing` | 37 |
 
 Разделы — не `tailor_structure`, а три отдельные таблицы (`type: structure`, по одной
 на инфоблок): 2 + 4 + 6 = 12 записей. Таблицы создаются `php artisan tailor:migrate`,
@@ -45,17 +45,20 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 
 | Таблица | Тип | Источник | Записей при импорте |
 |---|---|---|---|
-| `nlb_requests` | Eloquent | `requests` | 0 (истории нет) |
-| `nlb_bookings` | Eloquent | `bookings` | 0 (истории нет) |
-| `nlb_orders` | Eloquent | `orders` | 0 (истории нет) |
-| `nlb_slots` | Eloquent | — (новое, P1-9) | генерируется |
-| `nlb_subscribers` | Eloquent | — (P0-5) | 0 |
-| `nlb_push_subscriptions` | Eloquent | `nlb_push.php` (JSON-файл) | 0 |
-| `nlb_search_documents`, `nlb_search_terms` | Eloquent | `db/search/index.json` | 99 / 1 340 |
+| `elv_requests` | Eloquent | `requests` | 0 (истории нет) |
+| `elv_bookings` | Eloquent | `bookings` | 0 (истории нет) |
+| `elv_orders` | Eloquent | `orders` | 0 (истории нет) |
+| `elv_slots` | Eloquent | — (новое, P1-9) | генерируется |
+| `elv_subscribers` | Eloquent | — (P0-5) | 0 |
+| `elv_push_subscriptions` | Eloquent | `elv_push.php` (JSON-файл) | 0 |
+| `elv_search_documents`, `elv_search_terms` | Eloquent | `db/search/index.json` | 99 / 1 340 |
 
-Модели — `plugins/nlb/library/models/{Request,Booking,Order,Slot,Subscriber}.php`.
-Таблицы создаёт версия плагина **1.0.2** (`plugins/nlb/library/updates/create_nlb_*.php`),
-применяется `php artisan october:migrate` (не `tailor:migrate`, это не Tailor).
+Модели — `plugins/elv/library/models/{Request,Booking,Order,Slot,Subscriber}.php`.
+Таблицы создаёт версия плагина **1.0.2** (`plugins/elv/library/updates/create_elv_*.php`),
+версия **2.0.0** переименовывает их из старых `nlb_*`
+(`updates/rename_legacy_tables_to_elv.php`; create-миграции делают то же,
+если видят старую таблицу). Применяется `php artisan october:migrate`
+(не `tailor:migrate`, это не Tailor).
 Валидация полей — `$rules` моделей (трейт `October\Rain\Database\Traits\Validation`):
 ограничение схемы отбивается до записи, а не `QueryException` из MySQL.
 
@@ -68,7 +71,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 | Колонка | Фактический тип | Источник | Пишет импорт |
 |---|---|---|---|
 | `id` | `int unsigned`, PK | — | — |
-| `xml_id` | `text`, nullable | `nlb-news-001`, `nlb-sec-news-library` | да |
+| `xml_id` | `text`, nullable | `elv-news-001`, `elv-sec-news-library` | да |
 | `slug` | `varchar(255)`, nullable | `code` элемента | да |
 | `title` | `varchar(255)`, nullable | `name` | да |
 | `is_enabled` | `tinyint(1)` | — (`1`) | да |
@@ -84,12 +87,12 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 объявить нельзя: колонка `text`, а MySQL требует длину ключа. Поэтому идемпотентность
 держит не схема, а код: перед записью импортёр делает
 `EntryRecord::inSection(<blueprint>)->where('xml_id', $id)->first()`; второй прогон даёт
-0 новых строк (тест `plugins/nlb/library/tests/ImportTest.php`,
+0 новых строк (тест `plugins/elv/library/tests/ImportTest.php`,
 `testSecondRunUpdatesWithoutCreatingDuplicates`).
 
 ## 4. Поля контента
 
-### 4.1. `Nlb\News` (4 свойства)
+### 4.1. `Elv\News` (4 свойства)
 
 | Колонка | Фактический тип | Источник | Значения |
 |---|---|---|---|
@@ -98,7 +101,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 | `read_time` | `text`, nullable | `READ_TIME` (S) | — |
 | `source_url` | `text`, nullable | `SOURCE_URL` (S) | в выгрузке свойства нет — колонка пустая |
 
-### 4.2. `Nlb\Event` (8 свойств)
+### 4.2. `Elv\Event` (8 свойств)
 
 | Колонка | Фактический тип | Источник | Значения |
 |---|---|---|---|
@@ -111,7 +114,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 | `duration` | `text`, nullable | `DURATION` | — |
 | `register_url` | `text`, nullable | `REGISTER_URL` | — |
 
-### 4.3. `Nlb\Collection` (3 свойства)
+### 4.3. `Elv\Collection` (3 свойства)
 
 | Колонка | Фактический тип | Значения |
 |---|---|---|
@@ -119,7 +122,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 | `color` | `text`, nullable | `primary`, `green`, `sky`, `pink`, `orange` |
 | `icon` | `text`, nullable | — |
 
-### 4.4. `Nlb\Book` (9 свойств)
+### 4.4. `Elv\Book` (9 свойств)
 
 | Колонка | Фактический тип | Значения |
 |---|---|---|
@@ -138,7 +141,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 `children`, `business`, `art`). Это остаток от сувениров. Коды и названия переносятся
 **как есть**: переименование — отдельный пункт бэклога, не самодеятельность переезда.
 
-### 4.5. `Nlb\Service` (11 свойств)
+### 4.5. `Elv\Service` (11 свойств)
 
 | Колонка | Фактический тип | Примечание |
 |---|---|---|
@@ -156,9 +159,9 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 
 Семантика `TARIFFS`: третий сегмент — первый пункт «что входит», четвёртый —
 остальные через `;`, пятый непустой — «популярный тариф». Разбор повторяет
-источник (`components/bitrix/news.detail/nlb_service/template.php:48-86`).
+источник (`components/bitrix/news.detail/elv_service/template.php:48-86`).
 
-### 4.6. `Nlb\Printing` (4 свойства)
+### 4.6. `Elv\Printing` (4 свойства)
 
 | Колонка | Фактический тип |
 |---|---|
@@ -169,13 +172,13 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 
 ## 5. Заявки
 
-### 5.1. `nlb_requests` (9 свойств)
+### 5.1. `elv_requests` (9 свойств)
 
 `email` varchar(191), `phone` varchar(32), `subject` varchar(255), `message` text,
 `page` varchar(255), `source` varchar(64), `created_by` varchar(191),
 `date_processed` datetime nullable, `status` enum(`new`,`in_progress`,`done`) default `new`.
 
-### 5.2. `nlb_bookings` (14 свойств)
+### 5.2. `elv_bookings` (14 свойств)
 
 `service` varchar(191), `service_code` varchar(64), `tariff` varchar(191),
 `price` varchar(64), `date` date, `time` varchar(8), `person` varchar(191),
@@ -185,14 +188,14 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 
 Индексы: `(status, date)`, `(service_code, date)`, `email`.
 
-### 5.3. `nlb_orders` (12 свойств)
+### 5.3. `elv_orders` (12 свойств)
 
 `item` varchar(191), `article` varchar(64), `price` int unsigned, `qty` int unsigned,
 `person` varchar(191), `phone` varchar(32), `email` varchar(191), `comment` text,
 `source` varchar(64), `created_by` varchar(191), `date_processed` datetime nullable,
 `status` enum(`new`,`processing`,`done`,`cancelled`) default `new`.
 
-### 5.4. `nlb_slots` — новое (P1-20, P1-9)
+### 5.4. `elv_slots` — новое (P1-20, P1-9)
 
 | Колонка | Тип | Примечание |
 |---|---|---|
@@ -209,14 +212,14 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 на дубликат → `409`. Проверка «прочитал-записал» без уникального индекса — дефект,
 а не реализация.
 
-Реализация: `plugins/nlb/library/classes/BookingService.php` (`book`, `confirm`, `cancel`,
+Реализация: `plugins/elv/library/classes/BookingService.php` (`book`, `confirm`, `cancel`,
 `availableTimes`), исключение `classes/SlotUnavailableException.php`. Условный
 `UPDATE … WHERE taken < capacity` плюс блокировка строки не дают двум запросам занять
 одно место; дубликат `INSERT` слота ловится как `QueryException` с SQLSTATE `23000`.
-Слоты на 14 дней: `php artisan nlb:slots-generate --days=14` (часы 10:00–21:00,
-как `nlb_form_time_options()` источника; повторный прогон дублей не создаёт).
+Слоты на 14 дней: `php artisan elv:slots-generate --days=14` (часы 10:00–21:00,
+как `elv_form_time_options()` источника; повторный прогон дублей не создаёт).
 
-### 5.5. `nlb_subscribers` (P0-5)
+### 5.5. `elv_subscribers` (P0-5)
 
 `email` varchar(191) UNIQUE, `token` varchar(64) UNIQUE, `confirmed_at` datetime nullable,
 `unsubscribed_at` datetime nullable, `created_at`, `updated_at`.
@@ -245,15 +248,15 @@ Double opt-in: подписка активна только после подт�
 ## 7. Импорт
 
 ```
-php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data" [--dry-run]
+php artisan elv:import --source="D:/nlbbootstrap-main/db/config/data" [--dry-run]
 ```
 
 Факт прогона 10.11.2026: первый запуск — 91 элемент и 12 разделов, второй — 0 новых,
 91 обновление (таблица в выводе команды).
 
-- Ключ идемпотентности — `xml_id`: элементы `nlb-news-001`, `nlb-evt-001`,
-  `nlb-book-001`, `nlb-col-001`, `nlb-srv-001`, `nlb-prn-001`; разделы
-  `nlb-sec-<iblock>-<code>` (`nlb-sec-books-fiction`).
+- Ключ идемпотентности — `xml_id`: элементы `elv-news-001`, `elv-evt-001`,
+  `elv-book-001`, `elv-col-001`, `elv-srv-001`, `elv-prn-001`; разделы
+  `elv-sec-<iblock>-<code>` (`elv-sec-books-fiction`).
 - Разделы создаются до элементов (нужны `id` для `section_id`).
 - `properties` раскладываются по колонкам согласно разделу 4.
 - `L`-значения пишутся кодом (`xml_id` списка), не русским текстом.
@@ -264,8 +267,8 @@ php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data" [--dry-run
 - Импорт **не удаляет** записи, созданные в админке вручную (нет `delete` по таблице).
 - Дата: `active_from` парсится как `Y-m-d H:i:s`/`Y-m-d` и сохраняется без сдвига на
   сутки (`2026-11-02 10:00:00` читается обратно как `2026-11-02 10:00`).
-- Тесты: `vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` (sqlite `:memory:`,
-  фикстуры в `plugins/nlb/library/tests/fixtures/db/config`).
+- Тесты: `vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` (sqlite `:memory:`,
+  фикстуры в `plugins/elv/library/tests/fixtures/db/config`).
 
 ## 8. Что переносится из миграций источника
 
@@ -273,13 +276,13 @@ php artisan nlb:import --source="D:/nlbbootstrap-main/db/config/data" [--dry-run
 |---|---|
 | `001_iblock_types`, `002_iblocks` | таблицы контента (Tailor) |
 | `003_properties` | колонки (раздел 4) |
-| `004_sections` | таблицы разделов Tailor (`Nlb\NewsSection` и др., 12 записей) |
+| `004_sections` | таблицы разделов Tailor (`Elv\NewsSection` и др., 12 записей) |
 | `005_elements` | импорт 91 элемента |
 | `006_menus`, `011_section_menus` | компонент `Menu` + данные навигации |
-| `007_site_template` | тема `nlb` (layout) |
-| `008_requests`, `012_booking_mail`, `013_request_source` | `nlb_requests`, письма, поле `source` |
+| `007_site_template` | тема `elv` (layout) |
+| `008_requests`, `012_booking_mail`, `013_request_source` | `elv_requests`, письма, поле `source` |
 | `009_iblocks_sync` | не переносится (синхронизация инфоблоков Битрикса) |
-| `010_souvenirs` | `Nlb\Book`, `Nlb\Collection`, `Nlb\Printing` (фото сувениров) |
+| `010_souvenirs` | `Elv\Book`, `Elv\Collection`, `Elv\Printing` (фото сувениров) |
 
 ## 9. Ограничения
 

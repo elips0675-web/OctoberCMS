@@ -1,0 +1,99 @@
+uuid: 257f4b4d-a9b8-467a-8f53-1fba6d496a5b
+handle: Elv\Collection
+type: stream
+name: Коллекция
+drafts: false
+
+primaryNavigation:
+    label: Коллекции
+    icon: octo-icon-diamond
+    order: 130
+
+navigation:
+    label: Все коллекции
+    icon: octo-icon-diamond
+    order: 100
+
+fields:
+    xml_id:
+        label: 'ID в Битриксе'
+        commentAbove: 'Ключ импорта. Не менять.'
+        type: text
+        span: left
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100
+        span: right
+
+    title:
+        label: Название
+        type: text
+        required: true
+
+    slug:
+        label: Адрес (slug)
+        commentAbove: 'Латиница и дефисы. Адрес страницы: /collections/{slug}/'
+        type: text
+        required: true
+
+    published_at:
+        label: Дата публикации
+        type: datepicker
+        mode: datetime
+        span: left
+
+    is_enabled:
+        label: Опубликовано
+        type: checkbox
+        default: true
+        span: right
+
+    image:
+        label: Картинка
+        type: mediafinder
+        mode: image
+        span: left
+
+    items_count:
+        label: Предметов в наборе
+        type: number
+        span: right
+
+    color:
+        label: Цвет
+        type: dropdown
+        span: left
+        options:
+            primary: Синий
+            green: Зелёный
+            sky: Голубой
+            pink: Розовый
+            orange: Оранжевый
+
+    icon:
+        label: Иконка
+        commentAbove: 'Имя из спрайта: package, gift, book и т.д.'
+        type: text
+        span: right
+
+    excerpt:
+        label: Анонс
+        type: textarea
+        size: small
+
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — анонс. До 160 символов.'
+        type: textarea
+        size: small
+
+    content:
+        label: Описание
+        type: richeditor

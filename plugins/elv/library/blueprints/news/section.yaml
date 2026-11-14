@@ -1,0 +1,36 @@
+uuid: 7d052fe5-0e4b-4705-9aa3-a5f4c4cccb4f
+handle: Elv\NewsSection
+type: structure
+name: Раздел новостей
+drafts: false
+
+structure:
+    maxDepth: 1
+
+navigation:
+    label: Разделы
+    parent: Elv\News
+    icon: octo-icon-list-ul
+    order: 90
+
+fields:
+    xml_id:
+        label: 'ID в Битриксе'
+        commentAbove: 'Ключ импорта. Не менять — иначе повторный импорт создаст дубль.'
+        type: text
+
+    code:
+        label: Код
+        commentAbove: 'Латиница. Используется в адресе /news/?section={код}.'
+        type: text
+        required: true
+
+    is_enabled:
+        label: Опубликован
+        type: checkbox
+        default: true
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100

@@ -1,0 +1,128 @@
+uuid: 824265df-14f0-48a1-b18e-3d1d4ff62f4e
+handle: Elv\Event
+type: stream
+name: Событие
+drafts: false
+
+primaryNavigation:
+    label: События
+    icon: octo-icon-calendar
+    order: 110
+
+navigation:
+    label: Все события
+    icon: octo-icon-calendar
+    order: 100
+
+fields:
+    xml_id:
+        label: 'ID в Битриксе'
+        commentAbove: 'Ключ импорта. Не менять.'
+        type: text
+        span: left
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100
+        span: right
+
+    title:
+        label: Название
+        type: text
+        required: true
+
+    slug:
+        label: Адрес (slug)
+        commentAbove: 'Латиница и дефисы. Адрес страницы: /events/{slug}/'
+        type: text
+        required: true
+
+    event_date:
+        label: Дата и время
+        type: datepicker
+        mode: datetime
+        span: left
+
+    is_enabled:
+        label: Опубликовано
+        type: checkbox
+        default: true
+        span: right
+
+    section:
+        label: Раздел
+        type: entries
+        source: Elv\EventSection
+        maxItems: 1
+        span: left
+
+    image:
+        label: Картинка
+        type: mediafinder
+        mode: image
+        span: right
+
+    place:
+        label: Место
+        type: text
+
+    category:
+        label: Категория
+        type: dropdown
+        span: left
+        options:
+            literature: Литература
+            children: Для детей
+            tech: Технологии
+            lecture: Лекции
+
+    format:
+        label: Формат
+        type: dropdown
+        span: right
+        options:
+            offline: Офлайн
+            online: Онлайн
+            hybrid: Гибрид
+
+    seats:
+        label: Мест
+        type: number
+        span: left
+
+    price:
+        label: Цена
+        commentAbove: 'Текст как в афише: «Бесплатно», «200 ₽».'
+        type: text
+        span: right
+
+    duration:
+        label: Длительность
+        type: text
+        span: left
+
+    register_url:
+        label: Ссылка на запись
+        type: text
+        span: right
+
+    excerpt:
+        label: Анонс
+        type: textarea
+        size: small
+
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — анонс. До 160 символов.'
+        type: textarea
+        size: small
+
+    content:
+        label: Описание
+        type: richeditor

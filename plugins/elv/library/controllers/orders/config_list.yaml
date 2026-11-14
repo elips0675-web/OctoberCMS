@@ -1,0 +1,14 @@
+title: Заказы
+list: $/elv/library/models/order/columns.yaml
+modelClass: Elv\Library\Models\Order
+recordUrl: elv/library/orders/update/:id
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: false
+noRecordsMessage: 'Заказов пока нет — форма на странице товара пишет сюда автоматически.'
+defaultSort:
+    column: id
+    direction: desc
+toolbar:
+    search:
+        prompt: 'Поиск по товару, имени или телефону'

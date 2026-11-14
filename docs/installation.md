@@ -1,8 +1,8 @@
 # Установка
 
 Проверено 10.11.2026 на этой машине: October **v4.4.13**, Laravel **12.71.0**,
-PHP **8.3.30**, MySQL **8.4.3**, БД `nlb_october` — 44 таблицы после установки,
-95 после плагина `nlb/library` и `php artisan tailor:migrate`.
+PHP **8.3.30**, MySQL **8.4.3**, БД `elv_october` — 44 таблицы после установки,
+95 после плагина `elv/library` и `php artisan tailor:migrate`.
 
 ## 1. Что нужно
 
@@ -38,7 +38,7 @@ Start-Process 'C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqld.exe' `
 ```
 
 ```sql
-CREATE DATABASE nlb_october CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE elv_october CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ## 3. Порядок установки
@@ -68,7 +68,7 @@ php artisan october:about            # версия
 
 `theme:seed demo` нужен потому, что blueprints темы создают Tailor-таблицы
 (`xc_<md5>`) только при сидинге. Без него главная отдаёт `500`:
-`Base table or view not found: 1146 Table 'nlb_october.xc_…' doesn't exist`.
+`Base table or view not found: 1146 Table 'elv_october.xc_…' doesn't exist`.
 
 ## 4. `.env`
 
@@ -81,16 +81,16 @@ APP_LOCALE=ru
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=nlb_october
+DB_DATABASE=elv_october
 DB_USERNAME=root
 DB_PASSWORD=
 QUEUE_CONNECTION=database
 MAIL_MAILER=log
-ACTIVE_THEME=nlb
+ACTIVE_THEME=elv
 ```
 
-`ACTIVE_THEME=nlb` — рабочая тема (этап 4). Демо-тема и демо-плагин удалены,
-`theme:list` показывает только `nlb`. `.env` в git не попадает; шаблон —
+`ACTIVE_THEME=elv` — рабочая тема (этап 4). Демо-тема и демо-плагин удалены,
+`theme:list` показывает только `elv`. `.env` в git не попадает; шаблон —
 `.env.example`.
 
 `APP_NAME` — не только имя проекта: из него берётся название в шапке админки
@@ -120,7 +120,7 @@ php vendor/phpunit/phpunit/phpunit   # 0 упавших
 php artisan serve --host=127.0.0.1 --port=8080
 ```
 
-Замеры 12.11.2026 (тема `nlb`): `GET /` → `200`, 193 527 знаков; `GET /admin` →
+Замеры 12.11.2026 (тема `elv`): `GET /` → `200`, 193 527 знаков; `GET /admin` →
 `200`; `GET /health` → `200`; `php -l` по `app,config,database,plugins,themes,tests` →
 0 ошибок; PHPUnit ядра → 1 171 тест, 3 896 утверждений, 8 пропущено, 0 упавших;
 тесты плагина — 193, 724 утверждения, 0 упавших.
@@ -129,15 +129,18 @@ php artisan serve --host=127.0.0.1 --port=8080
 PHP 8.3 (в PATH или в `C:\laragon\bin\php`), проверяет порт 3306 и поднимает
 `mysqld` из Laragon, если база не отвечает, запускает `php artisan serve` на
 8080, ждёт ответа `/health` (до 40 с) и открывает браузер. Остановка — закрыть
-свёрнутые окна «NLB October 8080» и «NLB MySQL». Ключ `/nobrowser` — без
+свёрнутые окна «ELV October 8080» и «ELV MySQL». Ключ `/nobrowser` — без
 открытия браузера (для скриптов).
 
-Версия плагина **1.1.0** добавляет хелперы темы (`Media`, `Labels`, `Content`,
-карта занятых слотов). Версия **1.0.2** добавила Eloquent-таблицы `nlb_requests`,
-`nlb_bookings`, `nlb_orders`, `nlb_slots` (с `UNIQUE(service_code, date, time)`),
-`nlb_subscribers`; ставится `php artisan october:migrate`. Слоты услуг
-генерируются командой `php artisan nlb:slots-generate --days=14` (идемпотентно,
-часы 10:00–21:00). Тесты плагина — `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml`.
+Версия плагина **2.0.0** переименовывает тему, плагин и таблицы (`nlb_*` →
+`elv_*`, миграция `rename_legacy_tables_to_elv.php`; на чистой установке те же
+`elv_*` создают `create_elv_*.php`). Версия **1.1.0** добавляет хелперы темы
+(`Media`, `Labels`, `Content`,
+карта занятых слотов). Версия **1.0.2** добавила Eloquent-таблицы `elv_requests`,
+`elv_bookings`, `elv_orders`, `elv_slots` (с `UNIQUE(service_code, date, time)`),
+`elv_subscribers`; ставится `php artisan october:migrate`. Слоты услуг
+генерируются командой `php artisan elv:slots-generate --days=14` (идемпотентно,
+часы 10:00–21:00). Тесты плагина — `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml`.
 
 ## 7. Администратор
 
@@ -146,7 +149,7 @@ PHP 8.3 (в PATH или в `C:\laragon\bin\php`), проверяет порт 33
 ```powershell
 php artisan october:admin `
   --first-name="Администратор" --last-name="Библиотека" `
-  --email="admin@nlb.local" --login="admin" `
+  --email="admin@elv.local" --login="admin" `
   --password="<пароль>" --password-confirmation="<пароль>" `
   --default --no-interaction
 ```
@@ -155,7 +158,7 @@ php artisan october:admin `
 |---|---|
 | URL | `http://127.0.0.1:8080/admin` |
 | Логин | `admin` |
-| Email | `admin@nlb.local` |
+| Email | `admin@elv.local` |
 | Роль | superuser (`--default`) |
 
 **Пароль в git не попадает.** Он записан открытым текстом только в
@@ -205,7 +208,7 @@ php artisan october:passwd admin
 интервал 60 с, тревога при `503` или таймауте. Проба живёт вне репозитория —
 её включает владелец вместе с доменом (M17, P1-21).
 
-Часовой отчёт пишет команда `php artisan nlb:health-report`: JSON-строку с
+Часовой отчёт пишет команда `php artisan elv:health-report`: JSON-строку с
 временем, ответом БД в миллисекундах, размером очереди, свободным местом на
 диске и состоянием компонентов. По умолчанию — `storage/logs/health.log`,
 другой файл задаётся `--path`. Строку ставит планировщик
@@ -221,5 +224,5 @@ php artisan october:passwd admin
 
 ## 10. Удаление
 
-Каталог — целиком, база — `DROP DATABASE nlb_october`. Источник
+Каталог — целиком, база — `DROP DATABASE elv_october`. Источник
 `D:\nlbbootstrap-main` не затрагивается.

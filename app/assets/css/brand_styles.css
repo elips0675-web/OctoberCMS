@@ -1,7 +1,7 @@
 // Брендинг админки. Файл читается при первом создании настроек бренда
 // (modules/backend/models/BrandSetting.php:103-106) и компилируется вместе
 // с палитрой (BrandSetting::compileCss(), :310-346).
-// Цвета совпадают с токенами сайта: themes/nlb/assets/css/styles.css:13-21.
+// Цвета совпадают с токенами сайта: themes/elv/assets/css/styles.css:13-21.
 
 :root, [data-bs-theme="light"] {
     --bs-primary: #2563eb;
@@ -34,7 +34,7 @@
 // Полировка (Stage 23): верхнее меню в градиенте сайта, мягкие скругления
 // у кнопок и полей. Селекторы взяты из живой разметки бэкенда
 // (.main-menu-container .navbar.control-toolbar), цвета — из
-// themes/nlb/assets/css/styles.css:35 (--nlb-grad).
+// themes/elv/assets/css/styles.css:35 (--elv-grad).
 
 .main-menu-container .navbar.control-toolbar {
     background-color: #2563eb;

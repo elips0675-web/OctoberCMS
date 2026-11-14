@@ -1,0 +1,62 @@
+title = "Подписка на рассылку — {brand}"
+url = "/subscribe/"
+layout = "default"
+seo_description = "Подпишитесь на анонсы событий и новости библиотеки. Отписка — в один клик."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--violet">Рассылка</span>
+        <h1 class="page-title">Подписка на рассылку</h1>
+        <p class="page-lead">
+            Анонсы событий, новые поступления и важные объявления — одно письмо
+            в неделю. Без спама, отписка в один клик.
+        </p>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4 g-lg-5">
+            <div class="col-lg-7" data-reveal>
+                <div class="info-card">
+                    <h2 class="h4 mb-3">Оформить подписку</h2>
+                    <form class="needs-validation" action="/subscribe/" method="post">
+                        {{ elv_csrf()|raw }}
+                        <div class="mb-3">
+                            <label class="form-label" for="elvSubEmail">E-mail</label>
+                            <input class="form-control" id="elvSubEmail" type="email" name="EMAIL"
+                                   placeholder="you@example.com" autocomplete="email" required>
+                            <div class="invalid-feedback">Укажите корректный e-mail.</div>
+                        </div>
+                        <button class="btn btn-elv" type="submit">Подписаться</button>
+                    </form>
+                    <p class="form-hint mt-3 mb-0">
+                        Демо-форма: в Битриксе подключается модуль «Рассылки»
+                        (<code>bitrix:subscribe.form</code>) с двойным подтверждением.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-5" data-reveal>
+                <div class="info-card mb-4">
+                    <h2 class="h5">Что в рассылке</h2>
+                    <ul class="mb-0 ps-3">
+                        <li>афиша событий на две недели;</li>
+                        <li>новые сувениры и подарочные наборы;</li>
+                        <li>изменения в работе залов и услуг;</li>
+                        <li>сезонные проекты и конкурсы.</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h2 class="h5">Изменить или отменить</h2>
+                    <p class="text-muted mb-0">
+                        Управление подпиской — по e-mail, на который оформлена рассылка.
+                        В Битриксе для этого служит компонент <code>bitrix:subscribe.edit</code>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section></main>

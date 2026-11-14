@@ -1,0 +1,19 @@
+{% set imageRight = block.data.image_position != 'left' %}
+<div class="row g-4 align-items-start mt-4">
+    <div class="col-lg-6 {% if imageRight %} order-lg-2 {% endif %}">
+        {% if block.data.image %}
+            <figure class="mb-0">
+                {{ elv_picture(block.data.image, block.data.title ?: 'Иллюстрация', {sizes: '(max-width: 991px) 100vw, 50vw'})|raw }}
+                {% if block.data.caption %}<figcaption class="text-muted small mt-2">{{ block.data.caption }}</figcaption>{% endif %}
+            </figure>
+        {% endif %}
+    </div>
+    <div class="col-lg-6">
+        {% if block.data.title %}
+            <h2 class="h3 mb-3"{% if block.data.title_id %} id="{{ block.data.title_id }}"{% endif %}>{{ block.data.title }}</h2>
+        {% endif %}
+        {% if block.data.body %}
+            <div class="bitrix-content">{{ block.data.body|raw }}</div>
+        {% endif %}
+    </div>
+</div>

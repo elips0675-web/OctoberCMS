@@ -1,4 +1,0 @@
-name: Бронь
-modelClass: Nlb\Library\Models\Booking
-form: $/nlb/library/models/booking/fields.yaml
-defaultRedirect: nlb/library/bookings

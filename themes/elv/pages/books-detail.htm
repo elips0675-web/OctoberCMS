@@ -1,0 +1,95 @@
+title = "Сувенир — {brand}"
+url = "/books/:slug"
+layout = "default"
+==
+<?php
+function onStart()
+{
+    $record = \Elv\Library\Classes\Content::record('Elv\\Book', $this->param('slug'));
+    if (!$record) {
+        $this->controller->setStatusCode(404);
+        $this->page->title = 'Страница не найдена — ' . \Elv\Library\Classes\Brand::get('name');
+    }
+    else {
+        \Elv\Library\Classes\Seo::applyRecord($this->page, $record, 'product');
+    }
+
+    $this['record'] = $record;
+}
+?>
+==
+{% if not record %}
+<main class="site-main" id="main">{% partial 'not-found' %}</main>
+{% else %}
+{% set status = elv_availability(record.available ?: 'available') %}
+<main class="site-main" id="main">
+<section class="section"><div class="container"><article class="article">
+    <header class="article-head">
+        <h1 class="page-title">{{ record.title }}</h1>
+        <p class="section-lead">{{ record.excerpt }}</p>
+    </header>
+    <div class="article-body">
+        <div class="bitrix-content">{{ record.content|raw }}</div>
+        <aside class="article-aside">
+            <h2 class="h5 mb-3">Коротко</h2>
+            <dl class="article-props">
+                {% if record.author %}<div><dt>Материал</dt><dd>{{ record.author }}</dd></div>{% endif %}
+                {% if record.year %}<div><dt>Размер</dt><dd>{{ record.year }}</dd></div>{% endif %}
+                {% if record.publisher %}<div><dt>Упаковка</dt><dd>{{ record.publisher }}</dd></div>{% endif %}
+                {% if record.isbn %}<div><dt>Артикул</dt><dd>{{ record.isbn }}</dd></div>{% endif %}
+                {% if record.pages %}<div><dt>Вес, г</dt><dd>{{ record.pages }}</dd></div>{% endif %}
+                {% if record.shelf %}<div><dt>Состав</dt><dd>{{ record.shelf }}</dd></div>{% endif %}
+                {% if record.price %}<div><dt>Цена</dt><dd>{{ record.price|elv_num }} ₽</dd></div>{% endif %}
+                {% if record.age_limit %}<div><dt>Кому подойдёт</dt><dd>{{ elv_age(record.age_limit) }}</dd></div>{% endif %}
+                {% if record.available %}<div><dt>Наличие</dt><dd>{{ status.label }}</dd></div>{% endif %}
+            </dl>
+            <a class="btn btn-elv-green w-100 mt-3" href="#order">Заказать</a>
+        </aside>
+    </div>
+    <footer class="article-footer">
+        <a class="btn btn-elv-outline btn-icon" href="/books/">
+            <svg class="i" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+            Сувениры и подарки
+        </a>
+    </footer>
+</article></div></section>
+
+<section class="section section--booking" id="order"><div class="container">
+    <div class="booking-card"><div class="booking-head">
+        <span class="booking-icon"><svg class="i" aria-hidden="true"><use href="#i-package"/></svg></span>
+        <h2 class="section-title">Заказать «{{ record.title }}»</h2>
+        <p class="section-lead mb-0">Оставьте контакты — подтвердим наличие, способ оплаты и получения.</p>
+    </div>
+    <form class="feedback-form needs-validation" action="/order/" method="post" data-elv-form="order">
+        {{ elv_csrf()|raw }}
+        <input type="hidden" name="NAME" value="Заказ: {{ record.title }}">
+        <input type="hidden" name="PROPERTY[ITEM][0]" value="{{ record.title }}">
+        <input type="hidden" name="PROPERTY[ARTICLE][0]" value="{{ record.isbn }}">
+        <input type="hidden" name="PROPERTY[PRICE][0]" value="{{ record.price ? record.price : '' }}">
+        <input type="hidden" name="PROPERTY[STATUS][0]" value="new">
+        <div class="row g-3">
+            <div class="col-sm-6"><label class="form-label" for="elvOrderQty">Количество *</label>
+                <input class="form-control" id="elvOrderQty" type="number" name="PROPERTY[QTY][0]" min="1" step="1" value="1" required>
+                <div class="invalid-feedback">Укажите количество.</div></div>
+            <div class="col-sm-6"><label class="form-label" for="elvOrderName">Имя *</label>
+                <input class="form-control" id="elvOrderName" type="text" name="PROPERTY[PERSON][0]" autocomplete="name" placeholder="Ваше имя" required>
+                <div class="invalid-feedback">Укажите имя.</div></div>
+            <div class="col-md-6"><label class="form-label" for="elvOrderPhone">Телефон *</label>
+                <input class="form-control" id="elvOrderPhone" type="tel" name="PROPERTY[PHONE][0]" autocomplete="tel" placeholder="+375 (__) ___-__-__" required>
+                <div class="invalid-feedback">Укажите телефон.</div></div>
+            <div class="col-md-6"><label class="form-label" for="elvOrderEmail">E-mail</label>
+                <input class="form-control" id="elvOrderEmail" type="email" name="PROPERTY[EMAIL][0]" autocomplete="email" placeholder="you@example.by"></div>
+            <div class="col-12"><label class="form-label" for="elvOrderComment">Комментарий</label>
+                <textarea class="form-control" id="elvOrderComment" name="PROPERTY[COMMENT][0]" rows="3" placeholder="Размер, цвет, сроки…"></textarea></div>
+            <div class="col-12"><div class="form-check">
+                <input class="form-check-input" id="elvOrderConsent" type="checkbox" name="CONSENT" value="Y" required>
+                <label class="form-check-label small" for="elvOrderConsent">Согласен на обработку персональных данных</label>
+                <div class="invalid-feedback">Нужно согласие.</div></div></div>
+        </div>
+        <button class="btn btn-elv w-100 mt-3 btn-icon" type="submit" name="iblock_submit" value="Y">Оформить заказ<svg class="i" aria-hidden="true"><use href="#i-send"/></svg></button>
+    </form>
+    <p class="form-hint mt-3 mb-0 text-center">Заказ сохраняется в инфоблоке <code>orders</code>. Отправляя форму, вы соглашаетесь с <a href="/privacy/">политикой конфиденциальности</a>.</p>
+    </div>
+</div></section>
+</main>
+{% endif %}

@@ -1,0 +1,58 @@
+title = "Вход — {brand}"
+url = "/auth/"
+layout = "default"
+seo_description = "Вход в личный кабинет читателя: продление книг, подписка и история обращений."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--red">Личный кабинет</span>
+        <h1 class="page-title">Вход в личный кабинет</h1>
+        <p class="page-lead">
+            В кабинете можно изменить данные профиля, управлять подпиской
+            и посмотреть историю обращений.
+        </p>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4 g-lg-5">
+            <div class="col-lg-7" data-reveal>
+                <div class="info-card">
+                    <h2 class="h4 mb-3">Вход</h2>
+                    <form class="needs-validation" action="/" method="post">
+                        <div class="mb-3">
+                            <label class="form-label" for="elvAuthLogin">E-mail или логин</label>
+                            <input class="form-control" id="elvAuthLogin" type="text" name="USER_LOGIN"
+                                   autocomplete="username" required>
+                            <div class="invalid-feedback">Укажите логин.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="elvAuthPass">Пароль</label>
+                            <input class="form-control" id="elvAuthPass" type="password" name="USER_PASSWORD"
+                                   autocomplete="current-password" required>
+                            <div class="invalid-feedback">Укажите пароль.</div>
+                        </div>
+                        <button class="btn btn-elv" type="submit">Войти</button>
+                        <a class="btn btn-elv-outline ms-2" href="/feedback/">Забыли пароль?</a>
+                    </form>
+                    <p class="form-hint mt-3 mb-0">
+                        Демо-форма: в Битриксе подключается <code>bitrix:system.auth.authorize</code>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-5" data-reveal>
+                <div class="info-card">
+                    <h2 class="h5">Ещё нет билета?</h2>
+                    <p class="text-muted">
+                        Читательский билет оформляется бесплатно при первом посещении:
+                        нужен документ с фотографией.
+                    </p>
+                    <a class="btn btn-elv-green" href="/services/">Как записаться</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section></main>

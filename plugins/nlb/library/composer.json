@@ -1,9 +1,0 @@
-{
-    "name": "nlb/library-plugin",
-    "type": "october-plugin",
-    "description": "Сайт библиотеки: контент, заявки, слоты услуг, поиск.",
-    "license": "proprietary",
-    "require": {
-        "php": "^8.2"
-    }
-}

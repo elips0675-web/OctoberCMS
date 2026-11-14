@@ -1,4 +1,4 @@
-# NLB on October CMS — Project Context
+# ELV on October CMS — Project Context
 
 ## 1. Что это
 
@@ -7,7 +7,7 @@
 остаются 1:1 с источником `D:\nlbbootstrap-main`.
 
 Источник правды по внешнему виду и контенту на время переезда — репозиторий источника:
-`preview/**` (110 страниц), `local/templates/nlb_bootstrap/styles.css` (81 179 байт),
+`preview/**` (110 страниц), `local/templates/elv_bootstrap/styles.css` (81 179 байт),
 `script.js` (75 359 байт), `assets/css/bootstrap.min.css` (61 433 байта).
 
 ## 2. Стек
@@ -17,24 +17,24 @@
 | CMS | October CMS **4.4.13**, Laravel 12.71.0 | `composer.lock` в git |
 | Язык | PHP 8.3.30 (Laragon, ZTS) | `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe` |
 | Фреймворк | Laravel 12.71.0 (внутри October): Eloquent, миграции, очереди, планировщик | `vendor/laravel` |
-| Контент | Tailor blueprints (6 сущностей) | `plugins/nlb/library/blueprints/` |
-| Заявки | Eloquent-модели + миграции (3 сущности) | `plugins/nlb/library/models/`, `updates/` |
+| Контент | Tailor blueprints (6 сущностей) | `plugins/elv/library/blueprints/` |
+| Заявки | Eloquent-модели + миграции (3 сущности) | `plugins/elv/library/models/`, `updates/` |
 | CSS-фреймворк | Bootstrap 5.3.3, урезанный `tools/purge-css.mjs`, инлайн | layout темы |
 | Свой CSS | `styles.css` без переписывания + минификация на PHP | тема |
 | JS | `bootstrap.bundle.min.js` + `script.js` как есть | тема |
-| Поиск | свой Okapi BM25, индекс в БД, команда переиндексации | `plugins/nlb/library/classes/Search` |
-| БД | MySQL 8.4.3, `127.0.0.1:3306`, БД `nlb_october` | `.env` |
+| Поиск | свой Okapi BM25, индекс в БД, команда переиндексации | `plugins/elv/library/classes/Search` |
+| БД | MySQL 8.4.3, `127.0.0.1:3306`, БД `elv_october` | `.env` |
 | Письма | `Mail` + `ShouldQueue`; SMTP у владельца нет → `MAIL_MAILER=log` | `.env` |
-| PWA | `manifest.webmanifest`, `sw.js`, `offline.html` — файлы в `themes/nlb/assets/pwa/`, маршруты с корня | `classes/Pwa.php`, `classes/Http/PwaController.php` |
+| PWA | `manifest.webmanifest`, `sw.js`, `offline.html` — файлы в `themes/elv/assets/pwa/`, маршруты с корня | `classes/Pwa.php`, `classes/Http/PwaController.php` |
 | Сборка | `tools/*` (purge-css, build-image-variants, гейты) | `tools/` |
-| Тесты | PHPUnit + `RefreshDatabase` | `plugins/nlb/library/tests/` |
+| Тесты | PHPUnit + `RefreshDatabase` | `plugins/elv/library/tests/` |
 
 Заглушка ядра `db/tests/stub/bitrix.php` (31 750 байт) **выбрасывается**: тесты пишутся
 на PHPUnit с реальной БД, данные — фабрики.
 
 ## 3. Принятые решения (не пересматривать)
 
-1. **Один плагин** `nlb/library`, vendor `nlb`. Никаких демо-плагинов и RainLab.Blog.
+1. **Один плагин** `elv/library`, vendor `elv`. Никаких демо-плагинов и RainLab.Blog.
 2. **Tailor — только контент**: `news`, `events`, `collections`, `books`, `services`,
    `printing`. Read-mostly сущности правятся blueprints-полями в админке.
 3. **Заявки — Eloquent**: `requests`, `bookings`, `orders` + миграции. Причина: транзакции,
@@ -65,18 +65,18 @@
 ## 4. Структура каталога (цель)
 
 ```
-plugins/nlb/library/
+plugins/elv/library/
   Plugin.php
   blueprints/            # 6 контентных сущностей (Tailor)
   models/                # Request, Booking, Order, Slot, Subscriber, ...
   updates/               # миграции Eloquent-таблиц
   classes/               # Search (BM25), TextFilter, Media, Seo, Booking, Push
   components/            # Header, Footer, Menu, Breadcrumbs, Forms, Search, Chat, Picture
-  console/               # nlb:import, nlb:search-index, nlb:slots-generate
+  console/               # elv:import, elv:search-index, elv:slots-generate
   http/                  # контроллеры (search, chat, api)
   routes.php             # web/ajax/api маршруты
   tests/                 # PHPUnit + RefreshDatabase
-themes/nlb/
+themes/elv/
   layouts/default.htm    # инлайн CSS, спрайт, мета
   pages/                 # CMS-страницы: index, about, contacts, 404, ...
   partials/              # списки, карточки, крошки
@@ -93,11 +93,11 @@ docs/                    # документация (карта — docs/README.
 | Источник | Объём (проверено) | Куда |
 |---|---|---|
 | `db/config/iblocks.php` | 9 инфоблоков, 74 свойства | `docs/architecture.md` (таблица), blueprints + модели |
-| `db/config/data/*.php` | 91 элемент, 12 разделов | БД October, команда `nlb:import` |
+| `db/config/data/*.php` | 91 элемент, 12 разделов | БД October, команда `elv:import` |
 | `preview/**` | 110 HTML | CMS-страницы + маршруты `{slug}` |
 | `db/migrations/*.php` | 13 файлов | Laravel-миграции (схема пересматривается, не копируется) |
 | `local/php_interface/include/*` | 8 файлов, 4 585 строк | классы плагина |
-| `local/templates/nlb_bootstrap/*` | header 269, footer 323 строки, CSS 81 179, JS 75 359 | layout, компоненты, ассеты |
+| `local/templates/elv_bootstrap/*` | header 269, footer 323 строки, CSS 81 179, JS 75 359 | layout, компоненты, ассеты |
 | `db/menu/*.menu.php` | 4 меню | компонент меню / Tailor-навигация |
 | `urlrewrite.php` | 7 правил | `routes.php` |
 | `db/search/index.json` | 99 документов, 1 340 терминов | индекс в БД + команда переиндексации |
@@ -130,15 +130,17 @@ docs/                    # документация (карта — docs/README.
 | Скрипты | `footer.php:308-321` | layout: bundle, script.js, pwa.js, push.js, consent.js |
 | Правила чата | `script.js:169` (11 правил), `script.js:281` (10 подсказок) | данные в плагине, не `if` в JS |
 | Чат-эндпоинт | `script.js:155-156` (`USE_REAL_AI=false`, `/api/chat`) | контроллер `/api/chat` (правила + оператор) |
-| SEO | `nlb_seo.php` | `classes/Seo.php` + layout: meta, OG/Twitter, canonical, JSON-LD `Library`/`WebSite` + узел записи; `/rss.xml` — `classes/Rss.php` (Stage 11) |
-| Заголовки | `nlb_security.php` | `classes/Http/SecurityHeaders.php`: CSP с nonce, `X-Frame-Options`, HSTS; статические — ещё и `nginx.conf` (Stage 10) |
+| SEO | `elv_seo.php` | `classes/Seo.php` + layout: meta, OG/Twitter, canonical, JSON-LD `Library`/`WebSite` + узел записи; `/rss.xml` — `classes/Rss.php` (Stage 11) |
+| Заголовки | `elv_security.php` | `classes/Http/SecurityHeaders.php`: CSP с nonce, `X-Frame-Options`, HSTS; статические — ещё и `nginx.conf` (Stage 10) |
 
 ## 8. Ограничения и что ещё не проверено
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
-  БД `nlb_october`. Плагин `nlb/library` версии 1.1.0: 9 blueprints,
-  `nlb:import` перенёс 91 элемент и 12 разделов, тесты плагина — 231 зелёный
-  (`phpunit.nlb.xml`, 889 утверждений). Тема `nlb` — активная (`ACTIVE_THEME=nlb`), демо-тема
+  БД `elv_october`. Плагин `elv/library` версии 2.0.0 (переименован из `nlb`
+  в Stage 28, миграция `rename_legacy_tables_to_elv.php` хранит старые имена
+  таблиц): 9 blueprints,
+  `elv:import` перенёс 91 элемент и 12 разделов, тесты плагина — 231 зелёный
+  (`phpunit.elv.xml`, 889 утверждений). Тема `elv` — активная (`ACTIVE_THEME=elv`), демо-тема
   и демо-плагин удалены; 109 адресов и 404 отвечают, DOM и текст совпадают
   с `preview/` (гейты `tools/check-urls.mjs`, `tools/check-dom-parity.mjs`),
   `/sitemap.xml` (106 адресов), `/robots.txt`, 301, JSON-LD и `BreadcrumbList` —
@@ -146,14 +148,14 @@ docs/                    # документация (карта — docs/README.
   мета записи и микроразметка `Article`/`Event`/`Product`/`Service` —
   `tests/SeoTest.php` (67 тестов). Публичный JSON контента —
   `GET /api/v1/{handle}` и `/api/v1/{handle}/{slug}`
-  (`plugins/nlb/library/classes/Http/ApiController.php`, гейт
+  (`plugins/elv/library/classes/Http/ApiController.php`, гейт
   `tools/check-api.mjs`): 6 разделов, 91 запись, только опубликованное.
 - **Формы, админка, SEO и заголовки подключены** (этапы 5–10): `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; админка
   «Библиотека» со статусами и освобождением слота; sitemap, robots, 301,
   JSON-LD, мета записи из blueprints и узел записи в `@graph`; CSP с nonce,
   `X-Frame-Options`, HSTS-условие и статические заголовки в `nginx.conf`;
-  `/health` (БД, кэш, очередь), часовой `nlb:health-report` и ежедневная
+  `/health` (БД, кэш, очередь), часовой `elv:health-report` и ежедневная
   генерация слотов по расписанию.
   **Поиск, чат и внешние API — ещё нет** (M8, P1-16, P1-17).
 - **Живой SMTP отсутствует** — письма проверяются через `MAIL_MAILER=log`; код
@@ -164,7 +166,7 @@ docs/                    # документация (карта — docs/README.
   нечего — проверено в бэклоге источника.
 - **Числа, которые в промте разошлись с фактом**: `header.php` 269 (не 251),
   `footer.php` 323 (не 305), правил чата 11 (не 10). Замер — Этап 0, запись в `Что сделано.txt`.
-- **Админ-пользователь создан 10.11.2026**: логин `admin`, email `admin@nlb.local`,
+- **Админ-пользователь создан 10.11.2026**: логин `admin`, email `admin@elv.local`,
   superuser. Пароль — только в `.local/admin-credentials.md` (каталог в `.gitignore`),
   в документацию и git не попадает. Вход проверен реальным `POST
   /admin/backend/auth/signin` → `/admin/dashboard` (200). `adminAuth` в October
@@ -172,13 +174,13 @@ docs/                    # документация (карта — docs/README.
 
 ## 9. Соглашения
 
-- Классы плагина — namespace `Nlb\Library\...`, PSR-4.
-- Модели — единственное число (`Booking`), таблицы — множественное (`nlb_bookings`).
+- Классы плагина — namespace `Elv\Library\...`, PSR-4.
+- Модели — единственное число (`Booking`), таблицы — множественное (`elv_bookings`).
 - Blueprint-хендлы — как коды инфоблоков: `news`, `events`, `collections`, `books`,
   `services`, `printing`.
-- Blade-компоненты — `nlb:*` (`<x-nlb::picture>`), partials — `partials/`.
+- Blade-компоненты — `elv:*` (`<x-elv::picture>`), partials — `partials/`.
 - Миграции — `updates/YYYY_MM_DD_NNNN_<name>.php`, forward-only.
 - Запуск локально — `запуск.bat` в корне (PHP 8.3, MySQL 3306, `artisan serve`
   8080, ожидание `/health`, браузер); ключ `/nobrowser` — без браузера.
 - Комментарии в коде — по-русски, блоками с номерами разделов.
-- CSS-классы не переименовываются: `nlb-`, `.hero`, `.print-card` остаются как в источнике.
+- CSS-классы не переименовываются: `elv-`, `.hero`, `.print-card` остаются как в источнике.

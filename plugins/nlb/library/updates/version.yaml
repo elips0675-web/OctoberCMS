@@ -1,9 +1,0 @@
-1.0.1: Первая версия плагина NLB Library
-1.0.2:
-    - Eloquent-таблицы заявок, броней, заказов, слотов и подписчиков
-    - create_nlb_requests_table.php
-    - create_nlb_bookings_table.php
-    - create_nlb_orders_table.php
-    - create_nlb_slots_table.php
-    - create_nlb_subscribers_table.php
-1.1.0: 'Хелперы темы: адаптивные картинки, инлайн CSS, подписи свойств, карта занятых слотов'

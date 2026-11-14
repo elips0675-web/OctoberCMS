@@ -2,7 +2,7 @@
 
 Дизайн **не переписывается**. Источник правды — `D:\nlbbootstrap-main`:
 
-- токены: `local/templates/nlb_bootstrap/styles.css` (`:root`, строки 12–61);
+- токены: `local/templates/elv_bootstrap/styles.css` (`:root`, строки 12–61);
 - компоненты и состояния: там же + `docs/design-system.md` источника;
 - раскладка секций: `preview/index.html` (190 412 знаков) и `demo/index.php`.
 
@@ -17,8 +17,8 @@
 | `bootstrap.min.css` | 61 433 байта, урезается `tools/purge-css.mjs` |
 | `bootstrap.bundle.min.js` | 80 721 байт, подключается как есть |
 | `script.js` | 75 359 байт, 10 модулей + PWA/consent/push |
-| Токены | `--nlb-primary: #2563eb`, `--nlb-violet: #7c3aed`, `--nlb-accent: #10b981`, `--nlb-ink: #0f172a`, `--nlb-radius: 1.25rem`, `--nlb-header-h: 76px` |
-| Градиенты | `--nlb-grad` (135°, `#2563eb → #7c3aed 55% → #9333ea`), `--nlb-grad-green`, `--nlb-grad-sky`, `--nlb-grad-pink`, `--nlb-grad-orange` |
+| Токены | `--elv-primary: #2563eb`, `--elv-violet: #7c3aed`, `--elv-accent: #10b981`, `--elv-ink: #0f172a`, `--elv-radius: 1.25rem`, `--elv-header-h: 76px` |
+| Градиенты | `--elv-grad` (135°, `#2563eb → #7c3aed 55% → #9333ea`), `--elv-grad-green`, `--elv-grad-sky`, `--elv-grad-pink`, `--elv-grad-orange` |
 | Шрифт | системный стек (`"Manrope", "Inter", "Segoe UI", system-ui, …`), внешних запросов нет |
 | Иконки | inline SVG-спрайт в шапке (partial), без иконочных шрифтов |
 | Тема | только светлая, `prefers-color-scheme` не подключается |
@@ -26,16 +26,16 @@
 ## 2. Что меняется в шаблоне
 
 1. `styles.css` и `bootstrap.min.css` читаются сервером, минифицируются
-   `Media::minifyCss()` и встраиваются в layout как `<style data-nlb-css="bootstrap|styles">`.
+   `Media::minifyCss()` и встраиваются в layout как `<style data-elv-css="bootstrap|styles">`.
 2. Кеш инлайн-CSS — по `mtime`. Отдельного собранного файла нет.
 3. Разметка секций переезжает из PHP-шаблонов в Blade почти дословно: классы
-   `nlb-*`, `.hero`, `.print-card`, `.collection-card`, `.section`, `.eyebrow` не
+   `elv-*`, `.hero`, `.print-card`, `.collection-card`, `.section`, `.eyebrow` не
    переименовываются.
 
 ## 3. Правила
 
 - Сначала утилиты Bootstrap (`d-flex`, `row`, `col-*`, `gap-*`), потом свой CSS.
-- Новый оттенок — новая переменная `--nlb-*`, а не `#123456` в разметке.
+- Новый оттенок — новая переменная `--elv-*`, а не `#123456` в разметке.
 - Модификаторы — двойной дефис (`.collection-card--blue`), состояния — `is-*`.
 - JS-хуки — `data-*` (`data-reveal`, `data-scroller`, `data-chat-open`).
 - Вендорный Bootstrap не «улучшается»: все переопределения — в `styles.css`.

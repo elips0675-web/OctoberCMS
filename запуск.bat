@@ -2,7 +2,7 @@
 chcp 65001 >nul
 setlocal EnableExtensions
 cd /d "%~dp0"
-title NLB October CMS — запуск
+title ELV October CMS — запуск
 
 set "HOST=127.0.0.1"
 set "PORT=8080"
@@ -37,10 +37,10 @@ if not defined PHP (
 )
 
 set "PHPVER=?"
-"%PHP%" -r "echo PHP_VERSION;" > "%TEMP%\nlb_php_version.txt" 2>nul
-if exist "%TEMP%\nlb_php_version.txt" (
-    set /p PHPVER=<"%TEMP%\nlb_php_version.txt"
-    del "%TEMP%\nlb_php_version.txt" >nul 2>&1
+"%PHP%" -r "echo PHP_VERSION;" > "%TEMP%\elv_php_version.txt" 2>nul
+if exist "%TEMP%\elv_php_version.txt" (
+    set /p PHPVER=<"%TEMP%\elv_php_version.txt"
+    del "%TEMP%\elv_php_version.txt" >nul 2>&1
 )
 echo PHP:    %PHPVER%  (%PHP%)
 
@@ -66,9 +66,9 @@ if not defined MYSQLD (
 )
 
 if defined MYINI (
-    start "NLB MySQL" /min "%MYSQLD%" --defaults-file="%MYINI%"
+    start "ELV MySQL" /min "%MYSQLD%" --defaults-file="%MYINI%"
 ) else (
-    start "NLB MySQL" /min "%MYSQLD%" --console
+    start "ELV MySQL" /min "%MYSQLD%" --console
 )
 
 set "MYSQL_WAIT=0"
@@ -96,7 +96,7 @@ if not errorlevel 1 (
 )
 
 echo Сервер: запускаю php artisan serve (окно свёрнуто)
-start "NLB October %PORT%" /min "%PHP%" artisan serve --host=%HOST% --port=%PORT%
+start "ELV October %PORT%" /min "%PHP%" artisan serve --host=%HOST% --port=%PORT%
 
 set "SERVER_WAIT=0"
 set "HAS_CURL="
@@ -114,7 +114,7 @@ if not errorlevel 1 (
 set /a SERVER_WAIT+=1
 if %SERVER_WAIT% geq 20 (
     echo [ВНИМАНИЕ] /health не ответил за 40 секунд.
-    echo             Смотрите окно «NLB October %PORT%» и storage\logs\laravel.log.
+    echo             Смотрите окно «ELV October %PORT%» и storage\logs\laravel.log.
     if not "%~1"=="/nobrowser" pause
     goto open
 )
@@ -127,7 +127,7 @@ echo Сайт:    %URL%
 echo Админка: %ADMIN%   (логин admin, пароль — .local\admin-credentials.md)
 echo Health:  %URL%health
 echo.
-echo Остановить: закройте свёрнутые окна «NLB October %PORT%» и «NLB MySQL».
+echo Остановить: закройте свёрнутые окна «ELV October %PORT%» и «ELV MySQL».
 echo.
 if /i "%~1"=="/nobrowser" (
     echo Браузер не открываю: ключ /nobrowser.

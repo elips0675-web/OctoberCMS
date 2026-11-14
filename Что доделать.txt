@@ -1,6 +1,6 @@
 # Что доделать — бэклог переезда на October CMS
 
-> Актуально: **13.11.2026**. Чистый бэклог: только открытые пункты. История —
+> Актуально: **14.11.2026**. Чистый бэклог: только открытые пункты. История —
 > в `Что сделано.txt`. Правила — `AGENTS.md`, карта — `docs/README.md`.
 >
 > **Как читать.** P0 — без этого сайт нельзя ставить на прод. P1 — качество и
@@ -9,19 +9,21 @@
 > попадает одной записью в `Что сделано.txt`.
 >
 > **Состояние проверки.** October **установлен 10.11.2026**: v4.4.13,
-> Laravel 12.71.0, PHP 8.3.30, БД `nlb_october` (76 таблиц после удаления
-> демо-схемы), PHPUnit 1 171 тест ядра зелёный, `/` и `/admin` отвечают 200.
-> Плагин `nlb/library` версии **1.1.0**: 9 blueprints, команда
-> `nlb:import` перенесла 91 элемент и 12 разделов, Eloquent-таблицы заявок, броней,
-> заказов, слотов и подписчиков созданы, слоты — `nlb:slots-generate`; тесты
-> плагина — **231 зелёный** (`phpunit.nlb.xml`, 889 утверждений). Формы `/feedback/`, `/booking/`,
+> Laravel 12.71.0, PHP 8.3.30, БД `elv_october` (79 таблиц), PHPUnit 1 171 тест
+> ядра зелёный, `/` и `/admin` отвечают 200.
+> Плагин `elv/library` версии **2.0.0** (переименован из `nlb` в Stage 28,
+> старые имена таблиц остались только в миграции `rename_legacy_tables_to_elv.php`):
+> 9 blueprints, команда
+> `elv:import` перенесла 91 элемент и 12 разделов, Eloquent-таблицы заявок, броней,
+> заказов, слотов и подписчиков созданы, слоты — `elv:slots-generate`; тесты
+> плагина — **231 зелёный** (`phpunit.elv.xml`, 889 утверждений). Формы `/feedback/`, `/booking/`,
 > `/order/`, `/subscribe/` пишут в БД и ставят письма в очередь (Stage 5),
 > периметр SEO и микроразметка записи — Stage 7–9, CSP и заголовки — Stage 10,
 > лента `/rss.xml` — Stage 11, PWA-оболочка — Stage 12, health-check — Stage 13,
 > `BreadcrumbList` из адреса — Stage 16, публичный JSON `GET /api/v1/{handle}`
 > и `/api/v1/{handle}/{slug}` — Stage 17.
-> Тема `nlb` — рабочая
-> (`ACTIVE_THEME=nlb`), демо-тема и демо-плагин удалены: 109 адресов отвечают
+> Тема `elv` — рабочая
+> (`ACTIVE_THEME=elv`), демо-тема и демо-плагин удалены: 109 адресов отвечают
 > `200`, `/non-existent/` — `404` со страницей, DOM и текст совпадают с `preview/`
 > на всех 110. Пункты, унаследованные от источника, сохраняют его нумерацию
 > (`P0-6`, `P1-11`, `P1-20`), пункты переезда — префикс `M`.
@@ -55,7 +57,7 @@ deprecation-шума). MySQL 8.4 локально; на хостинге нуж�
 `APP_ENV=production` в `.env`; HTTPS с валидным сертификатом; `php artisan
 october:about` на сервере печатает ту же версию, что локально; бэкап БД и
 `storage/app` по cron (восстановление проверено один раз, а не «скрипт есть»);
-cron `schedule:run` включён (`nlb:health-report` и `nlb:slots-generate`);
+cron `schedule:run` включён (`elv:health-report` и `elv:slots-generate`);
 внешняя проба на `/health` с алертом при `503` — адрес готов (`P1-21`), сама
 проба заводится вместе с доменом.
 
@@ -65,14 +67,14 @@ cron `schedule:run` включён (`nlb:health-report` и `nlb:slots-generate`)
 телефон, e-mail), `footer.php:36` и `:171` (соцсети), `footer.php:85-89`
 (телефон, e-mail), `footer.php:183` (e-mail в FAB), `footer.php:283-306`
 (УНП `000000000`, счёт `BY00 XXXX…`). Те же значения дублируются в JSON-LD
-(`nlb_seo.php`, `nlb_seo_jsonld()`).
+(`elv_seo.php`, `elv_seo_jsonld()`).
 
 Приёмка: значения реальные и совпадают в шапке, подвале, JSON-LD и `tel:`;
 соцсети открываются; реквизиты соответствуют организации.
 
 ### P0-7. Права на демо-изображения не зафиксированы
 
-Источник: 20 JPG и иконки в `local/templates/nlb_bootstrap/assets/` взяты из
+Источник: 20 JPG и иконки в `local/templates/elv_bootstrap/assets/` взяты из
 демо-набора, происхождение не записано. При переезде файлы копируются как есть
 (`docs/content.md`, раздел 5), значит и вопрос прав переезжает.
 
@@ -108,8 +110,8 @@ Winter CMS не берём: нет Tailor и Laravel 9 без security-фикс�
 восстановление ни разу не проверялось, поэтому «миграции forward-only» пока
 лозунг. Внешняя оценка ставит это в P0 — согласны (`docs/roadmap.md`, §2).
 
-Нужно: `mysqldump` по cron (БД + `storage/app` + `themes/nlb` +
-`plugins/nlb`), retention, копия вне площадки, смоук восстановления в
+Нужно: `mysqldump` по cron (БД + `storage/app` + `themes/elv` +
+`plugins/elv`), retention, копия вне площадки, смоук восстановления в
 отдельную БД со сверкой числа строк и «сложных» значений (кириллица, кавычки,
 перевод строки), запись RTO в `docs/security-performance.md`. `storage/app`
 и `.env` — разные вещи: `.env` в бэкап не кладётся.
@@ -157,7 +159,7 @@ Winter CMS не берём: нет Tailor и Laravel 9 без security-фикс�
 
 Без JS: формы отправляются обычным `POST` и работают, но мобильное меню,
 выпадающие меню «Услуги»/«Печать» и модалки поиска, реквизитов и обратной
-связи держатся на `data-bs-toggle` (`themes/nlb/partials/header.htm:38,48,56,69`,
+связи держатся на `data-bs-toggle` (`themes/elv/partials/header.htm:38,48,56,69`,
 `pages/contacts.htm:44`, `partials/footer.htm:105`) — без скриптов не
 открываются. Нужен `<noscript>`-минимум или это фиксируется как осознанное
 ограничение (`docs/roadmap.md`, §6).
@@ -169,7 +171,7 @@ Winter CMS не берём: нет Tailor и Laravel 9 без security-фикс�
 публикацией.
 
 Демо-подсказка «Демо: часть слотов занята — они отмечены и недоступны» стоит
-в разметке как в эталоне (`themes/nlb/pages/services-detail.htm`) и **удаляется
+в разметке как в эталоне (`themes/elv/pages/services-detail.htm`) и **удаляется
 вместе с демо-данными** до прода — иначе на живом сайте останется слово «Демо».
 
 Приёмка: на странице услуги нет слова «Демо»; занятые часы приходят только из
@@ -193,7 +195,7 @@ fallback, галерея услуги показывает одну фотогр
 захардкожены («06.11, 18:30 — лекция…»), а не берутся из `events`
 (`script.js`, блок ответов; `Что доделать.txt` источника, P1-15).
 
-Приёмка: афиша в ответе берётся из `nlb_events`; имя и аватар согласованы с
+Приёмка: афиша в ответе берётся из `elv_events`; имя и аватар согласованы с
 библиотекой или заменены фото реального сотрудника с его согласия.
 
 ### P1-16. REST-эндпоинт брони пишется заново, черновик источника непригоден
@@ -220,7 +222,7 @@ fallback, галерея услуги показывает одну фотогр
 `API_URL='/api/chat'`), реальный канал оператора, история и приватность,
 лимит частоты, аналитика (`chat_open`, `chat_question`, `chat_fallback`,
 `chat_to_form`), переводы, фокус-ловушка (Tab уходит за панель), автотесты
-правил, подключение серверного фильтра (`nlb_text_filter.php`), поведение меню
+правил, подключение серверного фильтра (`elv_text_filter.php`), поведение меню
 «+» при открытом чате (`z-index` 1045 против 1044).
 
 В October бэкенд — `POST /api/chat` (`docs/architecture.md`, раздел 6.2), фильтр
@@ -233,7 +235,7 @@ fallback, галерея услуги показывает одну фотогр
 
 ### P1-20. Бронь: гонка слота закрывается `UNIQUE`, а не проверкой
 
-Источник: `nlb_form_slot_taken()` (`nlb_forms.php:656`) вызывается из
+Источник: `elv_form_slot_taken()` (`elv_forms.php:656`) вызывается из
 `OnBeforeIBlockElementAdd` (`:1000`, проверка `:1055`), между чтением и
 записью нет ни транзакции, ни блокировки, `UNIQUE` в `db/migrations/*.php` не
 создаётся — два одновременных запроса проходят оба.
@@ -242,9 +244,9 @@ fallback, галерея услуги показывает одну фотогр
 `lockForUpdate()` + перехват `QueryException` на дубликат → `409`
 (`docs/db.md`, раздел 5.4).
 
-Этап 3 (10.11.2026): слой готов — `nlb_slots` с `UNIQUE`, `BookingService::book()`
+Этап 3 (10.11.2026): слой готов — `elv_slots` с `UNIQUE`, `BookingService::book()`
 в транзакции, `SlotUnavailableException`; тест схемы красный без `UNIQUE`
-(`plugins/nlb/library/tests/BookingTest.php`, `testUniqueIndexBlocksDuplicateSlotRows`).
+(`plugins/elv/library/tests/BookingTest.php`, `testUniqueIndexBlocksDuplicateSlotRows`).
 Осталось: HTTP `409` на публичном маршруте (этап 7) и живой параллельный прогон на
 MySQL — SQLite `lockForUpdate` не держит.
 
@@ -257,7 +259,7 @@ MySQL — SQLite `lockForUpdate` не держит.
 Администратор `admin` — superuser (`system_users.is_superuser = 1`), он видит и
 контент, и настройки, и пользователей. Библиотекарю, который будет править
 новости и афишу, такая роль не нужна: ошибка в «Настройках» роняет сайт.
-Отдельной роли «Редактор контента» (доступ только к `Nlb\*` и медиа, без
+Отдельной роли «Редактор контента» (доступ только к `Elv\*` и медиа, без
 системных разделов) нет.
 
 Приёмка: роль создаётся миграцией/сидером (не руками в БД); пользователь с ней
@@ -268,7 +270,7 @@ MySQL — SQLite `lockForUpdate` не держит.
 
 Виджеты и пункты главного экрана `/admin` приходят из ядра
 (`modules/backend/lang/ru`) и переведены, но **собственные** блоки плагина
-(«NLB Library», будущие счётчики заявок) пока не имеют `lang/ru/lang.php` и
+(«ELV Library», будущие счётчики заявок) пока не имеют `lang/ru/lang.php` и
 показываются английским названием плагина. Библиотекарю, который «просто
 нажимает кнопки», англоязычная плашка непонятна.
 
@@ -278,10 +280,10 @@ MySQL — SQLite `lockForUpdate` не держит.
 
 ### M8. Поиск BM25 не портирован
 
-`docs/october-integration.md`, раздел 5: математика — `nlb_search.php`
+`docs/october-integration.md`, раздел 5: математика — `elv_search.php`
 (1 272 строки), индекс — 99 документов и 1 340 терминов (`k1=1.5`, `b=0.75`),
 29 кейсов фикстуры. В October нужны `classes/Search.php`, таблицы индекса и
-команда `nlb:search-index`.
+команда `elv:search-index`.
 
 Приёмка: 29 кейсов `db/tests/fixtures/search-cases.json` дают те же
 результаты; контракт `/ajax/search` (`?q=`, `&limit=`, коды
@@ -290,8 +292,8 @@ MySQL — SQLite `lockForUpdate` не держит.
 ### M9. Web Push: ключи и подписки
 
 `docs/october-integration.md`, раздел 7: VAPID, шифрование и отправка —
-`nlb_push.php` (769 строк), подписки — сейчас JSON-файл, в October таблица
-`nlb_push_subscriptions`. Ключей нет, HTTPS-стенда нет.
+`elv_push.php` (769 строк), подписки — сейчас JSON-файл, в October таблица
+`elv_push_subscriptions`. Ключей нет, HTTPS-стенда нет.
 
 Приёмка: `tools/gen-vapid.php` генерирует ключи в `.env` (не в git); подписка
 браузера сохраняется строкой; `POST /ajax/push/subscribe` и `/unsubscribe`
@@ -299,13 +301,13 @@ MySQL — SQLite `lockForUpdate` не держит.
 
 ### M22. Баннер «Установить приложение» не перенесён
 
-Источник: `footer.php:143-166` — блок `#nlbInstallBanner` с иконкой, текстом для
+Источник: `footer.php:143-166` — блок `#elvInstallBanner` с иконкой, текстом для
 Android и отдельной подсказкой для iOS, `footer.php:310` —
-`window.NLB_PWA = { sw, scope }`. В теме `nlb` этого блока нет:
-`themes/nlb/partials/footer.htm` заканчивается на модалке реквизитов,
-`window.NLB_PWA` не объявлен, `themes/nlb/assets/js/pwa.js` (Stage 12) —
+`window.ELV_PWA = { sw, scope }`. В теме `elv` этого блока нет:
+`themes/elv/partials/footer.htm` заканчивается на модалке реквизитов,
+`window.ELV_PWA` не объявлен, `themes/elv/assets/js/pwa.js` (Stage 12) —
 только регистрация service worker. CSS баннера уже перенесён
-(`themes/nlb/assets/css/styles.css:3130-3262`), поэтому работа только в разметке
+(`themes/elv/assets/css/styles.css:3130-3262`), поэтому работа только в разметке
 и конфиге.
 
 Почему не сделано вместе с M10: `tools/check-dom-parity.mjs:149` сверяет текст
@@ -313,7 +315,7 @@ Android и отдельной подсказкой для iOS, `footer.php:310` 
 сервере) — добавление блока уронит гейт на всех 110 адресах.
 
 Приёмка: исключение для `.site-notices` в `check-dom-parity` (или баннер вне
-сверяемого блока), разметка 1:1 с `footer.php:143-166`, `window.NLB_PWA` с nonce
+сверяемого блока), разметка 1:1 с `footer.php:143-166`, `window.ELV_PWA` с nonce
 (иначе CSP Stage 10 заблокирует инлайновый скрипт), установка проверена в Chrome
 на HTTPS-стенде (M17), тест на `Pwa`/гейт `tools/check-pwa.mjs`.
 
@@ -349,22 +351,22 @@ HSTS и исключение админки. Этап 11 (11.11.2026): **171 т�
 компонента, отсутствие утечек и часовой отчёт. Осталось:
 тесты поиска и чата (M8).
 
-### M21. Отзывов нет: нужна своя `nlb_reviews`
+### M21. Отзывов нет: нужна своя `elv_reviews`
 
-В `plugins/nlb/library/blueprints/` девять YAML, отзывов среди них нет.
+В `plugins/elv/library/blueprints/` девять YAML, отзывов среди них нет.
 `type: submission` (`modules/tailor/classes/Blueprint.php:533`) пишет в `tailor_*`
 и навязывает свою разметку, а у нас правило «1:1 с `preview/`» — решение
 зафиксировано в `docs/plugins.md`, раздел 5.
 
-Своя таблица `nlb_reviews` + миграция + Eloquent-модель: `booking_id` (отзыв
+Своя таблица `elv_reviews` + миграция + Eloquent-модель: `booking_id` (отзыв
 только после подтверждённой брони), `service_code`, `author_name`, `rating` 1–5,
 `text`, `status` (`pending`/`approved`/`rejected`), `consent`, `ip_hash`,
 `created_at`. Модерация — список в админке. Агрегат рейтинга и JSON-LD
 `AggregateRating` — на странице услуги.
 
-Приёмка: миграция в `plugins/nlb/library/updates/` и описание в `docs/db.md`;
+Приёмка: миграция в `plugins/elv/library/updates/` и описание в `docs/db.md`;
 CHECK по `rating`; отзыв без подтверждённой брони отбит `422`; модерация в админке;
-агрегат и JSON-LD на странице услуги; тесты (не меньше 8) и `nlb_reviews` нет
+агрегат и JSON-LD на странице услуги; тесты (не меньше 8) и `elv_reviews` нет
 в Tailor-таблицах.
 
 ### P1-21. Внешняя проба и трекер ошибок
@@ -372,10 +374,10 @@ CHECK по `rating`; отзыв без подтверждённой брони �
 Код health-check готов (Stage 13): `GET /health` — `200` при живой БД, кэше и
 очереди, `503` с именем отказавшего компонента (`classes/Health.php`,
 `classes/Http/HealthController.php`), `Cache-Control: no-store`, без `Set-Cookie`
-и без текста исключений; `php artisan nlb:health-report` пишет часовую
+и без текста исключений; `php artisan elv:health-report` пишет часовую
 JSON-строку (ответ БД в мс, размер очереди, свободный диск) в
 `storage/logs/health.log`; `Plugin::registerSchedule()` ставит её раз в час, а
-`nlb:slots-generate` — ежедневно в 03:10. Проверено `tests/HealthTest.php`
+`elv:slots-generate` — ежедневно в 03:10. Проверено `tests/HealthTest.php`
 (12 тестов) и `tools/check-health.mjs`.
 
 Осталось то, что живёт вне репозитория (владелец + хостинг, M17):
@@ -400,8 +402,8 @@ JSON-строку (ответ БД в мс, размер очереди, сво�
 
 Нужно: cookie-баннер с реальным согласием (не «закрыл крестик = согласен»);
 журнал согласий (кто, когда, что принял, `ip_hash`); `php artisan
-nlb:erase-user {email}` — анонимизация в `nlb_requests`, `nlb_bookings`,
-`nlb_orders`, `nlb_subscribers`; страница политики — `noindex`, но с
+elv:erase-user {email}` — анонимизация в `elv_requests`, `elv_bookings`,
+`elv_orders`, `elv_subscribers`; страница политики — `noindex`, но с
 canonical.
 
 Приёмка: согласие хранится и видно в админке; команда удаления обнуляет ПДн и
@@ -422,7 +424,7 @@ canonical.
 
 ### P1-24. Валюта цен: `₽` и `RUB` вместо BYN
 
-Шаблоны печатают `₽` (`themes/nlb/pages/books-detail.htm:42`,
+Шаблоны печатают `₽` (`themes/elv/pages/books-detail.htm:42`,
 `classes/Media.php:337-357`), JSON-LD отдаёт `RUB` (`classes/Seo.php:337`), а
 библиотека — в Минске. Это заглушка источника, но в проде она станет
 фактической ошибкой.
@@ -443,7 +445,7 @@ canonical.
 подвала захардкожены, переключателя нет. В October это штатные переводы, но
 второго сайта `/en/` пока нет.
 
-Поля `ml_` заранее не вводятся: `nlb:import` и JSON-LD читают текущие имена
+Поля `ml_` заранее не вводятся: `elv:import` и JSON-LD читают текущие имена
 (`classes/Seo.php`), переименование делается одновременно со вторым языком
 (`docs/roadmap.md`, §6), а не «на будущее».
 
@@ -535,7 +537,7 @@ Brevo Free (300 писем/день) — лимиты и антиспам-пол
 `pages/contacts.htm`), менять их должен владелец, а не разработчик.
 Внешняя оценка права только в части `theme.yaml` (`docs/roadmap.md`, §3).
 
-Нужно: `themes/nlb/config/fields.yaml` — телефон, e-mail, адрес, часы,
+Нужно: `themes/elv/config/fields.yaml` — телефон, e-mail, адрес, часы,
 соцсети; чтение через `this.theme` в шапке, подвале, контактах и JSON-LD;
 CSS-переменные `:root` — только если бюджет и 1:1 не страдают (тёмная тема —
 отдельное решение, не побочный эффект).
@@ -561,7 +563,7 @@ Unit-тесты есть, «глазами» сайт не проверяетс�
 
 Новая функция сейчас включается деплоем, откатить можно только релизом.
 
-Нужно: таблица `nlb_feature_flags` (ключ, включён, описание) + хелпер
+Нужно: таблица `elv_feature_flags` (ключ, включён, описание) + хелпер
 `Feature::enabled('new-search')`; значение по умолчанию — в коде, не в БД;
 kill switch через `.env` (`FEATURE_NEW_SEARCH=false`) действует без миграции.
 
@@ -571,7 +573,7 @@ kill switch через `.env` (`FEATURE_NEW_SEARCH=false`) действует б
 ### P2-18. ADR, Makefile и pre-commit
 
 Решения («почему Tailor, а не RainLab.Blog», «почему Bootstrap») живут в
-переписке; команды (`phpunit -c phpunit.nlb.xml`, гейты) помнят только агенты.
+переписке; команды (`phpunit -c phpunit.elv.xml`, гейты) помнят только агенты.
 
 Нужно: `docs/adr/NNN-*.md` — по одному решению на файл, со ссылками на код;
 `Taskfile.yml`/`Makefile` — `test`, `gates`, `serve`, `backup`; pre-commit —
@@ -586,14 +588,14 @@ kill switch через `.env` (`FEATURE_NEW_SEARCH=false`) действует б
 published`, истории версий, массовых операций и руководства для библиотекаря.
 
 Нужно: поле `status` + scope в шести blueprints (или отдельная таблица, если
-Tailor не даёт), ревизии — своя `nlb_content_revisions` (без стороннего
-плагина), команда `nlb:bulk-update`, `docs/editor-guide.md` со скриншотами
+Tailor не даёт), ревизии — своя `elv_content_revisions` (без стороннего
+плагина), команда `elv:bulk-update`, `docs/editor-guide.md` со скриншотами
 админки.
 
 Заодно: `seo_title` и `seo_description` продублированы в шести
 `blueprints/*/item.yaml` — вынести в mixin Tailor
 (`modules/tailor/classes/blueprint/MixinBlueprint.php:11`), проверив на одной
-сущности и прогнав `nlb:import` (`docs/roadmap.md`, §6): иначе правка поля
+сущности и прогнав `elv:import` (`docs/roadmap.md`, §6): иначе правка поля
 в одном blueprint'е тихо расходится с остальными пятью. `seo_image` и
 `seo_robots` — свойства страниц CMS, их это не касается.
 
@@ -620,7 +622,7 @@ Tailor не даёт), ревизии — своя `nlb_content_revisions` (бе
 
 Нужно: `tools/db-audit.php` — обход моделей и `EXPLAIN` по частым запросам;
 slow query log MySQL, разбор раз в сутки; план 10 частых запросов в
-`docs/db.md`; `php artisan nlb:seed-demo` для нового разработчика.
+`docs/db.md`; `php artisan elv:seed-demo` для нового разработчика.
 
 Приёмка: у каждого поля в `WHERE`/`ORDER BY`/`JOIN` есть индекс или записанное
 исключение; планы `EXPLAIN` в документе; сидер идемпотентен.
@@ -657,24 +659,24 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 `docs/roadmap.md` §10.
 
 Факты: локальный путь в поставляемом коде ровно один —
-`plugins/nlb/library/console/Import.php:65` (`'D:/nlbbootstrap-main/db/config/data'`
+`plugins/elv/library/console/Import.php:65` (`'D:/nlbbootstrap-main/db/config/data'`
 по умолчанию). У темы нет `composer.json`, а ядро ищет код продукта именно там
 (`modules/cms/classes/ThemeManager.php:354-366`); в `theme.yaml` нет
 `authorCode` (`:229-231`); `screenshot.png` отсутствует (ядром не используется,
 но нужен карточке Marketplace). У плагина
-`plugins/nlb/library/composer.json`: имя `nlb/library-plugin` не в форме
+`plugins/elv/library/composer.json`: имя `elv/library-plugin` не в форме
 `vendor/name`, `"license": "proprietary"` без файла `LICENSE`.
 
 Нужно: убрать дефолт с абсолютным путём (только `--source`/env), добавить
-`themes/nlb/composer.json` и `authorCode`, привести `composer.json` плагина к
+`themes/elv/composer.json` и `authorCode`, привести `composer.json` плагина к
 `vendor/name`, положить `LICENSE` с текстом лицензии покупателя, добавить
-`themes/nlb/screenshot.png`, вынести бренд и контакты в настройки темы
+`themes/elv/screenshot.png`, вынести бренд и контакты в настройки темы
 (`theme.yaml` → `form:`) вместо 61 вхождения «Библиотека 2026» и 26 строк
 телефона/адреса.
 
-Границы: `themes/nlb/assets/js/script.js` побайтово равен источнику — правка
+Границы: `themes/elv/assets/js/script.js` побайтово равен источнику — правка
 бренда в нём ломает паритет, решение отдельное. Переименование вендора
-`Nlb\Library` (75 файлов, 60 `namespace`) — не этот пункт, отдельное решение
+`Elv\Library` (75 файлов, 60 `namespace`) — не этот пункт, отдельное решение
 владельца.
 
 Приёмка: `grep` не находит абсолютных путей в `plugins/`, `themes/`, `config/`;
@@ -688,7 +690,7 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 слово «Библиотека» и реальные контакты из шаблона убираются. Пункт заменил
 прежние формулировки «демо-набор и сброс стенда» и «чистый шаблон без демо».
 
-Нужно: бренд и контакты — в настройки темы (`themes/nlb/theme.yaml`, раздел
+Нужно: бренд и контакты — в настройки темы (`themes/elv/theme.yaml`, раздел
 `form:`), в коде — нейтральные значения; все вхождения «Библиотека 2026» и
 «библиотека» в текстах заменить на нейтральные («организация», «центр»,
 «специалист»), сохранив смысл и демонстрационные блоки; демо-записи (книги,
@@ -696,27 +698,27 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 подписка и обратная связь работают как сейчас.
 
 Границы: демо-данные — пример, а не выгрузка реального фонда; `theme:seed` не
-используется (папки `themes/nlb/seeds` нет); реальные контакты в код не
+используется (папки `themes/elv/seeds` нет); реальные контакты в код не
 возвращаются.
 
-Приёмка: `grep -ri "библиотек"` по `themes/nlb` и `plugins/nlb/library` не
+Приёмка: `grep -ri "библиотек"` по `themes/elv` и `plugins/elv/library` не
 находит вхождений (кроме `preview/` и журналов); бренд меняется в одном месте —
 настройках темы; демо-блоки на месте; бронь, заказ, подписка и форма отвечают
 200; гейты зелёные.
 
 Статус (Stage 27, 13.11.2026): инфраструктура бренда готова —
-`plugins/nlb/library/classes/Brand.php`, поля `brand_*` в `themes/nlb/theme.yaml`,
-Twig-функции `nlb_brand`/`nlb_brand_text`, настройки читают шапка, подвал,
+`plugins/elv/library/classes/Brand.php`, поля `brand_*` в `themes/elv/theme.yaml`,
+Twig-функции `elv_brand`/`elv_brand_text`, настройки читают шапка, подвал,
 fab-кнопки, реквизиты, копирайт, макет (`<title>`, RSS, `og:site_name`, apple
 title), `Seo.php` (JSON-LD, robots), `Rss.php`, `Pwa.php` (манифест и `sw.js`),
-письма и подписи плагина. Осталось: заголовки страниц `themes/nlb/pages/*.htm`
+письма и подписи плагина. Осталось: заголовки страниц `themes/elv/pages/*.htm`
 (`title = "Контакты — Библиотека 2026"` → `{brand}`), тексты чат-помощника в
-`themes/nlb/assets/js/script.js` (телефон, адрес, «библиотекарь») и тексты
+`themes/elv/assets/js/script.js` (телефон, адрес, «библиотекарь») и тексты
 демо-записей в БД — это следующий блок.
 
 ### P2-28. Тумблеры элементов темы: каждый отдельно
 
-Нужно: настройки темы (`themes/nlb/theme.yaml`, раздел `form:`) с отдельным
+Нужно: настройки темы (`themes/elv/theme.yaml`, раздел `form:`) с отдельным
 переключателем на **каждый** элемент: верхняя полоса контактов, поиск в шапке,
 кнопка «Записаться», колонки подвала, соцсети, блок подписки, секции главной,
 боковая колонка детальной, cookie-плашка.
@@ -725,7 +727,7 @@ title), `Seo.php` (JSON-LD, robots), `Rss.php`, `Pwa.php` (манифест и `
 `tools/check-dom-parity.mjs` не менялись; один тумблер = один блок разметки;
 `<title>`, canonical, JSON-LD, инлайн-CSS, PWA-манифест и карта сайта не
 переключаются; на каждый тумблер — тест «выключен → элемента нет, по
-умолчанию → есть» (образец — `plugins/nlb/library/tests/PageBuilderTest.php`).
+умолчанию → есть» (образец — `plugins/elv/library/tests/PageBuilderTest.php`).
 
 Приёмка: список переключателей описан в `docs/monetization.md` §5; тесты
 зелёные; `check-dom-parity` 110/110 при дефолтах; выключение любого тумблера не
@@ -738,7 +740,7 @@ title), `Seo.php` (JSON-LD, robots), `Rss.php`, `Pwa.php` (манифест и `
 `favicon.svg` в `app/assets/images`, акцент сайта `#2563eb` в
 `app/assets/css/brand_styles.css`; проверка — `tools/check-admin-brand.mjs`
 (включая ловушку «настройки бренда не пересозданы»). Осталось: привести четыре
-экрана (`plugins/nlb/library/controllers/{requests,bookings,orders,subscribers}`)
+экрана (`plugins/elv/library/controllers/{requests,bookings,orders,subscribers}`)
 к одному виду — сводка сверху, быстрые фильтры по статусу, бейджи, массовые
 действия.
 
@@ -760,29 +762,29 @@ E2E на бэкенд в проекте нет — проверка ручная
 имеет, его разметка и JS не переносятся (то же решение, что в Stage 23 для
 карточек).
 
-Факты. Входящий поток уже есть: `nlb_requests`
-(`plugins/nlb/library/updates/create_nlb_requests_table.php:10-25` — `email`,
+Факты. Входящий поток уже есть: `elv_requests`
+(`plugins/elv/library/updates/create_elv_requests_table.php:10-25` — `email`,
 `phone`, `subject`, `message`, `page`, `source`, `created_by`,
 `date_processed`, `status` enum `new/in_progress/done`), модель со статусами и
-`markProcessed()` (`plugins/nlb/library/models/Request.php:39-59`), форма
+`markProcessed()` (`plugins/elv/library/models/Request.php:39-59`), форма
 `/feedback/` создаёт запись и ставит письмо админу в очередь
-(`plugins/nlb/library/classes/Http/FeedbackController.php:40-59`). Диалога нет:
+(`plugins/elv/library/classes/Http/FeedbackController.php:40-59`). Диалога нет:
 админский раздел — только список и просмотр, 31 строка без обработчиков
-(`plugins/nlb/library/controllers/Requests.php:13-29`). `created_by` хранит имя,
+(`plugins/elv/library/controllers/Requests.php:13-29`). `created_by` хранит имя,
 а не идентификатор (`FeedbackController.php:52`) — для авторства ответов нужен
 отдельный `author_id`.
 
 Решение: путь А — тикет по ссылке-токену, без регистрации. Личных кабинетов
-читателей на сайте нет (`themes/nlb/pages/` — только `feedback.htm` и
+читателей на сайте нет (`themes/elv/pages/` — только `feedback.htm` и
 `contacts.htm`), поэтому чат «для вошедшего пользователя», как в референсе, в
 лоб не переносится; P2-5 (кабинет) остаётся отдельным пунктом.
 
 Нужно:
 
-- миграция `nlb_ticket_messages`: `request_id` (FK cascade), `author_type`
+- миграция `elv_ticket_messages`: `request_id` (FK cascade), `author_type`
   (`client`/`staff`), `author_id` (backend user), `author_name`, `body`,
   `created_at`, `read_at`; индексы `(request_id, created_at)` и `read_at`;
-- в `nlb_requests` — `token_hash` (unique), `last_message_at`,
+- в `elv_requests` — `token_hash` (unique), `last_message_at`,
   `assigned_user_id`, `priority`, `closed_at`;
 - модель `TicketMessage`, связь `Request::messages()`, обновление
   `last_message_at` при сохранении;
@@ -834,32 +836,32 @@ E2E на бэкенд в проекте нет — проверка ручная
 - **M1** (версия October и хостинг) — версия решена: 4.4.13; хостинг выделен
   в отдельный пункт M17.
 - **M2** (установка не выполнена) — установка сделана: v4.4.13, Laravel
-  12.71.0, БД `nlb_october`, PHPUnit 1 171 тест ядра, `/` и `/admin` — 200.
-- **M4** (импорт) — команда `nlb:import`: 91 элемент, 12 разделов, повторный
-  прогон — 0 новых, тест идемпотентности зелёный (`phpunit.nlb.xml`).
-- **M5** (blueprints) — 9 YAML в `plugins/nlb/library/blueprints/`
+  12.71.0, БД `elv_october`, PHPUnit 1 171 тест ядра, `/` и `/admin` — 200.
+- **M4** (импорт) — команда `elv:import`: 91 элемент, 12 разделов, повторный
+  прогон — 0 новых, тест идемпотентности зелёный (`phpunit.elv.xml`).
+- **M5** (blueprints) — 9 YAML в `plugins/elv/library/blueprints/`
   (`news`, `events`, `books` × раздел, `collections`, `services`, `printing`),
   таблицы созданы `php artisan tailor:migrate`.
-- **M6** (110 URL) — тема `nlb`, 109 страниц `200`, `/non-existent/` — `404`;
+- **M6** (110 URL) — тема `elv`, 109 страниц `200`, `/non-existent/` — `404`;
   DOM-сверка и текст совпадают с `preview/` на всех 110
   (`tools/check-urls.mjs`, `tools/check-dom-parity.mjs`).
 - **M7** (инлайн-CSS и бюджет) — `tools/purge-css.mjs` и
   `tools/check-css-budget.mjs` созданы и зелёные; главная 185 676 знаков
   (бюджет 190 412), инлайн `styles.css` 57 795 байт (порог 57 856),
   внешних CSS-запросов и Google Fonts нет.
-- **M12** (тема `nlb`) — тема зарегистрирована, layout отдаёт инлайн-CSS и
+- **M12** (тема `elv`) — тема зарегистрирована, layout отдаёт инлайн-CSS и
   спрайт, страницы собраны из partials, `script.js` побайтово равен источнику.
 - **M16** (демо-тема и демо-плагин) — каталоги удалены, таблицы `xc_*`
-  демо-блюпринтов и запись `October.Demo` вычищены; `theme:list` — только `nlb`,
-  `plugin:list` — только `Nlb.Library`, `/` отвечает из темы `nlb`.
+  демо-блюпринтов и запись `October.Demo` вычищены; `theme:list` — только `elv`,
+  `plugin:list` — только `Elv.Library`, `/` отвечает из темы `elv`.
 - **P1-9** (бронь: слоты, письма, статус) — закрыт на Stage 3–6:
-  `BookingService` + `nlb:slots-generate` (Stage 3), занятые часы из БД
+  `BookingService` + `elv:slots-generate` (Stage 3), занятые часы из БД
   (Stage 4), `POST /booking/` с `409 SLOT_UNAVAILABLE` и письмами в очереди
   (Stage 5), админ-список броней со сменой статуса и освобождением слота
   (Stage 6, `tests/AdminTest.php`). Осталась только демо-подсказка «часть
   слотов занята» — она вынесена в P1-9 как шаг перед публикацией.
 - **P1-12** (заказ сувенира) — закрыт на Stage 5–6: `POST /order/` пишет
-  `nlb_orders`, заново проверяет скрытые `PRICE`/`QTY`, ставит письмо
+  `elv_orders`, заново проверяет скрытые `PRICE`/`QTY`, ставит письмо
   сотрудникам; статус («В работе», «Выполнен», «Отменён») меняется в админке,
   `date_processed` проставляется хуком `Order::saving`.
 - **M20** (карта сайта, robots, 301, JSON-LD) — закрыт на Stage 7:
@@ -888,7 +890,7 @@ E2E на бэкенд в проекте нет — проверка ручная
   `classes/Http/SecurityHeaders.php:27` ставит CSP с одноразовым nonce,
   `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), `Referrer-Policy`,
   `Permissions-Policy`, HSTS только на HTTPS; инлайновый скрипт фильтров
-  подписан `nonce="{{ nlb_csp_nonce() }}"`; статические заголовки дублирует
+  подписан `nonce="{{ elv_csp_nonce() }}"`; статические заголовки дублирует
   `nginx.conf` (с `fastcgi_hide_header` от дублей). Проверено 162 тестами
   (`SecurityHeadersTest` — 12) и гейтом `tools/check-headers.mjs` (12 страниц,
   уникальный nonce, админка без CSP, 404 с заголовками).
@@ -899,7 +901,7 @@ E2E на бэкенд в проекте нет — проверка ручная
   Проверено 171 тестом (`RssTest` — 9) и `tools/check-seo.mjs`.
 - **M10** (PWA-обвязка) — закрыт на Stage 12: `manifest.webmanifest`, `sw.js`
   и `offline.html` отдаются с корня маршрутами (`routes.php:24-26`,
-  `classes/Http/PwaController.php:19`), файлы лежат в `themes/nlb/assets/pwa/`;
+  `classes/Http/PwaController.php:19`), файлы лежат в `themes/elv/assets/pwa/`;
   версия кеша — восемь hex из `mtime` файлов `SHELL` (`classes/Pwa.php:72`),
   `/admin/` из перехвата исключён, регистрация — `assets/js/pwa.js` из layout.
   Проверено 181 тестом (`PwaTest` — 9) и гейтом `tools/check-pwa.mjs`

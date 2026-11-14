@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Бюджет встроенного CSS и внешних запросов темы nlb.
+ * Бюджет встроенного CSS и внешних запросов темы elv.
  *
  * Проверяет то, что видит браузер до первой отрисовки:
  *   - минифицированный `styles.css` (встраивается в <style>) влезает в бюджет;
@@ -25,7 +25,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const theme = path.join(root, 'themes/nlb');
+const theme = path.join(root, 'themes/elv');
 
 // 56,4 КиБ в документации = 57 753 байта; фактическая базовая линия источника
 // 57 794 байта, у перенесённой темы — 57 795. Бюджет держим на 56,5 КиБ.
@@ -33,8 +33,8 @@ const STYLES_BUDGET = 57856;
 const BOOTSTRAP_BUDGET = 61377;
 const DOCUMENT_BUDGET = 190412;
 
-const stylesFile = 'themes/nlb/assets/css/styles.css';
-const bootstrapFile = 'themes/nlb/assets/vendor/bootstrap.min.css';
+const stylesFile = 'themes/elv/assets/css/styles.css';
+const bootstrapFile = 'themes/elv/assets/vendor/bootstrap.min.css';
 
 const failures = [];
 
@@ -116,7 +116,7 @@ for (const file of sources) {
     }
 }
 
-if (!sources.length) failures.push('в themes/nlb нет разметки — проверять нечего');
+if (!sources.length) failures.push('в themes/elv нет разметки — проверять нечего');
 
 const urlIndex = process.argv.indexOf('--url');
 if (urlIndex !== -1) {

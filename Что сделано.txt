@@ -6,10 +6,66 @@
 
 ---
 
+(Stage 28 — 14.11.2026) — **`nlb` переименован в `elv` целиком: тема, плагин, данные.**
+
+Решение владельца 13.11.2026: «исключить везде nlb», вариант — полное
+переименование (код + тема + БД) с сохранением данных.
+
+Что переименовано:
+- папки `themes/nlb` → `themes/elv`, `plugins/nlb/library` → `plugins/elv/library`;
+  идентификатор темы `code: elv` (`themes/elv/theme.yaml:2`);
+- namespace `Nlb\Library` → `Elv\Library` (`plugins/elv/library/Plugin.php:1`),
+  Tailor-handle `Nlb\*` → `Elv\*` (UUID блюпринтов не менялись — `tailor:migrate`
+  отвечает «Nothing to migrate», данные в `xc_*` не тронуты);
+- Twig-функции `nlb_*` → `elv_*`, классы `.nlb-*` → `.elv-*`, переменные
+  `--nlb-*` → `--elv-*`, атрибуты `data-nlb-*` → `data-elv-*`, JS `NLB_*`,
+  `nlbChat`, `nlbFab` → `ELV_*`, `elvChat`, `elvFab`; пути ассетов
+  `/themes/elv/...` (макет, PWA SHELL, `sw.js`, `manifest`);
+- команды `nlb:import` / `nlb:slots-generate` / `nlb:health-report` → `elv:*`
+  (`php artisan list`);
+- таблицы `nlb_bookings`, `nlb_orders`, `nlb_requests`, `nlb_slots`,
+  `nlb_subscribers` → `elv_*`: миграция версии **2.0.0**
+  `plugins/elv/library/updates/rename_legacy_tables_to_elv.php` (только
+  `RENAME TABLE`, `up`/`down`), плюс страховка в `create_elv_*.php`:
+  `Schema::hasTable('nlb_*')` → `rename`, иначе `create` (чистая установка
+  и обновление живой базы проходят одним путём);
+- база `nlb_october` → `elv_october`: дамп снят до переноса, `RENAME TABLE`
+  79 таблиц, сверка количества строк до/после — 15 410 = 15 410, расхождений
+  нет; пустая старая база удалена; `.env` и `.env.example` —
+  `DB_DATABASE=elv_october` (плюс `ACTIVE_THEME=elv`);
+- служебные записи БД, иначе October выполнил бы миграции заново на живой базе:
+  `cms_theme_data.theme` = `elv`, `system_plugin_versions.code` и
+  `system_plugin_history.code` = `Elv.Library` (detail `create_elv_*`);
+- `phpunit.nlb.xml` → `phpunit.elv.xml`; гейты `tools/*.mjs`
+  (`check-dom-parity`, `check-urls`, `check-css-budget`, `purge-css`,
+  `import-preview-pages`, `serve-static`) — пути и селекторы `elv`;
+- админка: `app/assets/css/brand_styles.css`, комментарии `nginx.conf`,
+  настройки бренда пересозданы из конфига (`BrandSetting::resetDefault()`):
+  в живой записи был чужой `app_name` («Услуги») и `custom_css` со старым
+  путём `themes/nlb/...`.
+
+Осознанные исключения (иначе ломается перенос данных): строки `nlb_*`
+в `updates/create_elv_*.php`, `rename_legacy_tables_to_elv.php` и
+`console/Import.php` — это имена **старых** таблиц для детекта; путь источника
+`D:\nlbbootstrap-main` (папка на диске, вне репозитория); черновики владельца.
+
+Проверено: PHPUnit `OK (231 tests, 889 assertions)`; `check-dom-parity` 110/110;
+`check-urls` 109×200 и `/non-existent/` 404; `check-seo` (106 адресов, RSS);
+`check-headers`; `check-pwa`; `check-api` (6 разделов, 91 запись);
+`check-health`; `check-orphans`; `check-css-budget` (56.4 и 51.6 КБ);
+`check-admin-brand`; `october:migrate` и `tailor:migrate` — «Nothing to migrate».
+Главная: 178 ссылок `/themes/elv/`, 507 классов `elv-`, вхождений `nlb` — 0.
+
+Не проверено: установка с нуля на пустой базе (`october:install` не гонялся,
+страховка в create-миграциях проверена чтением); тексты «Библиотека»/«Минск»
+не тронуты — это следующий блок (Stage 29).
+
+---
+
 (Stage 27.2 — 13.11.2026) — **В админке «Сувениры» стали «Каталогом».**
 
 Универсальный шаблон не должен называть раздел сувенирами: Tailor-блюпринт
-`plugins/nlb/library/blueprints/books/item.yaml` — `name: Товар`,
+`plugins/elv/library/blueprints/books/item.yaml` — `name: Товар`,
 `primaryNavigation.label: Каталог`, `navigation.label: Все товары`;
 `blueprints/books/section.yaml` — «Раздел каталога»;
 `blueprints/blocks/builder.yaml` — источник блоков `books: Каталог`;
@@ -26,14 +82,14 @@
 
 (Stage 27.1 — 13.11.2026) — **Заголовки страниц берут бренд из настроек.**
 
-25 файлов `themes/nlb/pages/*.htm`: `title = "Контакты — Библиотека 2026"` →
-`title = "Контакты — {brand}"` (подстановка — `nlb_brand_text()` в
-`themes/nlb/layouts/default.htm:11,24,33`); на главной — `{brand} — центр
+25 файлов `themes/elv/pages/*.htm`: `title = "Контакты — Библиотека 2026"` →
+`title = "Контакты — {brand}"` (подстановка — `elv_brand_text()` в
+`themes/elv/layouts/default.htm:11,24,33`); на главной — `{brand} — центр
 знаний`. Семь страниц с 404 (`books-detail`, `builder`, `collections-detail`,
 `events-detail`, `news-detail`, `printing-detail`, `services-detail`) вместо
 литерала ставят `Brand::get('name')`. `/personal/` — самостоятельный HTML без
-макета, поэтому заголовок проходит через `nlb_brand_text()` вручную
-(`themes/nlb/pages/personal.htm:12`).
+макета, поэтому заголовок проходит через `elv_brand_text()` вручную
+(`themes/elv/pages/personal.htm:12`).
 
 Проверено: `check-dom-parity` 110/110 (бренд в `<title>` нормализуется),
 `check-seo`, `check-urls` (109 × 200, 404 со страницей), PHPUnit 231/889.
@@ -44,14 +100,14 @@
 (Stage 27 — 13.11.2026) — **Бренд и контакты ушли в настройки темы; слово «Библиотека» из шапки, подвала, макета и микроразметки убрано.**
 
 Первый блок исполнения P2-27 после решения Stage 26 («демо остаётся, бренд —
-убирается»). Инфраструктура одна: класс `plugins/nlb/library/classes/Brand.php:13`
+убирается»). Инфраструктура одна: класс `plugins/elv/library/classes/Brand.php:13`
 (FALLBACK `:19`), значения берутся из `form.fields` темы и `cms_theme_data`
 (префикс `brand_` в настройках соответствует имени ключа в коде —
-`Brand::normalizeKey()`), Twig-функции `nlb_brand`/`nlb_brand_text` —
-`plugins/nlb/library/Plugin.php:205,208`. Подстановка `{brand}`, `{legal}`,
+`Brand::normalizeKey()`), Twig-функции `elv_brand`/`elv_brand_text` —
+`plugins/elv/library/Plugin.php:205,208`. Подстановка `{brand}`, `{legal}`,
 `{city}`, `{phone}` и т.д. — `Brand::replace()`.
 
-Поля настроек (19) — `themes/nlb/theme.yaml` (`form.fields`, начиная с
+Поля настроек (19) — `themes/elv/theme.yaml` (`form.fields`, начиная с
 `brand_name`): название, юридическое наименование, подпись, описание для
 микроразметки, тип организации, телефон, почта, индекс, город, улица, страна,
 часы работы, открытие/закрытие, Telegram, WhatsApp, VK, YouTube. Дефолты
@@ -60,17 +116,17 @@
 
 Что переведено на настройки:
 
-- шапка (`themes/nlb/partials/header.htm`) — название, подпись, телефон;
-- подвал (`themes/nlb/partials/footer.htm`) — адрес, часы, телефон, почта,
+- шапка (`themes/elv/partials/header.htm`) — название, подпись, телефон;
+- подвал (`themes/elv/partials/footer.htm`) — адрес, часы, телефон, почта,
   копирайт, реквизиты, fab-кнопки; Telegram и WhatsApp рисуются, только если
   заданы в настройках (пустые — кнопки скрыты, ссылок «в никуда» нет);
-- макет (`themes/nlb/layouts/default.htm`) — RSS-заголовок, `og:site_name`,
+- макет (`themes/elv/layouts/default.htm`) — RSS-заголовок, `og:site_name`,
   `apple-mobile-web-app-title`, `<title>`/`og:title`/`twitter:title` через
-  `nlb_brand_text()`, то есть `title = "Контакты — {brand}"` уже работает;
-- `plugins/nlb/library/classes/Seo.php:16,24` — `siteName()`/`contacts()` вместо
+  `elv_brand_text()`, то есть `title = "Контакты — {brand}"` уже работает;
+- `plugins/elv/library/classes/Seo.php:16,24` — `siteName()`/`contacts()` вместо
   констант `SITE_NAME`/`CONTACTS`; тип узла из `brand_schema_type`, id узла
   `#organization` вместо `#library`; описание — из настроек;
-- `plugins/nlb/library/classes/Rss.php:43,45`, `Pwa.php` (манифест и `sw.js`
+- `plugins/elv/library/classes/Rss.php:43,45`, `Pwa.php` (манифест и `sw.js`
   подставляют название, `manifest.webmanifest` — метки `__BRAND__`/
   `__DESCRIPTION__`), письма подписки, сообщение подписчика, подписи плагина и
   тег `library` (`О нас`), описание команды импорта.
@@ -92,8 +148,8 @@
 
 Не проверено: сохранение настроек в админке вручную (нужен вход в `/admin`) —
 кэш `cms_theme_data` (1440 минут) после смены значений сбрасывается
-пересохранением настроек; заголовки страниц `themes/nlb/pages/*.htm` и тексты
-чат-помощника (`themes/nlb/assets/js/script.js`), а также тексты демо-записей в
+пересохранением настроек; заголовки страниц `themes/elv/pages/*.htm` и тексты
+чат-помощника (`themes/elv/assets/js/script.js`), а также тексты демо-записей в
 БД ещё содержат «Библиотека» — это следующий блок.
 
 ---
@@ -128,7 +184,7 @@
 
 Повод: вопрос владельца «у меня нет быстрого разворачивания демо, но в
 `Что доделать` есть???». Проверка: быстрого развёртывания нет — папки
-`themes/nlb/seeds` в проекте нет, `theme:seed` нигде не вызывается (проверено
+`themes/elv/seeds` в проекте нет, `theme:seed` нигде не вызывается (проверено
 13.11.2026). Пункт P2-27 был планом, а не сделанным, и противоречил решению
 «демо не нужно».
 
@@ -144,7 +200,7 @@
 - `docs/README.md` — описание `monetization.md`: «стенд без демо».
 
 Не проверено: код шаблона не менялся — это правка плана. Демо-массивы внутри
-`themes/nlb/pages/*.htm` (главная — 616 строк) ещё не убраны, это следующий
+`themes/elv/pages/*.htm` (главная — 616 строк) ещё не убраны, это следующий
 блок работ.
 
 ---
@@ -160,18 +216,18 @@
   панели, «пузыри», бейдж непрочитанных, автоскролл; разметка и JS не
   переносятся, к бэкенду October они отношения не имеют (то же решение, что в
   Stage 23 для карточек);
-- факты текущего состояния с `file:line`: `nlb_requests`
-  (`plugins/nlb/library/updates/create_nlb_requests_table.php:10-25`), статусы и
-  `markProcessed()` (`plugins/nlb/library/models/Request.php:39-59`), админка —
-  только список и просмотр (`plugins/nlb/library/controllers/Requests.php:13-29`),
+- факты текущего состояния с `file:line`: `elv_requests`
+  (`plugins/elv/library/updates/create_elv_requests_table.php:10-25`), статусы и
+  `markProcessed()` (`plugins/elv/library/models/Request.php:39-59`), админка —
+  только список и просмотр (`plugins/elv/library/controllers/Requests.php:13-29`),
   форма пишет в БД и ставит письмо в очередь
-  (`plugins/nlb/library/classes/Http/FeedbackController.php:40-59`),
+  (`plugins/elv/library/classes/Http/FeedbackController.php:40-59`),
   `created_by` хранит имя, а не id (`:52`), личных кабинетов читателей нет
-  (`themes/nlb/pages/` — `feedback.htm`, `contacts.htm`);
+  (`themes/elv/pages/` — `feedback.htm`, `contacts.htm`);
 - решение: путь А — тикет по ссылке-токену, без регистрации и без кабинета
   (P2-5 остаётся отдельным пунктом);
-- состав: `nlb_ticket_messages` (`request_id` cascade, `author_type`,
-  `author_id`, `body`, `read_at`), поля в `nlb_requests` (`token_hash` unique,
+- состав: `elv_ticket_messages` (`request_id` cascade, `author_type`,
+  `author_id`, `body`, `read_at`), поля в `elv_requests` (`token_hash` unique,
   `last_message_at`, `assigned_user_id`, `priority`, `closed_at`), лента и
   ответ в админке с `Ctrl+Enter`, публичная страница `/ticket/{номер}-{токен}`,
   письма клиенту и сотруднику, поллинг 15 с при видимой вкладке;
@@ -208,7 +264,7 @@
 Stage 22):
 
 - верхнее меню — градиент сайта `#2563eb → #7c3aed → #9333ea` (значение
-  `--nlb-grad`, `themes/nlb/assets/css/styles.css:35`), тёмная тема —
+  `--elv-grad`, `themes/elv/assets/css/styles.css:35`), тёмная тема —
   `#1e3a8a → #5b21b6 → #7e22ce`;
 - кнопки и поля — скругление 8 px, у основной кнопки мягкая тень;
 - селектор меню проверен по живой разметке
@@ -252,10 +308,10 @@ Bootstrap 5 под MIT. Ни один не является скином October
   (две страницы) в градиенте сайта `#2563eb → #7c3aed` и словесный знак.
 - `app/assets/css/brand_styles.css` — акцент `#2563eb`, ссылки `#1d4ed8`,
   выделение `#10b981` (светлая тема) и `#3b82f6`/`#34d399` (тёмная); значения
-  совпадают с токенами `themes/nlb/assets/css/styles.css:13-21`.
+  совпадают с токенами `themes/elv/assets/css/styles.css:13-21`.
 - `.env.example` и `docs/installation.md` — `APP_NAME="Библиотека 2026"`
-  (аббревиатура `NLB` ушла), попутно убран устаревший комментарий
-  `ACTIVE_THEME=demo` (тема `nlb` работает с этапа 4).
+  (аббревиатура `ELV` ушла), попутно убран устаревший комментарий
+  `ACTIVE_THEME=demo` (тема `elv` работает с этапа 4).
 - `tools/check-admin-brand.mjs` — новый гейт: белые списки `menu_mode`/
   `color_mode`/`color_palette` по ядру, наличие всех пяти файлов, запрет
   `@import` и внешних `url()` в `brand_styles.css`, и живая проверка `/admin`.
@@ -313,7 +369,7 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
 `:35`, `:140`); `theme:seed` существует (`modules/cms/console/ThemeSeed.php:34`)
 и сам мигрирует Tailor (`modules/cms/models/ThemeSeed.php:150`, `:165`); код
 темы ядро берёт из `composer.json` (`modules/cms/classes/ThemeManager.php:354-366`),
-которого у `themes/nlb` нет; `version.yaml` темы необязателен (`:391-393`);
+которого у `themes/elv` нет; `version.yaml` темы необязателен (`:391-393`);
 `screenshot` в ядре не упоминается; админка настраивается через `brand` в
 `config/backend.php:45-62` (6 палитр, light/dark/auto, 5 режимов меню, свой CSS),
 глубже — скин `Backend\Classes\Skin` (`modules/backend/classes/Skin.php:72-95`).
@@ -326,15 +382,15 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
 
 (Stage 20 — 13.11.2026) — **P2-24: каркас конструктора страниц — запись Tailor, шесть блоков, маршрут, 404, карта сайта.**
 
-Повод: страницы сайта — файлы `themes/nlb/pages/*.htm` (26 шаблонов), Tailor
+Повод: страницы сайта — файлы `themes/elv/pages/*.htm` (26 шаблонов), Tailor
 хранил только контент (`type: stream` в `blueprints/*/item.yaml:5`). Собрать
 новую страницу без разработчика было нельзя: правка файла темы = деплой.
 
 Сделано:
 
-- модель: `blueprints/page/structure.yaml` (`Nlb\Page`, `structure.maxDepth: 1`,
+- модель: `blueprints/page/structure.yaml` (`Elv\Page`, `structure.maxDepth: 1`,
   поля `excerpt`/`seo_title`/`seo_description` + миксин `blocks`) и
-  `blueprints/blocks/builder.yaml` (`Nlb\Blocks`, `repeater` +
+  `blueprints/blocks/builder.yaml` (`Elv\Blocks`, `repeater` +
   `displayMode: builder` + шесть групп: `text`, `text-image`, `quote`,
   `records`, `video`, `toc`).
 - `classes/PageBuilder.php`: `find()` (опубликованная страница по slug,
@@ -342,13 +398,13 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
   дедупом `-2`, `Str::slug`), `grid()` (белый список `SOURCES`, лимит 1…12,
   через `Content::records()`), `fileUrl()` (внешние адреса отбрасываются — CSP
   `default-src 'self'`), `pages()` для карты сайта.
-- шаблоны: `themes/nlb/pages/builder.htm` (`url = "/:slug"`, 404-ветка,
+- шаблоны: `themes/elv/pages/builder.htm` (`url = "/:slug"`, 404-ветка,
   `Seo::applyRecord`), `partials/blocks/list.htm` + шесть партиалов блоков.
   Новых стилей нет: только классы Bootstrap и темы, `purge-css` пересобран
   (51,6 КБ; бюджет `styles.css` 56,4 КБ не тронут).
 - карта сайта: `Sitemap::urls()` добавляет опубликованные страницы
   конструктора; перечень статических страниц по-прежнему сверяется с
-  `themes/nlb/pages/*.htm`, страницы с параметром в адресе из сверки исключены
+  `themes/elv/pages/*.htm`, страницы с параметром в адресе из сверки исключены
   (`SeoTest::themePages()` — `str_contains($page->url, ':')`).
 - тесты: `tests/PageBuilderTest.php` (12 тестов) + `SeoTest` (+1 тест: страница
   в карте есть, выключенная — нет). Тесты плагина 231/889 (было 218/836).
@@ -379,7 +435,7 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
 
 (Stage 19 — 12.11.2026) — **P2-25: год в подвале берётся из часов, а не из литерала.**
 
-Повод: `themes/nlb/partials/footer.htm:76` печатал «© 2026» жёстко. В январе
+Повод: `themes/elv/partials/footer.htm:76` печатал «© 2026» жёстко. В январе
 2027 подвал соврал бы, а исправление одной цифры — это деплой. Дефект тихий:
 ни один гейт его не ловит, потому что в 2026 году оба варианта рендерятся
 одинаково.
@@ -389,7 +445,7 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
 - подвал: `© {{ 'now'|date('Y') }} Библиотека 2026. Все права защищены.`
   Год бренда («Библиотека 2026» в шапке и подвале) остался текстом — это имя,
   а не дата, подстановка года его бы испортила.
-- `plugins/nlb/library/tests/FooterTest.php` (2 теста): первый проверяет
+- `plugins/elv/library/tests/FooterTest.php` (2 теста): первый проверяет
   **источник** партиала (нет литерала `© 20\d\d`, есть `'now'|date('Y')`),
   второй — **рендер** главной (`© {текущий год} Библиотека 2026. Все права
   защищены.` ровно один раз). Разделение осознанное: сегодня рендер совпадает
@@ -425,7 +481,7 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
   с условиями, 5 отложены, 4 отклонены. Шапка документа дополнена вторым
   источником (оба черновика в `.gitignore`).
 - `Что доделать.txt`: **P2-24** — конструктор страниц из блоков (Tailor
-  `structure` + страница `Nlb\Page`, партиал на тип блока, блок «оглавление»
+  `structure` + страница `Elv\Page`, партиал на тип блока, блок «оглавление»
   без JS, переиспользование `Content::records()`), **P2-25** — год в подвале.
   В шапке бэклога счётчик тестов приведён к факту (193/724 → 216/832) и
   добавлены Stage 16–17.
@@ -437,10 +493,10 @@ CMS deepseek.html» (13.11.2026) и вопрос «сделать админку
   `[spoiler]`/`[button]` (движка шорткодов в October нет), «12 рекламных
   позиций» (в проекте такого наследия нет).
 
-Проверено по коду перед записью: `themes/nlb/partials/footer.htm:76`
-(жёсткий «© 2026»), `themes/nlb/assets/js/script.js` — 73,6 КБ (1:1),
-`themes/nlb/assets/css/styles.css` — без тёмной темы, `partials/cards/` —
-6 карточек по одной на раздел, `plugins/nlb/library/blueprints/books/item.yaml` —
+Проверено по коду перед записью: `themes/elv/partials/footer.htm:76`
+(жёсткий «© 2026»), `themes/elv/assets/js/script.js` — 73,6 КБ (1:1),
+`themes/elv/assets/css/styles.css` — без тёмной темы, `partials/cards/` —
+6 карточек по одной на раздел, `plugins/elv/library/blueprints/books/item.yaml` —
 нет поля `tags`, `classes/Content.php:26` — `flush()` на запрос.
 
 Не проверено: качество UX из WPShop — шаблона-источника у нас нет, оценивать
@@ -477,7 +533,7 @@ P2-24.
 
 Сделано:
 
-- `ApiController` (`plugins/nlb/library/classes/Http/ApiController.php`):
+- `ApiController` (`plugins/elv/library/classes/Http/ApiController.php`):
   `index()` — список раздела, `show()` — одна запись по slug. Разделы берутся
   из `Sitemap::SECTIONS` (`classes/Sitemap.php:21`), поэтому API и карта сайта
   не могут разойтись; выборка — через `Content::records()`/`Content::record()`
@@ -494,7 +550,7 @@ P2-24.
 - гейт `tools/check-api.mjs`: 6 разделов, 91 запись, поля контракта,
   `meta.count` = длина `data`, **каждая `url` из списка открывается 200**
   (иначе API отдаёт то, чего нет в вёрстке), `404`/`422` на ошибки.
-- тесты `plugins/nlb/library/tests/ApiTest.php` (7): контракт и типы полей,
+- тесты `plugins/elv/library/tests/ApiTest.php` (7): контракт и типы полей,
   исключение отключённой записи в списке и в `{slug}`, `limit`, чужой handle,
   все шесть разделов карты сайта.
 
@@ -507,7 +563,7 @@ P2-24.
 живой прогон `/api/v1/books` (24 записи, `Content-Type: application/json`),
 `/api/v1/news?limit=2`, `/api/v1/books/{slug}` (200), `/api/v1/unknown` (404
 JSON), `/api/v1/books/net-takogo-sluga` (404 JSON), картинка отдаётся
-абсолютным адресом `/themes/nlb/assets/images/news-1.jpg`. Ломка гейта: поле
+абсолютным адресом `/themes/elv/assets/images/news-1.jpg`. Ломка гейта: поле
 `excerpt` убрано из `payload()` — `check-api` упал с «в записи нет поля
 excerpt» по каждому разделу, после возврата снова зелёный.
 
@@ -526,7 +582,7 @@ excerpt» по каждому разделу, после возврата сно
 
 Сделано:
 
-- `Seo::breadcrumbs()` (`plugins/nlb/library/classes/Seo.php:118`) строит
+- `Seo::breadcrumbs()` (`plugins/elv/library/classes/Seo.php:118`) строит
   «Главная → раздел → страница» из пути запроса: первый сегмент ищется в
   `SECTIONS` (`Seo.php:32`, 17 подписей), последняя крошка — заголовок записи
   (`$recordTitle` из `applyRecord()`, `Seo.php:370`) или заголовок страницы без
@@ -537,7 +593,7 @@ excerpt» по каждому разделу, после возврата сно
   шаблон адреса страницы (`pageMatchesPath()`, `Seo.php:182`) — без этого
   `/events/<случайный-slug>/` получал крошку «События» и подпись «Страница не
   найдена» (поймано живьём, тест `testNotFoundPageOfKnownSectionGetsNoBreadcrumbs`).
-- тег разметки принимает страницу: `nlb_jsonld(this.page)`
+- тег разметки принимает страницу: `elv_jsonld(this.page)`
   (`Plugin.php:201`, `layouts/default.htm:19`).
 - `tools/check-orphans.mjs` — у каждого адреса `sitemap.xml` есть входящая
   внутренняя ссылка; ссылка на себя не считается, внешние хосты и
@@ -594,7 +650,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 - атомарные паршалы `button.htm`/`section-header.htm` — **отклонено**:
   карточки уже вынесены (`partials/cards/`, 6 файлов), остальное уникально;
 - `ml_`-префиксы — **заметка** в P2-1, не работа: переименование сломает
-  `nlb:import` и JSON-LD;
+  `elv:import` и JSON-LD;
 - zero-downtime (`october:mirror` + атомарный symlink; команда в 4.4 есть,
   `php artisan list`) — **принято после выбора хостинга**, строка в P0-9.
 
@@ -621,7 +677,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Повод: локальный запуск состоял из четырёх шагов в PowerShell (PATH, `cd`,
 `artisan serve`, браузер), PHP нет в PATH, а `README.md` в таблице статуса
-писал «не начат» про этапы 3–8 и предлагал `nlb:search-index`, которой нет.
+писал «не начат» про этапы 3–8 и предлагал `elv:search-index`, которой нет.
 Пользователь дважды спросил «сделай батник запуска» и «сайт не открывается» —
 причина второго: сервер останавливался при прогоне гейтов.
 
@@ -633,16 +689,16 @@ BreadcrumbList» по каждому разделу, после откатa сн
   отказе поднимается `mysqld` из Laragon с его `my.ini`; `php artisan serve` на
   8080 стартует в свёрнутом окне; готовность — до 40 с по `/health`, а не по
   «порт открылся»; затем браузер. Ключ `/nobrowser` — без браузера (для
-  скриптов и проверок). Остановка — закрыть окна «NLB October 8080» и
-  «NLB MySQL».
+  скриптов и проверок). Остановка — закрыть окна «ELV October 8080» и
+  «ELV MySQL».
 - Файл в UTF-8 с `chcp 65001` **и CRLF**: с одним LF `cmd` рвал строки и падал
   на `set /a` и `goto` (проверено на первом прогоне), `chcp 1251` не понадобился.
   В `.gitattributes` добавлено `*.bat text eol=crlf`, чтобы LF не вернулся при
   checkout.
 - `README.md`: таблица статуса приведена к факту (этапы 3, 4, 5 и 8 закрыты
   с датами и тестами; 6 — M8, 7 — P1-16), в «Быстром старте» появился
-  `запуск.bat`, удалена несуществующая команда `nlb:search-index` (её нет в
-  `plugins/nlb/library/console`). `docs/installation.md` §6 — запуск батником и
+  `запуск.bat`, удалена несуществующая команда `elv:search-index` (её нет в
+  `plugins/elv/library/console`). `docs/installation.md` §6 — запуск батником и
   свежие замеры (193 527 знаков, 193 теста); `project-context.md` §9 — строка
   про батник.
 - `docs/architecture.md` §2 — структура плагина приведена к факту: реальные
@@ -678,7 +734,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Повод: P1-21. Health-эндпоинта не было, ошибки видны только в
 `storage/logs/laravel.log`, а планировщик не был зарегистрирован вовсе — при
-этом `docs/architecture.md` §7 уже называл `nlb:slots-generate` ежедневной
+этом `docs/architecture.md` §7 уже называл `elv:slots-generate` ежедневной
 задачей. Слоты в проде кончились бы через 30 дней после `--days`, и бронь
 начала бы отвечать «нет свободного времени».
 
@@ -693,12 +749,12 @@ BreadcrumbList» по каждому разделу, после откатa сн
 - `classes/Http/HealthController.php:18` — `200`/`503`, JSON
   `{status, checks, time}`, `Cache-Control: no-store`; маршрут `health`
   объявлен вне группы `web` (`routes.php:11`), поэтому сессия не создаётся.
-- `console/HealthReport.php:20` — `nlb:health-report`: JSON-строка
+- `console/HealthReport.php:20` — `elv:health-report`: JSON-строка
   (`at`, `db_ms`, `queue_size`, `disk_free_bytes`, `checks`) дописывается в
   `storage/logs/health.log` (или `--path`), код возврата `1`, если БД не
   ответила.
-- `Plugin.php:27` — `registerSchedule()`: `nlb:health-report` ежечасно,
-  `nlb:slots-generate` ежедневно в 03:10, оба `withoutOverlapping()`.
+- `Plugin.php:27` — `registerSchedule()`: `elv:health-report` ежечасно,
+  `elv:slots-generate` ежедневно в 03:10, оба `withoutOverlapping()`.
   Проверено `php artisan schedule:list` — обе задачи в расписании.
 - `tests/HealthTest.php` — 12 тестов: 200 на живых компонентах, 503 при отказе
   каждого по отдельности, отсутствие `Set-Cookie`, отсутствие `SQLSTATE`/DSN/
@@ -707,17 +763,17 @@ BreadcrumbList» по каждому разделу, после откатa сн
 - `tools/check-health.mjs` — гейт на живом сервере: 200, `application/json`,
   `status: "ok"`, три `true`, `no-store`, нет cookie и внутренних деталей.
 - Документация: `docs/installation.md` §9 (мониторинг, cron `schedule:run`,
-  logrotate), `docs/architecture.md` §7 (расписание и план `nlb:search-index`),
+  logrotate), `docs/architecture.md` §7 (расписание и план `elv:search-index`),
   `docs/security-performance.md` §1 (почему `/health` не отдаёт детали),
   `docs/qa-checklist.md` B5, `project-context.md`, `README.md`, `AGENTS.md` §5,
   `CHANGELOG.md`.
 
 Проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **193 теста,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **193 теста,
   724 утверждения**, 0 упавших (было 181/684).
 - `node tools/check-health.mjs` — 200, `db`/`cache`/`queue` живы, `no-store`,
-  без cookie и утечек; `php artisan nlb:health-report` — строка
+  без cookie и утечек; `php artisan elv:health-report` — строка
   `{"at":…,"db_ms":8.7,"queue_size":0,"disk_free_bytes":…,"checks":{…}}`,
   exit 0; `schedule:list` — обе задачи.
 - `check-urls` — 109×200 + 404, документ 187 999 знаков, CSS 57 795 байт;
@@ -741,7 +797,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Повод: M10. В источнике `manifest.webmanifest`, `sw.js` и `offline.html` лежали
 в корне и работали; в October этих файлов не было — 404 на все три адреса, а из
-папки темы service worker получил бы область `/themes/nlb/` и не перехватывал
+папки темы service worker получил бы область `/themes/elv/` и не перехватывал
 страницы сайта.
 
 Сделано:
@@ -761,17 +817,17 @@ BreadcrumbList» по каждому разделу, после откатa сн
   типами: `application/manifest+json`, `application/javascript` +
   `Service-Worker-Allowed: /` + `no-cache`, `text/html`; `routes.php:24-26`
   поднимает их с корня.
-- `themes/nlb/assets/pwa/manifest.webmanifest` — `id`, `name`, `short_name`,
+- `themes/elv/assets/pwa/manifest.webmanifest` — `id`, `name`, `short_name`,
   `lang: ru`, `start_url: /?utm_source=pwa`, `scope: /`, `display: standalone`,
   четыре иконки (192, 512, maskable, svg) и три shortcut: каталог, афиша, печать.
-- `themes/nlb/assets/pwa/sw.js` — cache-first для оболочки, network-first для
+- `themes/elv/assets/pwa/sw.js` — cache-first для оболочки, network-first для
   страниц с откатом на `/offline.html`, `/admin/` из перехвата исключён,
-  `activate` чистит `nlb-*` кроме текущего кеша; push-обработчики оставлены
+  `activate` чистит `elv-*` кроме текущего кеша; push-обработчики оставлены
   точкой подключения для M9.
-- `themes/nlb/assets/pwa/offline.html` — без `<script>` и `onclick=`, чтобы
+- `themes/elv/assets/pwa/offline.html` — без `<script>` и `onclick=`, чтобы
   страницу не заблокировал CSP Stage 10; «обновить» — ссылка `href=""`
   (перезагрузка текущего адреса).
-- `themes/nlb/assets/js/pwa.js` (22 строки) — регистрация после `load`,
+- `themes/elv/assets/js/pwa.js` (22 строки) — регистрация после `load`,
   только если браузер поддерживает service worker; `layouts/default.htm:9`
   — `<link rel="manifest">`, `:64` — сам скрипт.
 - `tests/PwaTest.php` — 9 тестов: список `SHELL` и его файлы, версия из `mtime`
@@ -782,7 +838,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
   плейсхолдеры, версия 8 hex, каждый адрес `SHELL` по 200, `/admin/`
   исключён), `/offline.html` (тип, нет `<script>`/`onclick=`, ссылка на
   главную), главная (`rel="manifest"`, `pwa.js`).
-- `tools/purge-css.mjs:38` — из обхода исключён `themes/nlb/assets/pwa`:
+- `tools/purge-css.mjs:38` — из обхода исключён `themes/elv/assets/pwa`:
   офлайн-страница стилизуется своим инлайн-CSS, Bootstrap в неё не
   подключается, а её классы (`card`, `mark`, `hint`) попадали в safelist и
   ломали `--check` (226 классов вместо 222).
@@ -797,7 +853,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **181 тест,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **181 тест,
   684 утверждения**, 0 упавших (было 171/616).
 - `node tools/check-pwa.mjs` — manifest (4 иконки, 3 shortcut), версия
   `0a27a146`, все 9 адресов `SHELL` по 200, офлайн-страница, регистрация.
@@ -817,8 +873,8 @@ BreadcrumbList» по каждому разделу, после откатa сн
 - Safari/iOS: `beforeinstallprompt` не используется, поведение «Добавить на
   экран Домой» не измерялось.
 - Баннер «Установить приложение» не перенесён — новый пункт M22. Прежний
-  `themes/nlb/assets/js/pwa.js` (206 строк из источника) был мёртвым кодом:
-  разметки `#nlbInstallBanner` в теме нет, `window.NLB_PWA` не объявлялся,
+  `themes/elv/assets/js/pwa.js` (206 строк из источника) был мёртвым кодом:
+  разметки `#elvInstallBanner` в теме нет, `window.ELV_PWA` не объявлялся,
   поэтому условие `config.sw` не выполнялось и service worker не регистрировался
   вовсе. Файл заменён регистратором на 22 строки; логика баннера восстанавливается
   вместе с M22, а не копией, которая молча ничего не делает.
@@ -839,13 +895,13 @@ BreadcrumbList» по каждому разделу, после откатa сн
   `atom:link rel="self"`), у записи — `title`, абсолютный `link`,
   `guid isPermaLink="true"`, `pubDate`. Описание берётся из `excerpt`,
   а если его нет — из `content` без разметки (обрезка 300 знаков).
-- `classes/Rss.php:83` — `items()`: тот же `Content::records('Nlb\News')`,
+- `classes/Rss.php:83` — `items()`: тот же `Content::records('Elv\News')`,
   что и страница новостей, поэтому отключённая или удалённая запись в ленту
   не попадает; сортировка по `published_at` с откатом на `created_at`
   (запись без даты не уезжает в конец навсегда), лимит 20.
 - `classes/Http/SeoController.php:31` и `routes.php:21` — `/rss.xml` с
   `Content-Type: application/rss+xml; charset=UTF-8` рядом с картой и robots.
-- `themes/nlb/layouts/default.htm:18` — `<link rel="alternate"
+- `themes/elv/layouts/default.htm:18` — `<link rel="alternate"
   type="application/rss+xml">`, чтобы читалки и браузеры находили ленту.
 - `tests/RssTest.php` — 9 тестов: разбор XML, метаданные канала, обязательные
   поля каждой записи, порядок по дате, отсечение отключённой новости,
@@ -859,7 +915,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **171 тест,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **171 тест,
   616 утверждений**, 0 упавших (было 162/569).
 - `node tools/check-seo.mjs` — 106 адресов, `/rss.xml` (10 записей на
   фикстуре), `alternate` на главной; `check-headers` — 12 страниц;
@@ -907,9 +963,9 @@ BreadcrumbList» по каждому разделу, после откатa сн
   по умолчанию `/admin`) исключена из CSP: October использует инлайновые
   скрипты и eval в редакторах, строгая политика ломает виджеты.
 - `Plugin.php:104` — регистрация рядом с `CompressResponse` и `LegacyRedirect`;
-  `Plugin.php:190` — хелпер `nlb_csp_nonce()`.
-- `themes/nlb/partials/filter-script.htm:1` — единственный исполняемый
-  инлайновый скрипт темы (фильтры списков) получил `nonce="{{ nlb_csp_nonce() }}"`.
+  `Plugin.php:190` — хелпер `elv_csp_nonce()`.
+- `themes/elv/partials/filter-script.htm:1` — единственный исполняемый
+  инлайновый скрипт темы (фильтры списков) получил `nonce="{{ elv_csp_nonce() }}"`.
 - `nginx.conf:36-38` — статические заголовки для статики и ответов ошибок
   (`add_header … always`); `nginx.conf:53-55` — `fastcgi_hide_header` для трёх
   заголовков, которые ставит PHP, чтобы браузер не получал два значения.
@@ -924,7 +980,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **162 теста,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **162 теста,
   569 утверждений**, 0 упавших (было 150/535).
 - `node tools/check-headers.mjs` — OK: 12 страниц, CSP с уникальным nonce,
   `/admin` без CSP, 404 с заголовками.
@@ -973,10 +1029,10 @@ BreadcrumbList» по каждому разделу, после откатa сн
 - `productNode`: `brand` — «Библиотека 2026», а не `publisher`. В blueprints
   сувениров `publisher` — упаковка, и в сниппет уезжало «Бренд: Картонная
   коробка» (`xc_…` записи «Кружка»).
-- `themes/nlb/pages/*-detail.htm:14` — вид узла: `news` → `article`,
+- `themes/elv/pages/*-detail.htm:14` — вид узла: `news` → `article`,
   `events` → `event`, `books` и `printing` → `product`, `services` →
   `service`; `collections` остаётся без узла (нет ни цены, ни даты).
-- `themes/nlb/layouts/default.htm:27-35` — `og:image` и `twitter:image`
+- `themes/elv/layouts/default.htm:27-35` — `og:image` и `twitter:image`
   берутся из `seo_image`, иначе остаётся hero-картинка сайта.
 - `tools/check-seo.mjs` — на каждой детальной странице проверяет узел своего
   вида (`Article` с `headline`/`datePublished`, `Event` с
@@ -989,7 +1045,7 @@ BreadcrumbList» по каждому разделу, после откатa сн
 
 Проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **150 тестов,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **150 тестов,
   535 утверждений**, 0 упавших (было 127/462).
 - `node tools/check-seo.mjs` — 106 адресов, все 200, узел записи и карточка
   шеринга на месте; `check-urls` — 109×200 + `/non-existent/` 404;
@@ -1024,7 +1080,7 @@ layout брал мету только со страницы, поэтому у �
 
 Сделано:
 
-- `plugins/nlb/library/blueprints/*/item.yaml` — по два поля на запись:
+- `plugins/elv/library/blueprints/*/item.yaml` — по два поля на запись:
   `news:72,77`, `events:115,120`, `books:124,129`, `services:117,122`,
   `printing:91,96`, `collections:86,91`. Тип `text`, `maxLength` 255 и 500,
   `comment` с подсказкой «пусто — соберётся само». Поля попали в таблицы
@@ -1036,7 +1092,7 @@ layout брал мету только со страницы, поэтому у �
   прежнее поведение (заголовок «Название — Библиотека 2026», описание из
   `excerpt`, обрезка 160 знаков). Вызывается из страницы, а не из layout:
   layout рендерится после того, как страница уже выставила мету.
-- `themes/nlb/pages/*-detail.htm:14` — шесть детальных страниц зовут
+- `themes/elv/pages/*-detail.htm:14` — шесть детальных страниц зовут
   `Seo::applyRecord($this->page, $record)` сразу после выборки записи.
 - `Plugin.php:187` — canonical собирается как
   `request()->getSchemeAndHttpHost() . $path`, а не `url($path)`: `url('/x/')`
@@ -1049,7 +1105,7 @@ layout брал мету только со страницы, поэтому у �
 
 Чем проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **127 тестов,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **127 тестов,
   462 утверждения** (было 117/429): `SeoTest` вырос с 17 до 27 тестов (121
   утверждение). Добавлены параметризованный
   `testEveryDetailPageBuildsTitleFromRecord` (шесть детальных страниц, у каждой
@@ -1069,7 +1125,7 @@ layout брал мету только со страницы, поэтому у �
   TBT 40 мс).
 
 **Что не проверено.** Редактирование меты руками в админке (Tailor-форма
-`/admin/nlb/…`): проверено тестами и SQL-записью, но не кликом оператора —
+`/admin/elv/…`): проверено тестами и SQL-записью, но не кликом оператора —
 в БД есть только суперпользователь `admin`. Валидация Google/Яндекс
 (Rich Results Test, карта, 301) по-прежнему требует домена — это M17.
 Расширения микроразметки (`Event`, `Product`, `Article`) — P2-4.
@@ -1083,11 +1139,11 @@ layout брал мету только со страницы, поэтому у �
 `GET /robots.txt` → 404. Старые адреса источника (`/index.php`,
 `/news/detail.php?CODE=…`) после переезда отдавали бы 404, а внешние ссылки и
 закладки — это потерянный трафик. JSON-LD в теме отсутствовал (`ld+json` — 0
-совпадений), хотя в источнике он был (`local/php_interface/include/nlb_seo.php`).
+совпадений), хотя в источнике он был (`local/php_interface/include/elv_seo.php`).
 
 Сделано:
 
-- `plugins/nlb/library/routes.php:20-21` — `GET /sitemap.xml` и `GET /robots.txt`
+- `plugins/elv/library/routes.php:20-21` — `GET /sitemap.xml` и `GET /robots.txt`
   в группе `web`: оба файла генерируются, а не лежат в `public/`.
 - `classes/Http/SeoController.php:20,30` — отдача с типами
   `application/xml; charset=UTF-8` и `text/plain; charset=UTF-8`.
@@ -1107,8 +1163,8 @@ layout брал мету только со страницы, поэтому у �
   `Disallow: /admin/` и `Sitemap:` с абсолютным адресом текущего запроса.
   `:25` — `CONTACTS` дублирует подвал (`partials/footer.htm`), как в источнике
   контакты жили в двух файлах; при P0-6 править три места.
-- `themes/nlb/layouts/default.htm:18` — `<script type="application/ld+json">`
-  в `<head>` через `nlb_jsonld()` (`Plugin.php:192`).
+- `themes/elv/layouts/default.htm:18` — `<script type="application/ld+json">`
+  в `<head>` через `elv_jsonld()` (`Plugin.php:192`).
 - `classes/Http/LegacyRedirect.php:50` — middleware 301: `/index.php` → `/`,
   `/sitemap.php` → `/sitemap.xml`, `/{section}/index.php` с белым списком
   разделов (`INDEX_PAGES`, `:23`) → `/{section}/`,
@@ -1128,9 +1184,9 @@ layout брал мету только со страницы, поэтому у �
 
 Чем проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **117 тестов,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **117 тестов,
   429 утверждений** (было 100/341): новые `tests/SeoTest.php` (17 тестов) —
-  перечень страниц карты сверяется с `themes/nlb/pages/*.htm` (новая страница
+  перечень страниц карты сверяется с `themes/elv/pages/*.htm` (новая страница
   без строки в `Sitemap::PAGES` роняет тест), XML разбирается `simplexml`,
   `lastmod` у каждого адреса, закрытые пути не в карте, редиректы и JSON-LD.
 - `node tools/check-seo.mjs` — «OK: robots.txt и sitemap.xml (106 адресов, все
@@ -1157,7 +1213,7 @@ layout брал мету только со страницы, поэтому у �
 проверка карты и 301) требуют живой домен — это M17. Редиректы проверены на
 смене структуры адресов, но не на смене домена (домена ещё нет). Мета записи
 (`seo_title`/`seo_description` у blueprints) осталась в M20: layout берёт мету
-только со страницы (`themes/nlb/layouts/default.htm:10-16`), у записи своих
+только со страницы (`themes/elv/layouts/default.htm:10-16`), у записи своих
 полей нет — **закрыто на Stage 8**. Расширения микроразметки (`Event`, `Product`, `Article`) — P2-4,
 лента `/rss.xml` — P2-6.
 
@@ -1172,14 +1228,14 @@ layout брал мету только со страницы, поэтому у �
 
 Сделано:
 
-- `plugins/nlb/library/Plugin.php:25` — четыре права
-  (`nlb.library.requests`, `.bookings`, `.orders`, `.subscribers`, вкладка
+- `plugins/elv/library/Plugin.php:25` — четыре права
+  (`elv.library.requests`, `.bookings`, `.orders`, `.subscribers`, вкладка
   «Библиотека»); `:47` — пункт главного меню «Библиотека» и подменю
   «Обращения / Брони / Заказы / Подписчики», у каждого свой `permissions` —
   оператор видит только то, что ему выдали.
 - `controllers/{Requests,Bookings,Orders,Subscribers}.php` — `ListController` +
   `FormController`, `$requiredPermissions` из тех же прав; контекст
-  `BackendMenu::setContext('Nlb.Library', 'library', …)`.
+  `BackendMenu::setContext('Elv.Library', 'library', …)`.
 - `controllers/*/config_list.yaml` + `models/{request,booking,order,subscriber}/columns.yaml`
   — списки с поиском (тема, e-mail, телефон, услуга, товар, адрес),
   `selectable`-статусы русскими словами и пустые сообщения «Обращений пока
@@ -1206,7 +1262,7 @@ layout брал мету только со страницы, поэтому у �
 
 Чем проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **100 тестов,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **100 тестов,
   341 утверждение** (было 86/311): новые `tests/AdminTest.php` (13 тестов) —
   список открывается с правом (`200` + строка в разметке), без права —
   `ForbiddenException` (`:134`), пункт меню без права не выводится (`:143`),
@@ -1247,7 +1303,7 @@ layout брал мету только со страницы, поэтому у �
 
 Сделано:
 
-- `plugins/nlb/library/routes.php:10-19` — шесть маршрутов в группе `web`
+- `plugins/elv/library/routes.php:10-19` — шесть маршрутов в группе `web`
   (`throttle:30,1`): `POST /feedback/`, `POST /booking/`, `POST /order/`,
   `POST /subscribe/`, `GET /subscribe/confirm/{token}`, `GET /unsubscribe/{token}`.
   Плагинные `routes.php` подключаются до CMS-заглушки, поэтому свои POST
@@ -1261,7 +1317,7 @@ layout брал мету только со страницы, поэтому у �
   редирект `?error=slot`). Возврат — на `Referer` **того же хоста**
   (`:153`), иначе `fallbackPath()`: чужой `Referer` не даёт открытый редирект
   (проверено тестом).
-- `classes/Http/FeedbackController.php:16` — `nlb_requests` (`email`, `phone`,
+- `classes/Http/FeedbackController.php:16` — `elv_requests` (`email`, `phone`,
   `subject`, `message`, `page`, `source=feedback`, `created_by`) + письмо
   сотрудникам. Футерная форма без `SUBJECT` получает тему из первых 60 знаков
   сообщения.
@@ -1275,7 +1331,7 @@ layout брал мету только со страницы, поэтому у �
   записи (иначе `BookingService` создал бы слот на любую дату), затем
   `BookingService::book()`; занятое время — `409 SLOT_UNAVAILABLE`, вне окна —
   `422` по полю `TIME`; письма сотрудникам и клиенту (клиенту — если есть e-mail).
-- `classes/Http/OrderController.php:15` — `nlb_orders` + письмо; скрытые поля
+- `classes/Http/OrderController.php:15` — `elv_orders` + письмо; скрытые поля
   проверяются заново (`PRICE` целое ≥ 0, `QTY` 1…999).
 - `classes/Mail/*.php` + `views/mail/*.htm` + `views/action.htm` — пять писем
   (обращение, бронь сотрудникам, бронь клиенту, заказ, подтверждение подписки)
@@ -1283,7 +1339,7 @@ layout брал мету только со страницы, поэтому у �
   а не из публичных свойств: October-овая `Mailable::buildViewData()` отдаёт
   только `viewData`, и первый прогон дал пустые поля («Имя — «—»») — это
   поймал тест рендера, а не живое письмо.
-- `Plugin.php:123` — `{{ nlb_csrf()|raw }}` в шаблонах: `csrf_field()` не
+- `Plugin.php:123` — `{{ elv_csrf()|raw }}` в шаблонах: `csrf_field()` не
   доступен в Twig, а без `_token` POST в группе `web` получает `419`.
 - Шесть форм темы получили реальный `action` и токен:
   `pages/feedback.htm`, `partials/footer.htm` (две формы), `pages/subscribe.htm`,
@@ -1295,7 +1351,7 @@ layout брал мету только со страницы, поэтому у �
 
 Чем проверено:
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — **86 тестов, 311
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — **86 тестов, 311
   утверждений** (было 61/218): новые `tests/FormsTest.php` (25 тестов) —
   разбор полей, согласие, `201/302/409/410/422`, отсутствие строки при ошибке,
   `Mail::assertQueued`/`assertNotQueued`, повторная подписка без дубля и без
@@ -1337,7 +1393,7 @@ Accessibility/Best Practices/SEO 100. Разбор показал, что про
 
 Сделано:
 
-- `plugins/nlb/library/classes/Http/CompressResponse.php` — gzip текстовых
+- `plugins/elv/library/classes/Http/CompressResponse.php` — gzip текстовых
   ответов (≥ 1 КБ, только если клиент прислал `Accept-Encoding: gzip`, ответ
   ещё не сжат) + `Cache-Control: public, max-age=31536000, immutable` для
   `/themes|plugins|modules/*/assets|resources/*` и `max-age=604800` для
@@ -1354,7 +1410,7 @@ Accessibility/Best Practices/SEO 100. Разбор показал, что про
   `gzip_proxied any`, типы включая `image/svg+xml`), `expires 1y` в
   статических `location`, `expires 7d` для `/storage/app/*`. Это прод:
   на проде gzip обязан быть в периметре, а не только в PHP.
-- `themes/nlb/layouts/default.htm:42-44` — `<link rel="preload" as="image"
+- `themes/elv/layouts/default.htm:42-44` — `<link rel="preload" as="image"
   type="image/avif" fetchpriority="high" imagesrcset="…hero-1…">` для главной:
   LCP-картинка начинает грузиться из `<head>`, а не после разбора `<body>`.
 - `docs/security-performance.md` §4/§4.1 — где живёт сжатие, чем проверять,
@@ -1370,7 +1426,7 @@ Accessibility/Best Practices/SEO 100. Разбор показал, что про
 - `node tools/check-urls.mjs` — 109×200 + 404; `node tools/check-dom-parity.mjs` —
   110/110; `node tools/check-css-budget.mjs --url http://127.0.0.1:8080/` —
   документ 186 069 знаков (бюджет 190 412), инлайн CSS 57 794 + 51 508 байт.
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — 61 тест, 218
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — 61 тест, 218
   утверждений, OK (`Plugin.php` менялся).
 
 Замер «а если убрать blur»: с `backdrop-filter: none` TBT 10–60 мс вместо
@@ -1448,12 +1504,12 @@ License» — **$0**, включая коммерческие проекты, г
 26 767 байт) уточняет три вещи: §3 — Updates только в Active Term, после года
 обновлений нет; §4 — лицензия выдаётся через сайт (аккаунт), поэтому «бесплатно»
 ≠ «без регистрации»; §7.4 — **править ядро запрещено**, значит все доработки
-живут только в `plugins/nlb/library` и `themes/nlb` (у нас так и есть:
+живут только в `plugins/elv/library` и `themes/elv` (у нас так и есть:
 `Media::imagePath()` — наш класс, не ядро). Обновление в обход Gateway —
 нарушение EULA, а не экономия.
 
 **Плагины.** Ни один платный не нужен: SEO-поля, JSON-LD, sitemap, robots, 301 —
-своим кодом (M20); отзывы — своя `nlb_reviews` (M21); формы и письма — Laravel
+своим кодом (M20); отзывы — своя `elv_reviews` (M21); формы и письма — Laravel
 (этап 5); PDF — `@media print` или `barryvdh/laravel-dompdf` (MIT); поиск —
 MySQL `FULLTEXT`; push — Web Push/VAPID; бэкап — `mysqldump` + `rclone`;
 антиспам — honeypot, rate limit, Cloudflare Turnstile. Из бесплатных сторонних
@@ -1507,10 +1563,10 @@ Cloudflare, Oracle, UptimeRobot, Brevo, Яндекс 360 не разворачи
   (`modules/tailor/classes/BlueprintIndexer.php:215`) и `type: submission`
   (`modules/tailor/classes/Blueprint.php:533`); неверно про «honeypot встроен
   в October» — он только в `modules/tailor/components/SubmissionComponent.php:263`;
-  `submission` создаёт второй склад отзывов рядом с `nlb_*`, поэтому отзывы — своя
+  `submission` создаёт второй склад отзывов рядом с `elv_*`, поэтому отзывы — своя
   таблица; POWER SEO Toolkit ставить рано.
 - Проверено на живом сайте: `/sitemap.xml`, `/robots.txt`, `/rss.xml` → **404**.
-  Поля для блога в `plugins/nlb/library/blueprints/news/item.yaml` уже есть
+  Поля для блога в `plugins/elv/library/blueprints/news/item.yaml` уже есть
   (`author`, `tags`, `read_time`, `image`, `source_url`) — не хватает ленты
   (P2-6) и меты записи (M20).
 
@@ -1518,12 +1574,12 @@ Cloudflare, Oracle, UptimeRobot, Brevo, Яндекс 360 не разворачи
 `AGENTS.md` §4.5 (сторонний плагин — только из `docs/plugins.md`, максимум три),
 `docs/architecture.md` §9, `docs/october-integration.md` §8 (состояние SEO),
 `Что доделать.txt` — M3 (факты лицензии), **M20** (sitemap/robots/301 и мета
-записи), **M21** (своя `nlb_reviews` с привязкой к брони), P2-6 (факт 404 и поля),
+записи), **M21** (своя `elv_reviews` с привязкой к брони), P2-6 (факт 404 и поля),
 M17 (в приёмку добавлены бэкап и health-проба); `docs/qa-checklist.md` — две
 команды PHPUnit вместо одной.
 
 **Гейты.** Код не менялся, поэтому числа этапа 4 в силе; повторный прогон
-11.11.2026: PHPUnit плагина (`-c phpunit.nlb.xml`) — **61 тест, 218 утверждений,
+11.11.2026: PHPUnit плагина (`-c phpunit.elv.xml`) — **61 тест, 218 утверждений,
 0 упавших**; ядро October (`phpunit.xml`) — 1171 тест, 3896 утверждений,
 8 пропущено (заглушки ядра), 0 упавших; `check-urls` — 109×200 + 404, главная
 185 676 знаков; `check-dom-parity` — 110/110; `check-css-budget` — styles.css
@@ -1534,11 +1590,11 @@ M17 (в приёмку добавлены бэкап и health-проба); `doc
 `vendor/phpunit/phpunit/phpunit` без `-c`, а корневой `phpunit.xml` содержит
 только `<directory>./modules/*/tests</directory>` — **тесты плагина в этот прогон
 не попадали**, гейт был зелёным по построению. Исправлено: в §5 две строки —
-`-c phpunit.nlb.xml` (61 тест плагина, sqlite `:memory:`) и ядро отдельно.
-Запуск `phpunit plugins/nlb/library/tests` без `-c` даёт 34 ошибки не потому,
+`-c phpunit.elv.xml` (61 тест плагина, sqlite `:memory:`) и ядро отдельно.
+Запуск `phpunit plugins/elv/library/tests` без `-c` даёт 34 ошибки не потому,
 что код плохой, а потому что корневой конфиг подменяет `PLUGINS_PATH` на
-`modules/system/tests/fixtures/plugins` — плагин `Nlb.Library` не регистрируется.
-Канон — только `-c phpunit.nlb.xml`.
+`modules/system/tests/fixtures/plugins` — плагин `Elv.Library` не регистрируется.
+Канон — только `-c phpunit.elv.xml`.
 
 **Что не проверено.** Ни один сторонний плагин не установлен и не тестировался
 (решение — ставить по необходимости, а не сейчас). Цены и данные карточек —
@@ -1546,15 +1602,15 @@ M17 (в приёмку добавлены бэкап и health-проба); `doc
 
 ---
 
-(Stage 4 — 11.11.2026) — **Тема `nlb`, 110 адресов, DOM и текст 1:1 с `preview/`,
+(Stage 4 — 11.11.2026) — **Тема `elv`, 110 адресов, DOM и текст 1:1 с `preview/`,
 демо-тема и демо-плагин удалены, инлайн CSS в бюджете.**
 
 Повод: M6 (110 URL), M7 (инлайн-CSS и бюджет), M12 (тема), M16 (демо-снятие),
 M11 (тесты). Эталон — `preview/**` источника, правило «разметка и тексты 1:1».
 
-**Тема.** `themes/nlb/`: `theme.yaml`, `layouts/default.htm` (56 строк; инлайн
+**Тема.** `themes/elv/`: `theme.yaml`, `layouts/default.htm` (56 строк; инлайн
 CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %}` — `:49`),
-25 CMS-страниц в `themes/nlb/pages/` (12 корневых, 6 списков, 6 шаблонов
+25 CMS-страниц в `themes/elv/pages/` (12 корневых, 6 списков, 6 шаблонов
 детальных + 404), 11 partials (`header`, `footer`, `sprite`, `not-found`,
 `filter-script` и 6 карточек `partials/cards/*`). Ассеты перенесены как есть:
 `styles.css` 81 179 байт, варианты 480/960 в JPG/WebP/AVIF, иконки, PWA-иконки,
@@ -1569,24 +1625,24 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
 минификация CSS, `:306` — инлайн CSS с кешем по `mtime`; регистрация тегов —
 `Plugin.php:25`. Карта занятых часов для формы брони —
 `models/Slot.php:67` (`occupiedMap`) и `:101` (`jsonOccupiedMap`), в разметке —
-`themes/nlb/pages/services-detail.htm:150`.
+`themes/elv/pages/services-detail.htm:150`.
 
 **Личный кабинет 1:1.** `/personal/` в эталоне — страница-редирект
 (`meta refresh` на `/auth/`, `noindex`), а не раздел сайта. Тема повторяет это
-(`themes/nlb/pages/personal.htm`), поэтому в DOM-сверке у неё нет `<main>`.
+(`themes/elv/pages/personal.htm`), поэтому в DOM-сверке у неё нет `<main>`.
 
 **Демо-снятие (M16).** Каталоги `themes/demo` и `plugins/october/demo` убраны;
 `october:fresh` **не запускался** — он снёс бы и контент сайта. Вместо него:
 удалены 24 таблицы `xc_*` демо-блюпринтов (UUID сверены с YAML темы),
 8 строк `tailor_content_schema` и запись `October.Demo` в
-`system_plugin_versions`. Итог: `theme:list` — только `nlb`, `plugin:list` —
-только `Nlb.Library`, БД — 76 таблиц (было 100).
+`system_plugin_versions`. Итог: `theme:list` — только `elv`, `plugin:list` —
+только `Elv.Library`, БД — 76 таблиц (было 100).
 
 **Гейты.** Новые скрипты: `tools/check-urls.mjs` (инвентарь из
 `docs/content.md`, 109 адресов + `/non-existent/`) и `tools/check-dom-parity.mjs`
 (title, h1, h2 без модалок, число `<article>`, текст `<main>` против `preview/`).
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` → **61 тест,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` → **61 тест,
   218 утверждений, 0 упавших**: добавлены `MediaTest` (19), `LabelsTest` (7),
   `SlotMapTest` (6). Тест `testImagePathDecodesMediafinderValues` нашёл дефект:
   пустое значение mediafinder `[]` возвращалось строкой `'[]'` и попадало в
@@ -1601,7 +1657,7 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
   (57 795 байт = 56,4 КиБ при пороге 57 856), `bootstrap.min.css` 51 758 → 51 508
   (порог 61 377); `purge-css.mjs --check`
   — сборка совпадает.
-- `october:migrate` → `Nlb.Library v1.0.2 -> v1.1.0`, 0 ошибок.
+- `october:migrate` → `Elv.Library v1.0.2 -> v1.1.0`, 0 ошибок.
 - `php -l` по `app,config,database,plugins,themes,tests` → **0 ошибок синтаксиса**.
 - `.gitignore`: добавлено исключение `!/themes/*/assets/vendor/*.min.css` —
   иначе `bootstrap.min.css` и `bootstrap.source.min.css` не попадали в git
@@ -1629,17 +1685,17 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
 Повод: P1-20 (гонка слота), P1-9 (слоты), P0-4/P0-5 (заявки и подписка), M11 (тесты).
 Схема и модели — `docs/db.md` разделы 2, 5, 9.
 
-**Миграции** (`plugins/nlb/library/updates/`, версия `1.0.2` в `version.yaml`):
-`create_nlb_requests_table.php`, `create_nlb_bookings_table.php`,
-`create_nlb_orders_table.php`, `create_nlb_slots_table.php`,
-`create_nlb_subscribers_table.php`. Создаются `php artisan october:migrate`
+**Миграции** (`plugins/elv/library/updates/`, версия `1.0.2` в `version.yaml`):
+`create_elv_requests_table.php`, `create_elv_bookings_table.php`,
+`create_elv_orders_table.php`, `create_elv_slots_table.php`,
+`create_elv_subscribers_table.php`. Создаются `php artisan october:migrate`
 (не `tailor:migrate` — это Eloquent, а не Tailor). Ключевое:
-`plugins/nlb/library/updates/create_nlb_slots_table.php:22` —
-`$table->unique(['service_code', 'date', 'time'], 'nlb_slots_unique')`;
-`nlb_subscribers` — `UNIQUE(email)` и `UNIQUE(token)`; у заявок/броней/заказов
+`plugins/elv/library/updates/create_elv_slots_table.php:22` —
+`$table->unique(['service_code', 'date', 'time'], 'elv_slots_unique')`;
+`elv_subscribers` — `UNIQUE(email)` и `UNIQUE(token)`; у заявок/броней/заказов
 индексы `(status, …)`, `(service_code, date)`, `email`.
 
-**Модели** (`plugins/nlb/library/models/`): `Request`, `Booking`, `Order`, `Slot`,
+**Модели** (`plugins/elv/library/models/`): `Request`, `Booking`, `Order`, `Slot`,
 `Subscriber`. У каждой `$rules` (трейт `October\Rain\Database\Traits\Validation`),
 русские `$customMessages`; статусы — константы и белый список `in:…`, диапазоны
 проверяются до записи. `Subscriber` — double opt-in: `subscribe()` (33),
@@ -1648,7 +1704,7 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
 `Request::markProcessed()` (43) ставит `done` и `date_processed`;
 `Order::total()` (49) считает `price × qty`.
 
-**Гонка слота.** `plugins/nlb/library/classes/BookingService.php`: `book()` (24) —
+**Гонка слота.** `plugins/elv/library/classes/BookingService.php`: `book()` (24) —
 `DB::transaction` + `lockForUpdate` + условный
 `UPDATE … WHERE taken < capacity`; `lockSlot()` (136) ловит дубликат `INSERT`
 (`isDuplicate()` (179), SQLSTATE `23000`/`1062`/`UNIQUE constraint failed`) и
@@ -1656,15 +1712,15 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
 `cancel()` (83) освобождает слот и идемпотентен, `confirm()` (64) меняет статус,
 `availableTimes()` (120) отдаёт свободные часы.
 
-**Генератор слотов.** `plugins/nlb/library/console/SlotsGenerate.php` —
-`nlb:slots-generate {--days=30} {--from=} {--service=*} {--times=}`. Часы по
-умолчанию 10:00–21:00, как `nlb_form_time_options()` источника
-(`local/php_interface/include/nlb_forms.php:543-550`); услуги — включённые
-`Nlb\Service`, ключ идемпотентности — `firstOrCreate` по `UNIQUE`.
+**Генератор слотов.** `plugins/elv/library/console/SlotsGenerate.php` —
+`elv:slots-generate {--days=30} {--from=} {--service=*} {--times=}`. Часы по
+умолчанию 10:00–21:00, как `elv_form_time_options()` источника
+(`local/php_interface/include/elv_forms.php:543-550`); услуги — включённые
+`Elv\Service`, ключ идемпотентности — `firstOrCreate` по `UNIQUE`.
 
 **Чем проверено.**
 
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` → **29 тестов,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` → **29 тестов,
   116 утверждений, 0 упавших**: `BookingTest` (10 — создание, вторая попытка,
   `UNIQUE`, ленивый слот, capacity 2, отмена, идемпотентная отмена, подтверждение,
   неверное время, `9:00` → `09:00`), `ModelsTest` (5 — заявка, телефон без e-mail,
@@ -1674,9 +1730,9 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
 - `testUniqueIndexBlocksDuplicateSlotRows` фиксирует именно схему: повторный
   `Slot::create` даёт `QueryException` с кодом `23000`; при удалении `UNIQUE`
   тест красный.
-- Живая MySQL: `october:migrate` → `v1.0.1 -> v1.0.2`; `nlb:slots-generate
+- Живая MySQL: `october:migrate` → `v1.0.1 -> v1.0.2`; `elv:slots-generate
   --days=14` → **1 344 создано** (8 услуг × 14 дней × 12 часов), второй прогон →
-  **0 создано, 1 344 уже было**; `SHOW INDEX` подтверждает `nlb_slots_unique`
+  **0 создано, 1 344 уже было**; `SHOW INDEX` подтверждает `elv_slots_unique`
   (3 колонки, `Non_unique=0`).
 
 **Что не проверено.**
@@ -1692,45 +1748,45 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
 
 ---
 
-(Stage 2 — 10.11.2026) — **Плагин `nlb/library`, 9 блюпринтов, импорт 91 элемента
+(Stage 2 — 10.11.2026) — **Плагин `elv/library`, 9 блюпринтов, импорт 91 элемента
 и 12 разделов, тесты идемпотентности.**
 
 Повод: пункты M4 (импорт) и M5 (blueprints) бэклога — без контента в БД нельзя
 строить ни один из 110 URL.
 
-**Плагин.** `plugins/nlb/library/Plugin.php` (`pluginDetails()`, `register()` →
+**Плагин.** `plugins/elv/library/Plugin.php` (`pluginDetails()`, `register()` →
 `discoverConsoleCommands()`), `composer.json` (`type: october-plugin`),
 `updates/version.yaml` (`1.0.1`). Без `version.yaml` плагин не виден
-`php artisan plugin:list` — проверено: файл есть → `Nlb.Library 1.0.1 Yes`.
+`php artisan plugin:list` — проверено: файл есть → `Elv.Library 1.0.1 Yes`.
 
-**9 блюпринтов** (`plugins/nlb/library/blueprints/`): `news/{section,item}`,
+**9 блюпринтов** (`plugins/elv/library/blueprints/`): `news/{section,item}`,
 `events/{section,item}`, `books/{section,item}`, `collections/item`,
 `services/item`, `printing/item`. Русские `label`/`commentAbove`, `drafts: false`.
 Таблицы созданы **`php artisan tailor:migrate`** (не `october:migrate` — он Tailor
 не трогает): 9 контентных + 3 таблицы разделов + парные `<таблица>r` для
-репитеров; всего в `nlb_october` 95 таблиц.
+репитеров; всего в `elv_october` 95 таблиц.
 
 **Факты, которые пришлось выяснить по коду ядра, а не по документации:**
 
 | Вопрос | Факт | Источник |
 |---|---|---|
-| Имя таблицы | `xc_<uuid без дефисов>c`, не `nlb_news` | `EntryBlueprint::makeBlueprintTableName` |
+| Имя таблицы | `xc_<uuid без дефисов>c`, не `elv_news` | `EntryBlueprint::makeBlueprintTableName` |
 | Раздел элемента | поле `entries` с `maxItems: 1` → колонка `section_id integer`, не join-таблица | `modules/tailor/contentfields/EntriesField.php:171-181` |
 | `UNIQUE(xml_id)` | невозможен: колонка `text`; идемпотентность держит код импортёра | схема `xc_ffcc9263…c` |
 | Репитер | `hasMany` в таблицу `<таблица>r`; `$record->features = [...]` → `Nested arrays may not be passed to whereIn method` | `modules/tailor/contentfields/RepeaterField.php:95-124` |
 | Типы колонок | Tailor делает `text`/`mediumtext`/`timestamp`, а не `varchar(191)` | `information_schema.columns` |
 | Разделы | три отдельные таблицы `type: structure`, не `tailor_structure` | `xc_7d052fe5…c`, `xc_5c9f95ad…c`, `xc_16285221…c` |
 
-**Импорт.** `plugins/nlb/library/console/Import.php` — команда
-`nlb:import {--source=} {--dry-run}`. Разделы → элементы; `properties` → колонки;
+**Импорт.** `plugins/elv/library/console/Import.php` — команда
+`elv:import {--source=} {--dry-run}`. Разделы → элементы; `properties` → колонки;
 `FEATURES`/`TARIFFS` разбираются по `|` и `;` (как
-`components/bitrix/news.detail/nlb_service/template.php:48-86`); репитеры
+`components/bitrix/news.detail/elv_service/template.php:48-86`); репитеры
 переписываются целиком с `sort_order` = порядок выгрузки; дата — `Y-m-d H:i:s`
 без сдвига.
 
 **Чем проверено.**
 
-- `php artisan nlb:import --dry-run` → 91 элемент, 12 разделов, ничего не пишет.
+- `php artisan elv:import --dry-run` → 91 элемент, 12 разделов, ничего не пишет.
 - Боевой прогон → `91 создано, 12 разделов`; второй прогон → **0 создано,
   91 обновлено**.
 - `SELECT COUNT(*)` по шести таблицам: 10 / 6 / 24 / 6 / 8 / 37 = **91**;
@@ -1739,18 +1795,18 @@ CSS — `default.htm:42-43`, спрайт и шапка — `:46-47`, `{% page %
   `$news->tags === ['digital','library']`, `$service->features` 6 строк с
   `sort_order` 1..6, `$service->tariffs` — 3 строки, `popular` только у второй,
   `$event->event_date->format('Y-m-d H:i') === '2026-11-29 12:00'`.
-- `php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` → **8 тестов,
-  42 утверждения, 0 упавших** (`plugins/nlb/library/tests/ImportTest.php`,
-  фикстуры — `plugins/nlb/library/tests/fixtures/db/config`): создание,
+- `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` → **8 тестов,
+  42 утверждения, 0 упавших** (`plugins/elv/library/tests/ImportTest.php`,
+  фикстуры — `plugins/elv/library/tests/fixtures/db/config`): создание,
   раздел, репитеры, даты и скаляры, второй прогон без дублей, ручная запись
   не удаляется, правка в админке перезаписывается выгрузкой, нет каталога → код 1.
 
 **Документация исправлена под факты.** `docs/db.md` разделы 2–4, 7–9:
-убраны несуществующие `nlb_news`/`parent_id`/`UNIQUE(xml_id)`/`json`-колонки,
+убраны несуществующие `elv_news`/`parent_id`/`UNIQUE(xml_id)`/`json`-колонки,
 добавлены uuid → таблица, `section_id`, парная репитер-таблица, фактические
-`text`/`mediumtext`, ключи `xml_id` (`nlb-news-001`, `nlb-evt-001`,
-`nlb-book-001`, `nlb-col-001`, `nlb-srv-001`, `nlb-prn-001`,
-`nlb-sec-<iblock>-<code>`) и `--dry-run`.
+`text`/`mediumtext`, ключи `xml_id` (`elv-news-001`, `elv-evt-001`,
+`elv-book-001`, `elv-col-001`, `elv-srv-001`, `elv-prn-001`,
+`elv-sec-<iblock>-<code>`) и `--dry-run`.
 
 **Что не проверено.**
 
@@ -1783,7 +1839,7 @@ v3.7.13 — релиз 21.01.2026, `php ^8.0.2`, `laravel ^9.0`. Для ново
 | `ext-zip` выключен | `php.ini:832` = `;extension=zip`, `ZipArchive MISSING` | включён; требование 4.x (`docs.octobercms.com/4.x/setup/installation.html`) |
 | PHP не в PATH | `october:install` вызывает `php` дочерним процессом → `'php' is not recognized`, установка падает на `october:migrate` | `$env:PATH` с каталогом PHP + повторный `october:migrate` |
 | Каталог занят документацией | `create-project` требует пустой каталог | установка в `._october`, затем перенос в корень (README/CHANGELOG/`.gitignore`/`.env.example` оставлены проектными) |
-| `500` на `/` после установки | в логе `Table 'nlb_october.xc_edcd102e…' doesn't exist` — blueprints демо-темы не засеяны | `php artisan theme:seed demo` |
+| `500` на `/` после установки | в логе `Table 'elv_october.xc_edcd102e…' doesn't exist` — blueprints демо-темы не засеяны | `php artisan theme:seed demo` |
 
 **Чем проверено (все числа — с этой машины, 10.11.2026).**
 
@@ -1795,7 +1851,7 @@ v3.7.13 — релиз 21.01.2026, `php ^8.0.2`, `laravel ^9.0`. Для ново
   `GET /admin` → **200**, 10 914 байт (страница входа).
 - `php -l` по `app, config, database, plugins, themes, tests, bootstrap`,
   `index.php`, `artisan` — **28 файлов, 0 ошибок**.
-- MySQL: 44 таблицы в `nlb_october`.
+- MySQL: 44 таблицы в `elv_october`.
 
 **Команды, которых в 4.x нет** (записано в `docs/installation.md`, §5):
 `october:version` → `october:about`; `artisan test` → `vendor/phpunit/phpunit/phpunit`;
@@ -1810,7 +1866,7 @@ v3.7.13 — релиз 21.01.2026, `php ^8.0.2`, `laravel ^9.0`. Для ново
 
 **Администратор — создан и вход проверен (10.11.2026, дополнение к Stage 1).**
 
-`php artisan october:admin --first-name=… --email=admin@nlb.local --login=admin
+`php artisan october:admin --first-name=… --email=admin@elv.local --login=admin
 --default --no-interaction` → `[OK] Administrator created successfully`.
 Логин `admin`, superuser, активирован; в `backend_users` одна запись.
 
@@ -1830,7 +1886,7 @@ v3.7.13 — релиз 21.01.2026, `php ^8.0.2`, `laravel ^9.0`. Для ново
 
 **Что не проверено.**
 
-- Своего кода нет: `plugins/nlb/library` и `themes/nlb` не существуют,
+- Своего кода нет: `plugins/elv/library` и `themes/elv` не существуют,
   `ACTIVE_THEME=demo`.
 - Демо-тема и демо-плагин October на месте — удаляются на этапе 4 (пункт M16);
   поведение `october:fresh` (что именно сносит) ещё не проверено.
@@ -1876,13 +1932,13 @@ October не установлен.**
 | HTML-страницы | 110 | `Get-ChildItem preview -Recurse -Filter *.html` |
 | Миграции | 13 | `database/migrations` источника (`db/migrations/001…013`) |
 | PHP-файлы вне `preview/` | 106 | рекурсивный подсчёт |
-| `nlb_forms.php` | 1 345 строк | подсчёт строк |
-| `nlb_search.php` | 1 272 строки | там же |
-| `nlb_push.php` | 769 строк | там же |
+| `elv_forms.php` | 1 345 строк | подсчёт строк |
+| `elv_search.php` | 1 272 строки | там же |
+| `elv_push.php` | 769 строк | там же |
 | `styles.css` | 81 179 байт | размер файла |
 | `script.js` | 75 359 байт | размер файла |
 | `bootstrap.min.css` | 61 433 байта | размер файла |
-| Поисковый индекс | 99 документов, 1 340 терминов, `k1=1.5`, `b=0.75` | `db/search/index.json` + `nlb_search.php` |
+| Поисковый индекс | 99 документов, 1 340 терминов, `k1=1.5`, `b=0.75` | `db/search/index.json` + `elv_search.php` |
 | Фикстуры | 95 кейсов фильтра, 29 кейсов поиска | `db/tests/fixtures/*.json` |
 | Элементы без фото | 59 из 91 | разбор `db/config/data/*.php`: books 24/24, printing 29/37, collections 6/6 |
 | Правила чата | 11 | `script.js:169` (блок `RULES`) |
@@ -1906,12 +1962,12 @@ October не установлен.**
 | `project-context.md` | стек, 8 принятых решений, структура каталога, карта 110 URL, точки интеграции, что не проверено |
 | `README.md` | статус этапов, быстрый старт, команды, карта документации, ограничения |
 | `docs/README.md` | карта документов и гигиена (правило «пункт без `file:line` не принимается») |
-| `docs/architecture.md` | плагин `nlb/library`, Tailor vs Eloquent, таблица «9 инфоблоков → blueprints/модели» (39 свойств, 91 элемент), 11 компонентов, маршруты, очереди |
+| `docs/architecture.md` | плагин `elv/library`, Tailor vs Eloquent, таблица «9 инфоблоков → blueprints/модели» (39 свойств, 91 элемент), 11 компонентов, маршруты, очереди |
 | `docs/db.md` | 13 таблиц, общие колонки, поля по сущностям, перечисления, `UNIQUE(service_code, date, time)`, идемпотентный импорт по `xml_id`, карта 13 миграций источника |
 | `docs/october-integration.md` | шапка/подвал/меню/формы/поиск/чат/push/SEO/заголовки — с указанием строк источника; чего в переносе нет |
 | `docs/installation.md` | PHP 8.3.30, composer, MySQL 8.4.3, `.env`, проверка после установки, 5 типовых сбоев |
 | `docs/security-performance.md` | CSP в двух местах, бюджеты (56,4 КБ / 190 412 знаков / 0 внешних CSS), картинки, кеш по `mtime`, протокол Lighthouse, приватность |
-| `docs/design-system.md` | токены (`--nlb-primary: #2563eb` и др.), что переносится как есть, что запрещено |
+| `docs/design-system.md` | токены (`--elv-primary: #2563eb` и др.), что переносится как есть, что запрещено |
 | `docs/content.md` | инвентарь 110 URL по группам, 12 разделов, где живёт контент, порядок блоков главной, изображения |
 | `docs/qa-checklist.md` | приёмка: гейты этапа, 110 адресов, Lighthouse, гонка слота, формы, API, поиск, регресс источника, что считается дефектом |
 | `Что доделать.txt` | 33 открытых пункта: P0 (M1, M2, P0-4, P0-5, P0-6, P0-7, M3), P1 (P1-4, P1-5, P1-9, P1-11, P1-12, P1-15, P1-16, P1-17, P1-20, M4–M11), P2 (P2-1…P2-13, M12–M15) |

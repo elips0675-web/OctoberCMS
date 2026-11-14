@@ -40,7 +40,7 @@
 Причины отказа, по убыванию веса:
 
 1. **Tailor — основа проекта.** Девять blueprints (6 сущностей + 3 раздела),
-   `type: structure` для вложенных разделов, `tailor:migrate`, `nlb:import`.
+   `type: structure` для вложенных разделов, `tailor:migrate`, `elv:import`.
    В Winter Tailor отсутствует: каждый blueprint — миграция + модель + контроллер
    + админ-форма. Это переписывание data-слоя, а не «пять строк в composer».
 2. **Laravel 9 не получает security-фиксов** с 06.02.2024
@@ -73,16 +73,16 @@ Winter оправдан, только если сайт форкается и п
 Перед установкой любого плагина проверить: строка «Platform Compatibility»
 содержит 4.x; дата последнего обновления не старше года; требуемая версия PHP
 не выше 8.3; `composer audit` после установки чистый; миграции не трогают наши
-таблицы `nlb_*` и `tailor_*`.
+таблицы `elv_*` и `tailor_*`.
 
 ## 4. Что не ставим
 
 | Плагин | Почему нет |
 |---|---|
-| **RainLab.Blog** (2.0.1, 173 505, 4.x) | у нас уже есть `Nlb\News` + разделы; получим вторую модель новостей, вторую админку и два источника правды |
+| **RainLab.Blog** (2.0.1, 173 505, 4.x) | у нас уже есть `Elv\News` + разделы; получим вторую модель новостей, вторую админку и два источника правды |
 | **POWER SEO Toolkit** ($9) | **1 проект**, плагин 2026 года — не проверен |
 | **SeoCore** (бесплатно) | 63 установки |
-| **Shopaholic / OFFLINE.Mall** | «модульность» Lovata — это 4–6 плагинов и свои таблицы; для печати и сканов хватает `nlb_orders` |
+| **Shopaholic / OFFLINE.Mall** | «модульность» Lovata — это 4–6 плагинов и свои таблицы; для печати и сканов хватает `elv_orders` |
 | Page builder'ы (`renick-content` и подобные) | ломают правило «разметка 1:1», добавляют внешний CSS и JS |
 | RainLab.Translate, мультиязычность | сайт на русском, решение владельца |
 | Плагины «honeypot»/«captcha» | honeypot уже есть в Tailor-компоненте (`modules/tailor/components/SubmissionComponent.php:263`), для своих форм пишем проверку сами |
@@ -101,8 +101,8 @@ Winter оправдан, только если сайт форкается и п
   `SubmissionBlueprint`, `SubmissionComponent`, письмо `tailor:submission`,
   модерация и honeypot.
 - `type: structure` существует (`Blueprint.php:530`) и уже используется:
-  `plugins/nlb/library/blueprints/*/section.yaml` (`Nlb\NewsSection`,
-  `Nlb\BookSection`, `Nlb\EventSection`).
+  `plugins/elv/library/blueprints/*/section.yaml` (`Elv\NewsSection`,
+  `Elv\BookSection`, `Elv\EventSection`).
 - Блог на Tailor для контентных новостей достаточен — у нас уже так.
 - `{% cache %}` для анонимных тяжёлых блоков — верно.
 
@@ -112,7 +112,7 @@ Winter оправдан, только если сайт форкается и п
   `SubmissionComponent` (`:178`, `:263`), не в CMS вообще.
 - «`submission` сэкономит дни» — только если устраивает его разметка. У нас
   правило «1:1 с `preview/`», поэтому форму рисуем свою, а `submission` создаёт
-  **второй** склад отзывов (`tailor_*`) рядом с `nlb_*`. Для отзыва после брони
+  **второй** склад отзывов (`tailor_*`) рядом с `elv_*`. Для отзыва после брони
   честнее своя таблица (M21).
 - «POWER SEO Toolkit / SeoCore» — см. раздел 4: один и 63 установки
   соответственно; безопаснее Renatio.SeoManager или свои поля.
@@ -132,10 +132,10 @@ Winter оправдан, только если сайт форкается и п
 
 | Домен | Состояние 11.11.2026 | Пункт бэклога |
 |---|---|---|
-| **Блог** | есть `Nlb\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url`, разделами (`section.yaml`, `type: structure`) и мета-полями `seo_title`/`seo_description`; лента `/rss.xml` — `classes/Rss.php` (Stage 11) | — |
-| **Отзывы** | blueprint'а нет; `type: submission` пишет в `tailor_*` и навязывает разметку | M21 — своя `nlb_reviews` + привязка к брони |
-| **SEO** | canonical, OG, Twitter и robots — в `themes/nlb/layouts/default.htm:10-35`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:255`); `/sitemap.xml` (106 адресов), `/robots.txt` и `/rss.xml` — 200, 301 со старых адресов (Stage 7, 11); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:356`, Stage 8); микроразметка записи `Article`/`Event`/`Product`/`Service` — `Seo::recordNode()` (`classes/Seo.php:399`, Stage 9); `BreadcrumbList` — `Seo::breadcrumbs()` (`classes/Seo.php:118`, Stage 16), гейты `check-seo` и `check-orphans`. Остаток — CWV после домена (M17), FAQ отклонён (на сайте нет блока «вопрос-ответ») | P2-22 (CWV) |
-| **Формы** | разметка и клиентская валидация 1:1, согласие на обработку есть в `feedback.htm:51` и `services-detail.htm:184`; серверные `POST` пишут в `nlb_*` и ставят письма в очередь, статусы меняются в админке (Stage 5–6) | SMTP — M14 |
+| **Блог** | есть `Elv\News` (`news/item.yaml`, `type: stream`) с автором, тегами, обложкой, `read_time`, `source_url`, разделами (`section.yaml`, `type: structure`) и мета-полями `seo_title`/`seo_description`; лента `/rss.xml` — `classes/Rss.php` (Stage 11) | — |
+| **Отзывы** | blueprint'а нет; `type: submission` пишет в `tailor_*` и навязывает разметку | M21 — своя `elv_reviews` + привязка к брони |
+| **SEO** | canonical, OG, Twitter и robots — в `themes/elv/layouts/default.htm:10-35`; JSON-LD `Library` + `WebSite` подключён (`classes/Seo.php:255`); `/sitemap.xml` (106 адресов), `/robots.txt` и `/rss.xml` — 200, 301 со старых адресов (Stage 7, 11); мета записи из blueprints — `Seo::applyRecord()` (`classes/Seo.php:356`, Stage 8); микроразметка записи `Article`/`Event`/`Product`/`Service` — `Seo::recordNode()` (`classes/Seo.php:399`, Stage 9); `BreadcrumbList` — `Seo::breadcrumbs()` (`classes/Seo.php:118`, Stage 16), гейты `check-seo` и `check-orphans`. Остаток — CWV после домена (M17), FAQ отклонён (на сайте нет блока «вопрос-ответ») | P2-22 (CWV) |
+| **Формы** | разметка и клиентская валидация 1:1, согласие на обработку есть в `feedback.htm:51` и `services-detail.htm:184`; серверные `POST` пишут в `elv_*` и ставят письма в очередь, статусы меняются в админке (Stage 5–6) | SMTP — M14 |
 | **Почта** | `MAIL_MAILER=log`, живого SMTP нет | M14 |
 | **Инфраструктура** | нет staging, хостинга, бэкапов и мониторинга; `QUEUE_CONNECTION=database`, но воркера и cron нет | M17, P0-8 (бэкапы), P0-9 (CI), P1-21 (мониторинг) |
 | **Контент** | 59 из 91 позиции без фото; контакты и реквизиты — заглушки; права на демо-фото не зафиксированы | P1-11, P0-6, P0-7 |

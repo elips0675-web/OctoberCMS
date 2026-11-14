@@ -1,0 +1,164 @@
+uuid: 845567bb-fc03-453c-ab9a-e0988d992b44
+handle: Elv\Service
+type: stream
+name: Услуга
+drafts: false
+
+primaryNavigation:
+    label: Услуги
+    icon: octo-icon-star
+    order: 140
+
+navigation:
+    label: Все услуги
+    icon: octo-icon-star
+    order: 100
+
+fields:
+    xml_id:
+        label: 'ID в Битриксе'
+        commentAbove: 'Ключ импорта. Не менять.'
+        type: text
+        span: left
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100
+        span: right
+
+    title:
+        label: Название
+        type: text
+        required: true
+
+    slug:
+        label: Адрес (slug)
+        commentAbove: 'Латиница и дефисы. Адрес страницы: /services/{slug}/'
+        type: text
+        required: true
+
+    published_at:
+        label: Дата публикации
+        type: datepicker
+        mode: datetime
+        span: left
+
+    is_enabled:
+        label: Опубликовано
+        type: checkbox
+        default: true
+        span: right
+
+    image:
+        label: Картинка
+        type: mediafinder
+        mode: image
+        span: left
+
+    icon:
+        label: Иконка
+        commentAbove: 'Имя из спрайта: eye, book, sparkles и т.д.'
+        type: text
+        span: right
+
+    color:
+        label: Цвет
+        type: dropdown
+        span: left
+        options:
+            primary: Синий
+            green: Зелёный
+            sky: Голубой
+            pink: Розовый
+            orange: Оранжевый
+
+    subtitle:
+        label: Подзаголовок
+        type: text
+        span: right
+
+    price_from:
+        label: Цена от, ₽
+        type: number
+        span: left
+
+    price_label:
+        label: Подпись цены
+        commentAbove: 'Например: «Бесплатно для читателей».'
+        type: text
+        span: right
+
+    duration:
+        label: Время работы
+        type: text
+
+    schedule:
+        label: Расписание
+        commentAbove: 'По одной строке на пункт.'
+        type: textarea
+        size: small
+
+    phone:
+        label: Телефон
+        type: text
+        span: left
+
+    email:
+        label: E-mail
+        type: text
+        span: right
+
+    excerpt:
+        label: Анонс
+        type: textarea
+        size: small
+
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — анонс. До 160 символов.'
+        type: textarea
+        size: small
+
+    content:
+        label: Описание
+        type: richeditor
+
+    features:
+        label: Что входит в услугу
+        type: repeater
+        span: adaptive
+        form:
+            fields:
+                title:
+                    label: Название
+                    type: text
+                description:
+                    label: Описание
+                    type: text
+
+    tariffs:
+        label: Тарифы
+        type: repeater
+        span: adaptive
+        form:
+            fields:
+                title:
+                    label: Название
+                    type: text
+                price:
+                    label: Цена
+                    type: text
+                includes:
+                    label: Что входит
+                    commentAbove: 'По одной строке на пункт.'
+                    type: textarea
+                    size: small
+                popular:
+                    label: Выделить как популярный
+                    type: checkbox

@@ -7,7 +7,7 @@
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
-& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml
 & $php vendor/phpunit/phpunit/phpunit
 node tools/purge-css.mjs --check
 node tools/check-css-budget.mjs
@@ -20,7 +20,7 @@ node tools/check-admin-brand.mjs
 node tools/check-clean-tree.mjs
 ```
 
-- [ ] PHPUnit плагина (`-c phpunit.nlb.xml`) — 0 упавших; без `-c` плагин не
+- [ ] PHPUnit плагина (`-c phpunit.elv.xml`) — 0 упавших; без `-c` плагин не
       регистрируется (корневой конфиг подменяет `PLUGINS_PATH`) и гейт врёт.
 - [ ] PHPUnit ядра — 0 упавших, число тестов записано в журнал.
 - [ ] `october:migrate` на чистой БД поднимает схему (не «на моей базе работает»).
@@ -108,9 +108,9 @@ node tools/check-clean-tree.mjs
 - [ ] В теле нет `SQLSTATE`, DSN, паролей и путей — только имена компонентов.
 - [ ] Остановить MySQL → `/health` отдаёт 503 с `db: false`; поднять → снова 200
       (проверяется на стенде, не под живой базой).
-- [ ] `php artisan nlb:health-report` пишет JSON-строку в `storage/logs/health.log`
+- [ ] `php artisan elv:health-report` пишет JSON-строку в `storage/logs/health.log`
       (`at`, `db_ms`, `queue_size`, `disk_free_bytes`, `checks`), exit 0.
-- [ ] `php artisan schedule:list` показывает `nlb:health-report` раз в час;
+- [ ] `php artisan schedule:list` показывает `elv:health-report` раз в час;
       внешняя проба на `/health` заведена (владелец, M17).
 - [ ] `node tools/check-health.mjs` — exit 0.
 
@@ -134,10 +134,10 @@ node tools/check-clean-tree.mjs
 
 ### D2. Формы (этап 5)
 
-- [ ] Обратная связь: `POST /feedback/` создаёт `nlb_requests`, письмо в очереди
+- [ ] Обратная связь: `POST /feedback/` создаёт `elv_requests`, письмо в очереди
   (`Mail::fake` + `assertQueued`), редирект `?sent=1`.
-- [ ] Бронь: создаёт `nlb_bookings`, занимает слот, письмо клиенту.
-- [ ] Заказ: создаёт `nlb_orders`, письмо в очереди; пустая форма → `422` с человеческим
+- [ ] Бронь: создаёт `elv_bookings`, занимает слот, письмо клиенту.
+- [ ] Заказ: создаёт `elv_orders`, письмо в очереди; пустая форма → `422` с человеческим
   текстом, не `QueryException`.
 - [ ] Подписка: double opt-in (без подтверждения рассылка не идёт), отписка по токену.
 - [ ] Антиспам: honeypot + лимитер; капча — только при наличии ключа.
@@ -149,7 +149,7 @@ node tools/check-clean-tree.mjs
 - [ ] Повтор с тем же `external_id` → тот же результат, вторая бронь не создаётся.
 - [ ] `400` — битый JSON; `422` — валидация; `409` — слот занят; `429` — лимитер.
 - [ ] 6 тестов на коды + тест идемпотентности.
-- [ ] Слоты генерируются на сервере (`nlb:slots-generate`), админ-список фильтруется
+- [ ] Слоты генерируются на сервере (`elv:slots-generate`), админ-список фильтруется
   по дате.
 
 ### D4. Поиск и чат (этап 6)

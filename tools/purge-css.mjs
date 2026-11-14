@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
- * Сборка bootstrap.min.css темы nlb под фактически используемые классы.
+ * Сборка bootstrap.min.css темы elv под фактически используемые классы.
  *
  * Полная сборка Bootstrap 5.3.3 весит 227 КБ, а на страницах библиотеки
  * используется меньше трети. CSS блокирует первую отрисовку, поэтому файл
  * режется на сборке: источник — нетронутый `bootstrap.source.min.css`,
  * результат — `bootstrap.min.css`, который макет встраивает в `<style>`.
  *
- * Источник логики — `tools/purge-css.mjs` шаблона `nlb_bootstrap`.
+ * Источник логики — `tools/purge-css.mjs` шаблона `elv_bootstrap`.
  *
  * Правила отбора:
  *   - правила без классов (reboot, :root, теги, [type=...]) остаются целиком;
  *   - правило с классами остаётся, только если ВСЕ его классы есть в выборке;
- *   - выборка = классы из разметки (`themes/nlb/**`, `plugins/nlb/**`) +
+ *   - выборка = классы из разметки (`themes/elv/**`, `plugins/elv/**`) +
  *     классы, которые добавляет JavaScript + safelist состояний Bootstrap и
  *     классов, собираемых в шаблонах из данных (`bg-grad-*`, `icon-tile--*`…).
  *
@@ -25,13 +25,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const vendor = path.join(root, 'themes/nlb/assets/vendor');
+const vendor = path.join(root, 'themes/elv/assets/vendor');
 const source = path.join(vendor, 'bootstrap.source.min.css');
 const target = path.join(vendor, 'bootstrap.min.css');
 
 const check = process.argv.includes('--check');
 
-const scanRoots = [path.join(root, 'themes/nlb'), path.join(root, 'plugins/nlb/library')];
+const scanRoots = [path.join(root, 'themes/elv'), path.join(root, 'plugins/elv/library')];
 // `controllers` — разметка админки: её стилизует тема backend, а не CSS сайта,
 // поэтому классы `btn btn-primary` из index/update.htm не должны тянуть
 // правила Bootstrap в файл, который встраивается в публичные страницы.
@@ -39,7 +39,7 @@ const skipDirs = new Set(['node_modules', 'vendor', 'storage', 'tests', 'lang', 
 // `assets/pwa/offline.html` — самостоятельная страница со своими инлайн-стилями:
 // Bootstrap в неё не подключается, и её классы (`card`, `mark`, `hint`)
 // не должны тянуть правила в файл, который встраивается в публичные страницы.
-const skipPaths = new Set([path.join(root, 'themes/nlb/assets/pwa')]);
+const skipPaths = new Set([path.join(root, 'themes/elv/assets/pwa')]);
 const scanExt = /\.(htm|php|html|js|json)$/i;
 
 function walk(dir, out) {

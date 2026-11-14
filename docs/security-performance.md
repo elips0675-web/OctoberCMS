@@ -5,7 +5,7 @@
 
 ## 1. Заголовки и CSP
 
-Источник — `nlb_security.php` (77 строк): CSP, `X-Frame-Options`, `Referrer-Policy`,
+Источник — `elv_security.php` (77 строк): CSP, `X-Frame-Options`, `Referrer-Policy`,
 `Permissions-Policy`. В October набор разделён осознанно, потому что два
 заголовка зависят от запроса и статикой не ставятся:
 
@@ -16,14 +16,14 @@
 | `Strict-Transport-Security` | nginx 443 (PHP — только если запрос уже HTTPS) | за прокси `isSecure()` не видит `X-Forwarded-Proto`, HSTS обязан ставить периметр |
 | `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` | `SecurityHeaders` **и** `nginx.conf` | одинаковы для всех; nginx скрывает версию PHP (`fastcgi_hide_header`), чтобы не было дублей |
 
-Middleware — `plugins/nlb/library/classes/Http/SecurityHeaders.php`, регистрация
+Middleware — `plugins/elv/library/classes/Http/SecurityHeaders.php`, регистрация
 в `Plugin.php::boot()` рядом с `CompressResponse` и `LegacyRedirect`.
 
 CSP и инлайн-стили: CSS встраивается в документ намеренно (это и даёт FCP 0,9 с),
 поэтому `style-src` требует `'unsafe-inline'` **осознанно** — инлайн-блок
 формируется сервером, а не пользователем. `script-src` — `'self'` плюс nonce:
-инлайновый скрипт фильтров (`themes/nlb/partials/filter-script.htm:1`) помечен
-`nonce="{{ nlb_csp_nonce() }}"`, `'unsafe-inline'` для скриптов не выдаётся.
+инлайновый скрипт фильтров (`themes/elv/partials/filter-script.htm:1`) помечен
+`nonce="{{ elv_csp_nonce() }}"`, `'unsafe-inline'` для скриптов не выдаётся.
 `unsafe-eval` не разрешён нигде.
 
 Админка исключена из CSP: October подключает инлайновые скрипты и eval в бэкенде,
@@ -70,7 +70,7 @@ CSP. Заголовки статики на проде ставит nginx (`ngin
 | Что | Как |
 |---|---|
 | Инлайн CSS | кеш по `mtime` файлов `bootstrap.min.css` и `styles.css` |
-| Поисковый индекс | таблицы + команда `nlb:search-index`, хуки на `saved`/`deleted` |
+| Поисковый индекс | таблицы + команда `elv:search-index`, хуки на `saved`/`deleted` |
 | HTML | без полностраничного кеша: TTFB в October дешевле на порядок |
 | Конфиг | `php artisan config:clear` после правок `.env` |
 | Сжатие | gzip в периметре (`nginx.conf`) **и** в приложении (`CompressResponse`) |
@@ -91,7 +91,7 @@ LCP 1,7 с, TBT 0–60 мс, CLS 0). Причина одна: 188 КБ HTML ка
 
 1. `nginx.conf` — `gzip on` + `expires` в статических `location`. Это прод:
    статику и HTML на проде отдаёт периметр, приложение до этого не доходит.
-2. `plugins/nlb/library/classes/Http/CompressResponse.php` — глобальный
+2. `plugins/elv/library/classes/Http/CompressResponse.php` — глобальный
    middleware (регистрация в `Plugin.php::boot()`): gzip для текстовых
    ответов и `Cache-Control` для ассетов. Нужен там, где nginx нет
    (shared-хостинг, `php artisan serve`). Уже сжатый ответ middleware не
@@ -102,7 +102,7 @@ LCP 1,7 с, TBT 0–60 мс, CLS 0). Причина одна: 188 КБ HTML ка
    приложения: локальный замер видел несжатые 75 КБ JS и без `Cache-Control`,
    то есть мерил не то, что увидит посетитель. На проде файл не участвует.
 
-Проверка: `curl -sI -H 'Accept-Encoding: gzip' /themes/nlb/assets/js/script.js`
+Проверка: `curl -sI -H 'Accept-Encoding: gzip' /themes/elv/assets/js/script.js`
 показывает `Content-Encoding: gzip`, `Content-Length: 17337`,
 `Cache-Control: public, max-age=31536000, immutable`.
 

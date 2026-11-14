@@ -1,0 +1,12 @@
+1.0.1: Первая версия плагина ELV Library
+1.0.2:
+    - Eloquent-таблицы заявок, броней, заказов, слотов и подписчиков
+    - create_elv_requests_table.php
+    - create_elv_bookings_table.php
+    - create_elv_orders_table.php
+    - create_elv_slots_table.php
+    - create_elv_subscribers_table.php
+1.1.0: 'Хелперы темы: адаптивные картинки, инлайн CSS, подписи свойств, карта занятых слотов'
+2.0.0:
+    - 'Переименование плагина и темы: Elv\Library, themes/elv, таблицы elv_*'
+    - rename_legacy_tables_to_elv.php

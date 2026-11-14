@@ -1,0 +1,36 @@
+uuid: 16285221-4859-451f-b8c6-f7f194b1ee73
+handle: Elv\BookSection
+type: structure
+name: Раздел каталога
+drafts: false
+
+structure:
+    maxDepth: 1
+
+navigation:
+    label: Разделы
+    parent: Elv\Book
+    icon: octo-icon-list-ul
+    order: 90
+
+fields:
+    xml_id:
+        label: 'ID в Битриксе'
+        commentAbove: 'Ключ импорта. Не менять.'
+        type: text
+
+    code:
+        label: Код
+        commentAbove: 'Латиница. Используется в адресе /books/?section={код}.'
+        type: text
+        required: true
+
+    is_enabled:
+        label: Опубликован
+        type: checkbox
+        default: true
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100

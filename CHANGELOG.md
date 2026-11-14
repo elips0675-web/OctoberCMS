@@ -1,7 +1,7 @@
 # CHANGELOG
 
-История версий сайта NLB на October CMS. Проект ведётся с 10.11.2026; до этого
-сайт существовал как шаблон `nlb_bootstrap` на 1С-Битрикс (источник
+История версий сайта ELV на October CMS. Проект ведётся с 10.11.2026; до этого
+сайт существовал как шаблон `elv_bootstrap` на 1С-Битрикс (источник
 `D:\nlbbootstrap-main`, его версии — в его собственном `CHANGELOG.md`).
 
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
@@ -9,9 +9,21 @@
 
 ## [Unreleased]
 
+### Изменено
+
+- Этап 28: переименование `nlb` → `elv` целиком — тема `themes/elv`
+  (`code: elv`), плагин `plugins/elv/library` и namespace `Elv\Library`,
+  Tailor-handle `Elv\*`, Twig-функции `elv_*`, классы `.elv-*`, команды
+  `elv:import` / `elv:slots-generate` / `elv:health-report`, таблицы `elv_*`
+  и база `elv_october`. Старые таблицы переименовывает миграция версии
+  **2.0.0** `rename_legacy_tables_to_elv.php` (данные сохранены: 79 таблиц,
+  15 410 строк до и после); create-миграции страхуют тот же случай на чистой
+  установке. `phpunit.nlb.xml` → `phpunit.elv.xml`, гейты `tools/*.mjs`
+  обновлены. Проверено: 231 тест плагина, 10 живых гейтов.
+
 ### Добавлено
 
-- Этап 20: конструктор страниц — blueprint `Nlb\Page` и миксин `Nlb\Blocks`
+- Этап 20: конструктор страниц — blueprint `Elv\Page` и миксин `Elv\Blocks`
   (шесть блоков: текст, текст с картинкой, цитата, сетка записей, видео,
   оглавление), класс `PageBuilder`, CMS-страница `/:slug` с 404-веткой,
   страницы конструктора в `/sitemap.xml`, `tests/PageBuilderTest.php`
@@ -19,7 +31,7 @@
 
 - Этап 5: формы обратной связи, брони, заказа и подписки — `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; записи в
-  `nlb_*` и письма в очереди (`Mail::queue`); `tests/FormsTest.php` (25 тестов).
+  `elv_*` и письма в очереди (`Mail::queue`); `tests/FormsTest.php` (25 тестов).
 - Этап 6: админка «Библиотека» — списки обращений, броней, заказов и
   подписчиков за своими правами, смена статуса; отмена брони освобождает слот;
   `tests/AdminTest.php` (13 тестов).
@@ -49,7 +61,7 @@
   В плагине 171 тест, 616 утверждений.
 - Этап 12: PWA — `manifest.webmanifest`, `sw.js` и `offline.html` отдаются с
   корня маршрутами (`classes/Http/PwaController.php`), файлы лежат в
-  `themes/nlb/assets/pwa/`, чтобы область service worker не сузилась до каталога
+  `themes/elv/assets/pwa/`, чтобы область service worker не сузилась до каталога
   темы; версия кеша — восемь hex из `mtime` файлов `SHELL` (`Pwa::version()`),
   `/admin/` из перехвата исключён, офлайн-страница без инлайнового JS.
   `tests/PwaTest.php` (9 тестов), гейт `tools/check-pwa.mjs`; попутно исправлен
@@ -59,7 +71,7 @@
 - Этап 13: health-check — `GET /health` отвечает `200`, если живы БД (`SELECT 1`),
   кэш и очередь, и `503` с именем отказавшего компонента; текст исключения
   уходит в лог, ответ с `Cache-Control: no-store` и без `Set-Cookie`.
-  `nlb:health-report` пишет часовую JSON-строку (ответ БД в мс, размер очереди,
+  `elv:health-report` пишет часовую JSON-строку (ответ БД в мс, размер очереди,
   свободный диск) в `storage/logs/health.log`, `registerSchedule()` ставит её и
   ежедневную генерацию слотов; `tests/HealthTest.php` (12 тестов), гейт
   `tools/check-health.mjs`; в плагине 193 теста, 724 утверждения.
@@ -67,7 +79,7 @@
   проверка/подъём MySQL, `artisan serve` на 8080, ожидание `/health`, браузер;
   ключ `/nobrowser`), CRLF закреплён в `.gitattributes`. README: таблица
   статуса приведена к факту (этапы 3–5 и 8 закрыты), убрана несуществующая
-  `nlb:search-index`; `docs/architecture.md` §2 — реальные классы плагина,
+  `elv:search-index`; `docs/architecture.md` §2 — реальные классы плагина,
   `Search`/`TextFilter`/`Push` помечены планом (M8/M9).
 - Этап 15: `docs/roadmap.md` §6 — пять тезисов оценки по шаблону и Tailor
   больше не выпадают молча (миксины SEO-полей — P2-19, работа без JS — P1-5,
@@ -94,9 +106,9 @@
   (16 тезисов: 2 закрыты, 1 правка, 5 приняты с условиями, 5 отложены,
   4 отклонены). Бэклог: P2-24 — конструктор страниц из блоков (Tailor
   `structure`, партиал на тип блока, TOC без JS), P2-25 — год в подвале
-  вместо жёсткого «© 2026» (`themes/nlb/partials/footer.htm:76`).
+  вместо жёсткого «© 2026» (`themes/elv/partials/footer.htm:76`).
 - Этап 19: P2-25 закрыт — подвал печатает `© {{ 'now'|date('Y') }}`
-  (`themes/nlb/partials/footer.htm:76`), бренд «Библиотека 2026» остался
+  (`themes/elv/partials/footer.htm:76`), бренд «Библиотека 2026» остался
   текстом; `tests/FooterTest.php` (2 теста: источник без литерала и рендер
   главной с текущим годом); в плагине 218 тестов, 836 утверждений.
 
@@ -106,15 +118,15 @@
 
 ## [0.4.0] — 11.11.2026
 
-Тема `nlb` и 110 адресов. Разметка и тексты совпадают с эталоном `preview/`,
+Тема `elv` и 110 адресов. Разметка и тексты совпадают с эталоном `preview/`,
 демо-тема и демо-плагин удалены, инлайн CSS в бюджете.
 
 ### Добавлено
 
-- Тема `themes/nlb`: layout с инлайн-CSS и спрайтом, 25 CMS-страниц, 11 partials,
+- Тема `themes/elv`: layout с инлайн-CSS и спрайтом, 25 CMS-страниц, 11 partials,
   ассеты 1:1 из источника (`styles.css`, варианты 480/960, иконки, Bootstrap).
 - Хелперы плагина `1.1.0`: `classes/{Content,Labels,Media}.php`,
-  `Slot::occupiedMap()` / `jsonOccupiedMap()`, теги `nlb_*` в `Plugin.php`.
+  `Slot::occupiedMap()` / `jsonOccupiedMap()`, теги `elv_*` в `Plugin.php`.
 - Гейты `tools/check-urls.mjs` (109×200 + 404) и `tools/check-dom-parity.mjs`
   (title, h1, h2, карточки, текст против `preview/`).
 - Тесты `MediaTest` (19), `LabelsTest` (7), `SlotMapTest` (6) — в плагине 61 тест.
@@ -139,16 +151,16 @@ Eloquent-слой заявок и броней, слоты услуг. Гонк�
 
 ### Добавлено
 
-- Миграции плагина `1.0.2`: `nlb_requests`, `nlb_bookings`, `nlb_orders`,
-  `nlb_slots` (`UNIQUE(service_code, date, time)`), `nlb_subscribers`
+- Миграции плагина `1.0.2`: `elv_requests`, `elv_bookings`, `elv_orders`,
+  `elv_slots` (`UNIQUE(service_code, date, time)`), `elv_subscribers`
   (`UNIQUE(email)`, `UNIQUE(token)`).
-- Модели `Nlb\Library\Models\{Request,Booking,Order,Slot,Subscriber}` с русской
+- Модели `Elv\Library\Models\{Request,Booking,Order,Slot,Subscriber}` с русской
   валидацией; double opt-in в `Subscriber`.
 - `classes/BookingService.php`: создание брони в `DB::transaction` +
   `lockForUpdate`, условный `UPDATE … WHERE taken < capacity`, перехват
   `QueryException` на дубликат → `SlotUnavailableException`; подтверждение,
   отмена с освобождением слота, свободные часы.
-- Команда `php artisan nlb:slots-generate [--days=30] [--from=] [--service=*]
+- Команда `php artisan elv:slots-generate [--days=30] [--from=] [--service=*]
   [--times=]` — идемпотентная генерация слотов 10:00–21:00.
 - Тесты: `BookingTest`, `ModelsTest`, `SlotsGenerateTest` (всего в плагине
   29 тестов, 116 утверждений).
@@ -157,29 +169,29 @@ Eloquent-слой заявок и броней, слоты услуг. Гонк�
 
 - `docs/db.md` (разделы 2, 5.4, 9), `docs/architecture.md` (`BookingService.php`),
   `docs/installation.md` — факты схемы, команда слотов, тесты.
-- Живая БД `nlb_october`: 100 таблиц, слотов на 14 дней — 1 344.
+- Живая БД `elv_october`: 100 таблиц, слотов на 14 дней — 1 344.
 
 ## [0.2.0] — 10.11.2026
 
-Плагин `nlb/library` и контент в БД: 91 элемент, 12 разделов. Сайта ещё нет —
+Плагин `elv/library` и контент в БД: 91 элемент, 12 разделов. Сайта ещё нет —
 `/` отдаёт демо-тему.
 
 ### Добавлено
 
-- Плагин `plugins/nlb/library`: `Plugin.php`, `composer.json`,
+- Плагин `plugins/elv/library`: `Plugin.php`, `composer.json`,
   `updates/version.yaml` (`1.0.1`), автообнаружение консольных команд.
 - 9 Tailor-blueprints с русскими метками: `news`, `events`, `books`
   (раздел + элемент), `collections`, `services`, `printing`. Таблицы созданы
   `php artisan tailor:migrate` (9 контентных + 3 раздела + парные репитер-таблицы).
-- Команда `php artisan nlb:import [--source=] [--dry-run]`: разделы → элементы,
+- Команда `php artisan elv:import [--source=] [--dry-run]`: разделы → элементы,
   `properties` → колонки, `FEATURES`/`TARIFFS` → репитеры, идемпотентность по
   `xml_id`.
-- Тесты плагина: `phpunit.nlb.xml` + `plugins/nlb/library/tests/ImportTest.php`
+- Тесты плагина: `phpunit.elv.xml` + `plugins/elv/library/tests/ImportTest.php`
   (8 тестов, 42 утверждения) на sqlite `:memory:` с фикстурами.
 
 ### Изменено
 
-- `docs/db.md` приведён к фактам: имена таблиц `xc_<uuid>c` вместо `nlb_news`,
+- `docs/db.md` приведён к фактам: имена таблиц `xc_<uuid>c` вместо `elv_news`,
   `section_id` вместо `parent_id`, `xml_id` — `text` без `UNIQUE`, репитеры
   в отдельной таблице, фактические типы колонок, ключи импорта.
 - Бэклог: закрыты M4 (импорт) и M5 (blueprints), добавлены M18 (роль «Редактор
@@ -188,13 +200,13 @@ Eloquent-слой заявок и броней, слоты услуг. Гонк�
 
 ### Проверено
 
-- `nlb:import`: первый прогон — 91 элемент и 12 разделов, второй — 0 новых,
+- `elv:import`: первый прогон — 91 элемент и 12 разделов, второй — 0 новых,
   91 обновление.
 - `SELECT COUNT(*)` по шести контентным таблицам = 91, по разделам = 12,
   дублей `xml_id` — 0.
 - Чтение моделями: `section`, `tags`, репитеры `features`/`tariffs` с
   `sort_order`, даты без сдвига на сутки.
-- `vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml` — 8 тестов, 0 упавших.
+- `vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` — 8 тестов, 0 упавших.
 
 ## [0.1.0] — 10.11.2026
 
@@ -203,9 +215,9 @@ Eloquent-слой заявок и броней, слоты услуг. Гонк�
 ### Добавлено
 
 - October CMS **4.4.13** (Laravel **12.71.0**) на PHP **8.3.30**, MySQL 8.4.3,
-  база `nlb_october`, 44 таблицы.
+  база `elv_october`, 44 таблицы.
 - `composer.json` + `composer.lock` — версия зафиксирована.
-- `.env.example` (проектные значения: `APP_NAME=NLB`, `DB_DATABASE=nlb_october`,
+- `.env.example` (проектные значения: `APP_NAME=ELV`, `DB_DATABASE=elv_october`,
   `QUEUE_CONNECTION=database`, `MAIL_MAILER=log`) и `.gitignore`, объединяющий
   правила October и проекта.
 - Документация переписана под 4.x: реальные команды (`october:about`,
@@ -213,7 +225,7 @@ Eloquent-слой заявок и броней, слоты услуг. Гонк�
   `ext-zip`), требования хостинга.
 - Каркас документации: `AGENTS.md`, `project-context.md`, `README.md`,
   `Что сделано.txt`, `Что доделать.txt` (41 открытый пункт), `docs/` — 9 документов.
-- Администратор `admin` (`admin@nlb.local`, superuser) создан `october:admin`
+- Администратор `admin` (`admin@elv.local`, superuser) создан `october:admin`
   10.11.2026; вход проверен реальным `POST /admin/backend/auth/signin` →
   `/admin/dashboard` (200). Пароль — в `.local/admin-credentials.md`, каталог
   в `.gitignore`, в репозиторий не попадает.

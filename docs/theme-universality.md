@@ -1,14 +1,14 @@
 # Конструктор страниц: как собрать страницу в админке
 
 Документ для контент-менеджера и для того, кто будет дорабатывать блоки.
-Код: `plugins/nlb/library/classes/PageBuilder.php`, blueprint
-`plugins/nlb/library/blueprints/page/structure.yaml` и
-`plugins/nlb/library/blueprints/blocks/builder.yaml`, шаблон
-`themes/nlb/pages/builder.htm`, партиалы `themes/nlb/partials/blocks/*.htm`.
+Код: `plugins/elv/library/classes/PageBuilder.php`, blueprint
+`plugins/elv/library/blueprints/page/structure.yaml` и
+`plugins/elv/library/blueprints/blocks/builder.yaml`, шаблон
+`themes/elv/pages/builder.htm`, партиалы `themes/elv/partials/blocks/*.htm`.
 
 ## 1. Что это и чего это не касается
 
-Страница конструктора — запись Tailor (`Nlb\Page`), состоящая из блоков.
+Страница конструктора — запись Tailor (`Elv\Page`), состоящая из блоков.
 Адрес — один сегмент: `/adres-stranicy/`.
 
 **110 существующих адресов на конструктор не переводятся.** Их разметка и
@@ -39,7 +39,7 @@
 ## 3. Блоки
 
 Порядок блоков на странице произвольный; каждый блок — отдельный партиал
-`themes/nlb/partials/blocks/<группа>.htm`. Неизвестная группа пропускается
+`themes/elv/partials/blocks/<группа>.htm`. Неизвестная группа пропускается
 молча (`PageBuilder::GROUPS`), поэтому страница не падает от старой строки
 повторителя.
 
@@ -57,8 +57,8 @@
 - **Один запрос к БД на блок.** Блок «сетка» берёт записи через
   `Content::records()` — тем же запросом, что и разделы, с тем же фильтром
   опубликованности. Второй источник выборки не заводится.
-- **Картинки — из темы.** `nlb_picture()` (плагин, `classes/Media.php:89`)
-  подставляет `/themes/nlb/<путь>`, поэтому в поле картинки указывается путь
+- **Картинки — из темы.** `elv_picture()` (плагин, `classes/Media.php:89`)
+  подставляет `/themes/elv/<путь>`, поэтому в поле картинки указывается путь
   внутри темы, например `assets/images/news-1.jpg`. Медиатека October для
   картинок не используется: файл из неё получил бы другой адрес и другую
   оптимизацию.
@@ -94,14 +94,14 @@
 
 ## 6. Что проверяет приёмка
 
-- `plugins/nlb/library/tests/PageBuilderTest.php` (12 тестов): рендер блока,
+- `plugins/elv/library/tests/PageBuilderTest.php` (12 тестов): рендер блока,
   404 на неизвестный адрес и на выключенную страницу, якоря и дубли, фильтр
   третьего уровня, неизвестная группа, сетка записей и лимит, запрет внешнего
   видео, **совпадение групп blueprint с партиалами** и **разделов сетки с
   белым списком**, **наличие правил CSS для каждого класса блоков**.
-- `plugins/nlb/library/tests/SeoTest.php`: страница попадает в
+- `plugins/elv/library/tests/SeoTest.php`: страница попадает в
   `/sitemap.xml`, выключенная — нет; перечень статических страниц карты
-  по-прежнему сверяется с `themes/nlb/pages/*.htm`, причём страницы с
+  по-прежнему сверяется с `themes/elv/pages/*.htm`, причём страницы с
   параметром в адресе (`url = "/:slug"`) из сверки исключены.
 - Живые гейты после сборки: `check-urls` (109 адресов 200, `/non-existent/` —
   404 со страницей), `check-dom-parity` (110/110), `check-seo`,
@@ -110,9 +110,9 @@
 
 ## 7. Как добавить новый блок
 
-1. Группа в `plugins/nlb/library/blueprints/blocks/builder.yaml` (`groups:`) —
+1. Группа в `plugins/elv/library/blueprints/blocks/builder.yaml` (`groups:`) —
    ключ группы совпадает с именем партиала.
-2. Партиал `themes/nlb/partials/blocks/<группа>.htm`; данные приходят в
+2. Партиал `themes/elv/partials/blocks/<группа>.htm`; данные приходят в
    `block.data`, поля перечислены в `PageBuilder::FIELDS`.
 3. Если блоку нужна подготовка (записи, якоря, адрес файла) — в
    `PageBuilder::prepare()`; шаблон не должен обращаться к моделям.
@@ -125,13 +125,13 @@
    отделены пробелами от `{% ... %}`: `purge-css` читает разметку регулярным
    выражением, и склеенный токен (`%}order-lg-2`) или вложенная кавычка
    (`alert alert-{{ kind == 'warning' … }}`) выкидывают класс из выборки.
-6. Прогнать `phpunit -c phpunit.nlb.xml` и `node tools/purge-css.mjs`, затем
+6. Прогнать `phpunit -c phpunit.elv.xml` и `node tools/purge-css.mjs`, затем
    `--check`.
 
 ## 8. Границы этапа
 
 Каркас закрыт: страница, шесть блоков, 404/SEO/карта сайта, тесты. Вторым
-шагом (отдельные пункты бэклога) — баннеры (`Nlb\Banner` с позициями показа) и
+шагом (отдельные пункты бэклога) — баннеры (`Elv\Banner` с позициями показа) и
 пресеты карточек. Перевод существующих 110 адресов, конструктор шапки и
 подвала, тёмная тема и «Читайте также» — отклонены или отложены решением
 владельца (`docs/roadmap.md` §4, §8).

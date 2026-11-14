@@ -1,0 +1,55 @@
+title = "Услуга печати — {brand}"
+url = "/printing/:slug"
+layout = "default"
+==
+<?php
+function onStart()
+{
+    $record = \Elv\Library\Classes\Content::record('Elv\\Printing', $this->param('slug'));
+    if (!$record) {
+        $this->controller->setStatusCode(404);
+        $this->page->title = 'Страница не найдена — ' . \Elv\Library\Classes\Brand::get('name');
+    }
+    else {
+        \Elv\Library\Classes\Seo::applyRecord($this->page, $record, 'product');
+    }
+
+    $this['record'] = $record;
+}
+?>
+==
+{% if not record %}
+<main class="site-main" id="main">{% partial 'not-found' %}</main>
+{% else %}
+{% set priceText = record.price_from|elv_price %}
+<main class="site-main" id="main">
+<section class="section"><div class="container"><article class="article">
+    <header class="article-head">
+        <h1 class="page-title">{{ record.title }}</h1>
+        <p class="section-lead">{{ record.excerpt }}</p>
+    </header>
+    {% if record.image %}
+        <figure class="article-cover">
+            {{ elv_picture(record.image, record.title, {sizes: '(max-width: 991px) 100vw, 760px'})|raw }}
+        </figure>
+    {% endif %}
+    <div class="article-body">
+        <div class="bitrix-content">{{ record.content|raw }}</div>
+        <aside class="article-aside">
+            <h2 class="h5 mb-3">Коротко</h2>
+            <dl class="article-props">
+                {% if priceText %}<div><dt>Цена</dt><dd>{{ priceText }}</dd></div>{% endif %}
+                {% if record.unit %}<div><dt>Единица</dt><dd>{{ record.unit }}</dd></div>{% endif %}
+            </dl>
+            <a class="btn btn-elv-green w-100 mt-3" href="/feedback/">Заказать</a>
+        </aside>
+    </div>
+    <footer class="article-footer">
+        <a class="btn btn-elv-outline btn-icon" href="/printing/">
+            <svg class="i" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+            Каталог печати
+        </a>
+    </footer>
+</article></div></section>
+</main>
+{% endif %}

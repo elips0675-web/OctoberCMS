@@ -1,11 +1,11 @@
-# AGENTS.md — правила работы с сайтом NLB на October CMS
+# AGENTS.md — правила работы с сайтом ELV на October CMS
 
 Короткий вход для агента. Полная карта — `docs/README.md`, состояние — `Что сделано.txt`,
 открытые пункты — `Что доделать.txt`. Не пересказывай этот файл в ответе.
 
 ## 1. Что это за проект
 
-Сайт библиотеки (шаблон `nlb_bootstrap`) переносится с **1С-Битрикс** на **October CMS
+Сайт библиотеки (шаблон `elv_bootstrap`) переносится с **1С-Битрикс** на **October CMS
 (Laravel + Tailor)**. Источник — `D:\nlbbootstrap-main` (только чтение). Цель — этот каталог.
 Сайт не «демо»: 110 страниц, 9 инфоблоков, 74 свойства, 91 элемент, три формы с записью
 в БД и письмами, свой поиск (BM25), PWA, Lighthouse 100/100/100/100 на мобильном профиле.
@@ -28,9 +28,16 @@
 - PHP **не в PATH**. Использовать `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe`
   (8.5 ветку October может не поддерживать).
 - Composer: `C:\laragon\bin\composer\composer.phar`.
-- MySQL 8.4.3 Laragon, `127.0.0.1:3306`, пользователь `root`, пароль пустой, БД `nlb_october`.
+- MySQL 8.4.3 Laragon, `127.0.0.1:3306`, пользователь `root`, пароль пустой, БД `elv_october`.
 - Файлы — UTF-8 без BOM. Кириллица в выводе PowerShell ломается: проверять через `node -e`,
   `php -r` или записывать результат в файл и читать его.
+
+### Имена
+
+Тема — `themes/elv` (`code: elv`), плагин — `plugins/elv/library` (namespace
+`Elv\Library`), таблицы — `elv_*`, БД — `elv_october`, тесты — `phpunit.elv.xml`.
+Прежний `nlb` остался только в миграции `rename_legacy_tables_to_elv.php`
+и в `create_elv_*.php` (детект старых таблиц при обновлении) — это не опечатка.
 
 ## 2. Что читать
 
@@ -71,7 +78,7 @@
 4. **Bootstrap 5.3.3 остаётся.** Урезанный CSS собирается `tools/purge-css.mjs`, встраивается
    в layout **инлайном** и минифицируется хелпером плагина с кешем по `mtime`. Ни одного
    внешнего CSS-запроса, никаких Google Fonts, Tailwind, React, Vite.
-5. **Один плагин** `nlb/library` (vendor `nlb`). Никаких демо-плагинов, тем и
+5. **Один плагин** `elv/library` (vendor `elv`). Никаких демо-плагинов, тем и
    RainLab.Blog. Сторонний плагин — только из списка `docs/plugins.md` (не больше
    трёх на проект), с проверкой строки «Platform Compatibility» 4.x, даты
    обновления и `composer audit` после установки.
@@ -92,7 +99,7 @@
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
-& $php vendor/phpunit/phpunit/phpunit -c phpunit.nlb.xml  # тесты плагина: 231 тест, 0 упавших
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml  # тесты плагина: 231 тест, 0 упавших
 & $php vendor/phpunit/phpunit/phpunit             # ядро October: 1171 тест, 0 упавших (artisan test в 4.x нет)
 & $php artisan october:migrate           # схема поднимается, 0 ошибок
 Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.php -File |
@@ -165,7 +172,7 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 ## 8. Стиль ответа
 
 - По-русски, коротко, по делу.
-- Ссылки на файлы — от корня этого каталога, например `plugins/nlb/library/Plugin.php:18`.
+- Ссылки на файлы — от корня этого каталога, например `plugins/elv/library/Plugin.php:18`.
 - «Не найдено» — только со списком проверенных файлов.
 - Не предлагать «переписать на React/Vue/Tailwind»: стек зафиксирован.
 
@@ -176,19 +183,19 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 
 | Задача | Файл |
 |---|---|
-| выборка записей Tailor для темы | `plugins/nlb/library/classes/Content.php` |
-| мета, canonical, JSON-LD, robots | `plugins/nlb/library/classes/Seo.php` |
-| `sitemap.xml` | `plugins/nlb/library/classes/Sitemap.php` |
-| картинки, `<picture>`, инлайн-CSS | `plugins/nlb/library/classes/Media.php` |
+| выборка записей Tailor для темы | `plugins/elv/library/classes/Content.php` |
+| мета, canonical, JSON-LD, robots | `plugins/elv/library/classes/Seo.php` |
+| `sitemap.xml` | `plugins/elv/library/classes/Sitemap.php` |
+| картинки, `<picture>`, инлайн-CSS | `plugins/elv/library/classes/Media.php` |
 | формы (заявка, бронь, заказ, подписка) | `classes/Http/*Controller.php`, `classes/FormFields.php` |
 | бронь и гонка слота | `classes/BookingService.php`, `models/Slot.php` |
-| Eloquent-модели заявок | `plugins/nlb/library/models/*.php` |
-| маршруты и регистрация middleware | `plugins/nlb/library/routes.php`, `Plugin.php` |
-| контент Tailor (поля, blueprints) | `plugins/nlb/library/blueprints/*/item.yaml` |
-| шапка, подвал, меню, карточки | `themes/nlb/partials/` |
-| страницы 110 адресов | `themes/nlb/pages/*.htm` |
-| `<head>`, инлайн CSS, JSON-LD в разметке | `themes/nlb/layouts/default.htm` |
-| тесты плагина | `plugins/nlb/library/tests/` |
+| Eloquent-модели заявок | `plugins/elv/library/models/*.php` |
+| маршруты и регистрация middleware | `plugins/elv/library/routes.php`, `Plugin.php` |
+| контент Tailor (поля, blueprints) | `plugins/elv/library/blueprints/*/item.yaml` |
+| шапка, подвал, меню, карточки | `themes/elv/partials/` |
+| страницы 110 адресов | `themes/elv/pages/*.htm` |
+| `<head>`, инлайн CSS, JSON-LD в разметке | `themes/elv/layouts/default.htm` |
+| тесты плагина | `plugins/elv/library/tests/` |
 | гейты | `tools/*.mjs` |
 | схема и индексы | `docs/db.md` |
 | инвентарь адресов и контента | `docs/content.md` |

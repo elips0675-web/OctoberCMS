@@ -1,0 +1,36 @@
+uuid: ace6d6b4-c8ae-4343-83cb-154a07bfc19d
+handle: Elv\Page
+type: structure
+name: Страница
+drafts: false
+
+structure:
+    maxDepth: 1
+
+primaryNavigation:
+    label: Страницы
+    icon: octo-icon-file
+    order: 130
+
+fields:
+    excerpt:
+        label: Краткое описание
+        commentAbove: '1–2 предложения: уходит в описание для поиска, если не заполнено поле ниже.'
+        type: textarea
+        size: small
+
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — краткое описание. До 160 символов.'
+        type: textarea
+        size: small
+
+    blocks:
+        label: Блоки страницы
+        type: mixin
+        source: Elv\Blocks

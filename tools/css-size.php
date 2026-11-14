@@ -6,7 +6,7 @@
  * Считает тем же кодом, что и макет (`Media::minifyCss`), поэтому гейт
  * `tools/check-css-budget.mjs` меряет ровно то, что встраивается в страницу.
  *
- *   php tools/css-size.php themes/nlb/assets/css/styles.css [ещё файлы…]
+ *   php tools/css-size.php themes/elv/assets/css/styles.css [ещё файлы…]
  *
  * Вывод — JSON-строки: {"file": "...", "raw": 81179, "minified": 57794}.
  */
@@ -29,6 +29,6 @@ foreach ($files as $file) {
     echo json_encode([
         'file' => $file,
         'raw' => strlen($raw),
-        'minified' => strlen(\Nlb\Library\Classes\Media::minifyCss($raw)),
+        'minified' => strlen(\Elv\Library\Classes\Media::minifyCss($raw)),
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL;
 }

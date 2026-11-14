@@ -1,0 +1,64 @@
+title = "Сувениры и подарки — {brand}"
+url = "/books/"
+layout = "default"
+seo_description = "Брелоки, фарфор, кружки, одежда, канцелярия, магниты и аксессуары для дома и автомобиля."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--violet">Сувениры</span>
+        <h1 class="page-title">Сувениры и подарки</h1>
+        <p class="page-lead">
+            Брелоки, фарфор, кружки, одежда, канцелярия, магниты и аксессуары
+            для дома и автомобиля. Наличие и цену уточняйте на карточке товара.
+        </p>
+
+        <ul class="section-chips" aria-label="Категории" data-elv-filter>
+            <li><button class="section-chip is-active" type="button" data-filter="all">Все сувениры</button></li>
+            {% for section in elv_sections('Elv\\BookSection') %}
+                <li><button class="section-chip" type="button" data-filter="{{ section.code }}">{{ section.title }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4" aria-label="Обозначения наличия">
+            <span class="book-status is-available">В наличии</span>
+            <span class="book-status is-reserved">Под заказ</span>
+            <span class="book-status is-unavailable">Нет в наличии</span>
+            <span class="small text-muted">Статус указан на карточке каждого товара.</span>
+        </div>
+
+        <div class="row g-4">
+            {% for item in elv_records('Elv\\Book') %}
+                {% partial 'cards/book' item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section--soft">
+    <div class="container">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-7" data-reveal>
+                <span class="eyebrow eyebrow--green">Подборки</span>
+                <h2 class="section-title">Не знаете, что выбрать?</h2>
+                <p class="section-lead mb-0">
+                    Собрали готовые наборы: для коллег, детей, в дорогу и на память
+                    о Минске.
+                </p>
+            </div>
+            <div class="col-lg-5 text-lg-end" data-reveal>
+                <a class="btn btn-elv-green btn-lg-elv btn-icon" href="/collections/">
+                    Смотреть подборки
+                    <svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% partial 'filter-script' %}
+</main>

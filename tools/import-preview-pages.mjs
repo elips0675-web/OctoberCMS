@@ -2,14 +2,14 @@
 /**
  * Импорт статических страниц из `preview/` источника.
  *
- * Эталон разметки — HTML-превью шаблона `nlb_bootstrap` (единственный
+ * Эталон разметки — HTML-превью шаблона `elv_bootstrap` (единственный
  * исполняемый оракул, `docs/qa-checklist.md` §B). Скрипт берёт `<main>`
  * готовой страницы, переписывает относительные адреса в абсолютные
- * (`assets/…` → `/themes/nlb/assets/…`, `news/` → `/news/`) и записывает
+ * (`assets/…` → `/themes/elv/assets/…`, `news/` → `/news/`) и записывает
  * CMS-страницу October с front matter.
  *
  * Переносятся только 13 корневых страниц: списки и детальные (91 элемент)
- * собираются из Tailor-записей шаблонами `themes/nlb/pages/*.htm`.
+ * собираются из Tailor-записей шаблонами `themes/elv/pages/*.htm`.
  *
  *   node tools/import-preview-pages.mjs [--source D:/nlbbootstrap-main/preview]
  *
@@ -23,8 +23,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourceIndex = process.argv.indexOf('--source');
 const source = sourceIndex !== -1 ? process.argv[sourceIndex + 1] : 'D:/nlbbootstrap-main/preview';
-const pagesDir = path.join(root, 'themes/nlb/pages');
-const themeUrl = '/themes/nlb/';
+const pagesDir = path.join(root, 'themes/elv/pages');
+const themeUrl = '/themes/elv/';
 
 const pages = [
     { file: 'index', url: '/', name: 'index' },
@@ -135,7 +135,7 @@ const personal = `<main class="site-main" id="main">
         <span class="eyebrow eyebrow--green">Кабинет</span>
         <h1 class="page-title">Личный кабинет</h1>
         <p class="page-lead">Страница доступна после входа: продление книг, брони и подписка.</p>
-        <a class="btn btn-nlb btn-lg-nlb" href="/auth/">Войти в кабинет</a>
+        <a class="btn btn-elv btn-lg-elv" href="/auth/">Войти в кабинет</a>
     </div>
 </section>
 </main>`;
@@ -164,7 +164,7 @@ const personalPage = `title = "${personalTitle.trim()}"\nurl = "/personal/"\nlay
 fs.writeFileSync(path.join(pagesDir, 'personal.htm'), personalPage, 'utf8');
 written++;
 
-console.log(`записано страниц: ${written} → themes/nlb/pages/`);
+console.log(`записано страниц: ${written} → themes/elv/pages/`);
 
 const sitemapFile = path.join(pagesDir, 'sitemap.htm');
 if (!fs.existsSync(sitemapFile)) {

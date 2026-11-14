@@ -8,23 +8,23 @@
 nginx/apache → index.php (корень проекта) → October bootstrap → plugin routes / CMS page
   → компонент (Header, Menu, Breadcrumbs, List, Detail, Form, Search)
   → Eloquent / Tailor-запись
-  → Blade-шаблон темы nlb → HTML (инлайн CSS)
+  → Blade-шаблон темы elv → HTML (инлайн CSS)
 ```
 
 Никакого SPA, клиентского роутинга и сборки фронтенда. JS — `bootstrap.bundle` +
 `script.js` как в источнике.
 
-## 2. Плагин `nlb/library`
+## 2. Плагин `elv/library`
 
 ```
-plugins/nlb/library/
+plugins/elv/library/
   Plugin.php               # регистрация прав, навигации, расписания, тегов разметки, middleware
   blueprints/              # 6 контентных сущностей Tailor (YAML)
   models/                  # Eloquent: Request, Booking, Order, Slot, Service, Subscriber
   updates/                 # миграции (forward-only)
   classes/
     Content.php            # выборки Tailor-записей и разделов
-    Seo.php                # мета, canonical, JSON-LD, robots (источник nlb_seo.php)
+    Seo.php                # мета, canonical, JSON-LD, robots (источник elv_seo.php)
     Sitemap.php            # sitemap.xml, lastmod из mtime текстовых страниц
     Rss.php                # /rss.xml
     Pwa.php                # manifest, sw.js с версией, SHELL, offline
@@ -33,16 +33,16 @@ plugins/nlb/library/
     Labels.php, Media.php, FormFields.php
     Http/                  # SecurityHeaders, CompressResponse, LegacyRedirect,
                            # SeoController, PwaController, HealthController, формы
-    Search.php             # план (M8): порт BM25 из nlb_search.php (1 272 строки)
+    Search.php             # план (M8): порт BM25 из elv_search.php (1 272 строки)
     TextFilter.php         # план (M8): фильтр чата
-    Push.php               # план (M9): порт nlb_push.php (769 строк)
-  console/                 # nlb:import, nlb:slots-generate, nlb:health-report
+    Push.php               # план (M9): порт elv_push.php (769 строк)
+  console/                 # elv:import, elv:slots-generate, elv:health-report
   routes.php               # формы, SEO, PWA, health
   tests/                   # PHPUnit + RefreshDatabase
 ```
 
-Компонентов темы (`components/`) нет: разметка собрана в `themes/nlb/partials`
-и тегах `{{ nlb_*() }}`, зарегистрированных в `Plugin::registerMarkupTags()`.
+Компонентов темы (`components/`) нет: разметка собрана в `themes/elv/partials`
+и тегах `{{ elv_*() }}`, зарегистрированных в `Plugin::registerMarkupTags()`.
 
 ## 3. Tailor или Eloquent: правило разделения
 
@@ -121,9 +121,9 @@ plugins/nlb/library/
 
 | Таблица | Поля источника → колонки | Перечисление |
 |---|---|---|
-| `nlb_requests` | `EMAIL`, `PHONE`, `SUBJECT`, `MESSAGE`, `PAGE`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED` (datetime), `STATUS` | `new`, `in_progress`, `done` (по умолчанию `new`) |
-| `nlb_bookings` | `SERVICE`, `SERVICE_CODE`, `TARIFF`, `PRICE`, `DATE`, `TIME`, `PERSON`, `PHONE`, `EMAIL`, `COMMENT`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED`, `STATUS` | `new`, `confirmed`, `cancelled` (по умолчанию `new`) |
-| `nlb_orders` | `ITEM`, `ARTICLE`, `PRICE` (N), `QTY` (N), `PERSON`, `PHONE`, `EMAIL`, `COMMENT`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED`, `STATUS` | `new`, `processing`, `done`, `cancelled` (по умолчанию `new`) |
+| `elv_requests` | `EMAIL`, `PHONE`, `SUBJECT`, `MESSAGE`, `PAGE`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED` (datetime), `STATUS` | `new`, `in_progress`, `done` (по умолчанию `new`) |
+| `elv_bookings` | `SERVICE`, `SERVICE_CODE`, `TARIFF`, `PRICE`, `DATE`, `TIME`, `PERSON`, `PHONE`, `EMAIL`, `COMMENT`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED`, `STATUS` | `new`, `confirmed`, `cancelled` (по умолчанию `new`) |
+| `elv_orders` | `ITEM`, `ARTICLE`, `PRICE` (N), `QTY` (N), `PERSON`, `PHONE`, `EMAIL`, `COMMENT`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED`, `STATUS` | `new`, `processing`, `done`, `cancelled` (по умолчанию `new`) |
 
 Свойств: 9 + 14 + 12 = **35**. Вместе с контентом — **74**, как в источнике.
 
@@ -141,9 +141,9 @@ plugins/nlb/library/
 | `Chat` | виджет, правила ответов, промо-подсказки | `footer.php:208`, `script.js:169/281` |
 | `Subscribe` | форма в подвале, double opt-in, отписка | `footer.php:92` |
 | `Feedback` | модалка и страница `/feedback/` | `footer.php:250` |
-| `Booking` | форма брони на детальной услуги | `nlb_forms.php` (`booking`) |
-| `Order` | заказ сувенира | `nlb_forms.php` (`order`) |
-| `Picture` | `<picture>` с WebP/AVIF, `srcset` 480/960/1280 | `nlb_media.php` (`nlb_picture()`) |
+| `Booking` | форма брони на детальной услуги | `elv_forms.php` (`booking`) |
+| `Order` | заказ сувенира | `elv_forms.php` (`order`) |
+| `Picture` | `<picture>` с WebP/AVIF, `srcset` 480/960/1280 | `elv_media.php` (`elv_picture()`) |
 | `Footer` | подвал, подписка, FAB, чат, модалки, скрипты | `footer.php` |
 
 ## 6. Маршруты
@@ -177,12 +177,12 @@ plugins/nlb/library/
 
 | Маршрут | Назначение | Контракт |
 |---|---|---|
-| `POST /feedback/` | обратная связь (P0-4) | `nlb_requests` + письмо в очередь; `201` JSON / `302 ?sent=1#form`; `422` на пустые поля |
-| `POST /subscribe/` | подписка (P0-5) | `nlb_subscribers` + письмо double opt-in; повторный адрес не даёт второй строки |
+| `POST /feedback/` | обратная связь (P0-4) | `elv_requests` + письмо в очередь; `201` JSON / `302 ?sent=1#form`; `422` на пустые поля |
+| `POST /subscribe/` | подписка (P0-5) | `elv_subscribers` + письмо double opt-in; повторный адрес не даёт второй строки |
 | `GET /subscribe/confirm/{token}` | подтверждение подписки | `200` страница «Подписка подтверждена», `410` на использованный токен |
 | `GET /unsubscribe/{token}` | отписка | `200` страница «Вы отписались», повторный переход безопасен |
-| `POST /booking/` | бронь услуги (P1-9) | `nlb_bookings` + слот + два письма; `409 SLOT_UNAVAILABLE` на занятое время, `422` вне окна слотов |
-| `POST /order/` | заказ сувенира (P1-12) | `nlb_orders` + письмо; `422` на `QTY < 1` и отрицательную цену |
+| `POST /booking/` | бронь услуги (P1-9) | `elv_bookings` + слот + два письма; `409 SLOT_UNAVAILABLE` на занятое время, `422` вне окна слотов |
+| `POST /order/` | заказ сувенира (P1-12) | `elv_orders` + письмо; `422` на `QTY < 1` и отрицательную цену |
 | `GET /ajax/search` — **план (M8)** | мгновенная выдача | `?q=`, `&limit=`; коды `200/400/405/503` (как `local/ajax/search.php`); маршрута пока нет |
 | `POST /api/chat` — **план (P1-17)** | проверка сообщения чата | `200/400/403/405/413/422/503`, `{ok, verdict, error}`; маршрута пока нет |
 | `POST /api/bookings` — **план (P1-16)** | REST для Telegram-бота | `Bearer`-токен, идемпотентность по `external_id`, `200/201/400/401/409/422/429`; маршрута пока нет |
@@ -205,8 +205,8 @@ API и карта сайта не могут разойтись: список р
 (`Cache-Control: public, max-age=60`).
 
 
-Формы (`plugins/nlb/library/routes.php`) сидят в группе `web`: обязателен
-`_token` (в шаблоне — `{{ nlb_csrf()|raw }}`), лимит `throttle:30,1`.
+Формы (`plugins/elv/library/routes.php`) сидят в группе `web`: обязателен
+`_token` (в шаблоне — `{{ elv_csrf()|raw }}`), лимит `throttle:30,1`.
 Поля источника `PROPERTY[EMAIL][0]` разбирает `classes/FormFields.php` в плоские
 `EMAIL`, `DATE`, … Возврат — на страницу формы из `Referer` того же хоста,
 иначе на `fallbackPath()`: чужой `Referer` не превращается в открытый редирект.
@@ -218,12 +218,12 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 
 ### 6.3. Админка
 
-| Раздел (меню «Библиотека») | Контроллер (`plugins/nlb/library/controllers`) | Право |
+| Раздел (меню «Библиотека») | Контроллер (`plugins/elv/library/controllers`) | Право |
 |---|---|---|
-| Обращения | `Requests.php` — `nlb/library/requests` | `nlb.library.requests` |
-| Брони | `Bookings.php` — `nlb/library/bookings` | `nlb.library.bookings` |
-| Заказы | `Orders.php` — `nlb/library/orders` | `nlb.library.orders` |
-| Подписчики | `Subscribers.php` — `nlb/library/subscribers` | `nlb.library.subscribers` |
+| Обращения | `Requests.php` — `elv/library/requests` | `elv.library.requests` |
+| Брони | `Bookings.php` — `elv/library/bookings` | `elv.library.bookings` |
+| Заказы | `Orders.php` — `elv/library/orders` | `elv.library.orders` |
+| Подписчики | `Subscribers.php` — `elv/library/subscribers` | `elv.library.subscribers` |
 
 Права и меню объявлены в `Plugin.php` (`registerPermissions()`,
 `registerNavigation()`): у каждого пункта свой `permissions`, поэтому оператор
@@ -248,14 +248,14 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 
 | Что | Где | Как работает |
 |---|---|---|
-| Мета страницы | `themes/nlb/layouts/default.htm:10-35` | `seo_title`/`seo_description` страницы → `<title>`, description, OG, Twitter, canonical, `og:image` |
+| Мета страницы | `themes/elv/layouts/default.htm:10-35` | `seo_title`/`seo_description` страницы → `<title>`, description, OG, Twitter, canonical, `og:image` |
 | Мета записи | `classes/Seo.php:356` | `applyRecord()`: `seo_title`/`seo_description` записи перекрывают имя и `excerpt`, пустые — прежнее поведение; картинка → `seo_image`; зовётся из шести `*-detail.htm:14` |
-| JSON-LD | `classes/Seo.php:255` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction` + узел записи (`Article`/`Event`/`Product`/`Service`, `recordNode` §399) + `BreadcrumbList` (`breadcrumbs` §118, «Главная → раздел → страница»); на всех страницах через `nlb_jsonld(this.page)`; на главной и на 404 крошек нет |
+| JSON-LD | `classes/Seo.php:255` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction` + узел записи (`Article`/`Event`/`Product`/`Service`, `recordNode` §399) + `BreadcrumbList` (`breadcrumbs` §118, «Главная → раздел → страница»); на всех страницах через `elv_jsonld(this.page)`; на главной и на 404 крошек нет |
 | `robots.txt` | `classes/Seo.php:660` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
-| `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Nlb\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
+| `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Elv\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
-| PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/nlb/`; версия кеша — `mtime` файлов, восемь hex |
+| PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/elv/`; версия кеша — `mtime` файлов, восемь hex |
 | Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
 
 Карта сайта собирается из тех же записей, что показывает тема: отключённая или
@@ -289,13 +289,13 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `OrderNotification` | `Mailable` в очереди | письмо сотрудникам о заказе сувенира |
 | `SubscriptionConfirmation` | `Mailable` в очереди | double opt-in и ссылка отписки |
 | `NotifyStaffPush` | план | Web Push персоналу о брони |
-| `nlb:health-report` | schedule (ежечасно) | JSON-строка состояния: ответ БД, очередь, диск, компоненты |
-| `nlb:slots-generate` | schedule (ежедневно, 03:10) | генерация слотов из расписания услуг |
-| `nlb:search-index` | план (M8) | переиндексация BM25 |
+| `elv:health-report` | schedule (ежечасно) | JSON-строка состояния: ответ БД, очередь, диск, компоненты |
+| `elv:slots-generate` | schedule (ежедневно, 03:10) | генерация слотов из расписания услуг |
+| `elv:search-index` | план (M8) | переиндексация BM25 |
 | `ExpireUnconfirmedBookings` | план | снятие просроченных броней |
 
 Отдельных job-классов нет: письмо ставит в очередь контроллер формы
-(`Mail::queue(new …)`), письма — `plugins/nlb/library/classes/Mail/`. Очередь
+(`Mail::queue(new …)`), письма — `plugins/elv/library/classes/Mail/`. Очередь
 `QUEUE_CONNECTION=database`, поэтому без воркера (`php artisan queue:work`)
 письма лежат в таблице `jobs` и не уходят — это требование хостинга, а не код.
 
@@ -310,7 +310,7 @@ SMTP у владельца нет: `MAIL_MAILER=log`, письма провер�
   `fetchpriority="high"` у hero, `loading="lazy"` ниже первого экрана.
 - CSS: `bootstrap.min.css` (51 758 байт) собирается `tools/purge-css.mjs` из
   `bootstrap.source.min.css` (232 803 байта) по классам, которые реально есть в
-  `themes/nlb/**` и `plugins/nlb/**`; каталог `controllers` в обход сканера —
+  `themes/elv/**` и `plugins/elv/**`; каталог `controllers` в обход сканера —
   это разметка админки, её стилизует тема backend, а не CSS сайта. Вместе со
   `styles.css` (84 995 байт) результат минифицируется хелпером
   `Media::minifyCss()` и встраивается инлайном в layout. Кеш — по `mtime`,

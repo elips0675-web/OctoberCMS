@@ -1,0 +1,19 @@
+<script nonce="{{ elv_csp_nonce() }}">
+(function () {
+    document.querySelectorAll('[data-elv-filter]').forEach(function (list) {
+        list.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-filter]');
+            if (!button) {
+                return;
+            }
+            var value = button.getAttribute('data-filter');
+            list.querySelectorAll('[data-filter]').forEach(function (one) {
+                one.classList.toggle('is-active', one === button);
+            });
+            document.querySelectorAll('[data-elv-item]').forEach(function (card) {
+                card.hidden = value !== 'all' && card.getAttribute('data-elv-item') !== value;
+            });
+        });
+    });
+})();
+</script>

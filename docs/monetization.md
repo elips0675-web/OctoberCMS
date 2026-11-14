@@ -32,37 +32,37 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
   Marketplace их нет: там своя карточка продукта и свои условия. В документации
   продукта нельзя смешивать две модели.
 - `composer.json` плагина сейчас `"license": "proprietary"`
-  (`plugins/nlb/library/composer.json`): для продажи нужен файл `LICENSE` в
+  (`plugins/elv/library/composer.json`): для продажи нужен файл `LICENSE` в
   пакете и текст лицензии покупателя, иначе поле противоречит продаже.
 
 ## 2. Что отделяет проектный код от продукта
 
 | Что | Сколько | Где |
 |---|---|---|
-| Бренд «Библиотека 2026» | **61** вхождение | `themes/nlb`, `plugins/nlb/library` (в т.ч. `themes/nlb/assets/js/script.js` и `assets/pwa/sw.js`) |
-| Телефон и адрес | **26** строк | `themes/nlb/pages/*.htm`, `assets/js/script.js` |
-| Локальный путь | **1** | `plugins/nlb/library/console/Import.php:65` — `'D:/nlbbootstrap-main/db/config/data'` как значение по умолчанию |
-| Вендор `Nlb\Library` | **75** файлов (60 с `namespace`) | `plugins/nlb/library`, `themes/nlb` |
-| Хендлы blueprints | 9 сущностей | `plugins/nlb/library/blueprints/*`, карты `Content::SECTIONS`, `Sitemap::SECTIONS`, `Seo::SECTIONS` |
+| Бренд «Библиотека 2026» | **61** вхождение | `themes/elv`, `plugins/elv/library` (в т.ч. `themes/elv/assets/js/script.js` и `assets/pwa/sw.js`) |
+| Телефон и адрес | **26** строк | `themes/elv/pages/*.htm`, `assets/js/script.js` |
+| Локальный путь | **1** | `plugins/elv/library/console/Import.php:65` — `'D:/nlbbootstrap-main/db/config/data'` как значение по умолчанию |
+| Вендор `Elv\Library` | **75** файлов (60 с `namespace`) | `plugins/elv/library`, `themes/elv` |
+| Хендлы blueprints | 9 сущностей | `plugins/elv/library/blueprints/*`, карты `Content::SECTIONS`, `Sitemap::SECTIONS`, `Seo::SECTIONS` |
 
 Важные уточнения, которые меняют оценку стоимости:
 
-- `themes/nlb/assets/js/script.js` **побайтово** равен источнику; правка бренда
+- `themes/elv/assets/js/script.js` **побайтово** равен источнику; правка бренда
   и телефона в нём ломает паритет с эталоном источника, то есть переупаковка
   начинается с решения: либо скрипт остаётся как есть и адреса берутся из
   разметки, либо паритет осознанно теряется.
 - Таблицы Tailor называются по UUID blueprint (`xc_<uuid без дефисов>`), а не
-  по хендлу: переименование `Nlb\Book` → `Article` **не теряет данные**, но
+  по хендлу: переименование `Elv\Book` → `Article` **не теряет данные**, но
   карты разделов в коде (`Content`, `Sitemap`, `Seo`, JSON-LD, тесты) надо
   править синхронно — иначе записи «исчезнут» из лент и карты сайта.
 - Перед сменой вендора нужно решить, продаётся тема отдельно, плагин отдельно
-  или набор; от этого зависит, где заканчивается `Nlb\` и начинается `Vendor\`.
+  или набор; от этого зависит, где заканчивается `Elv\` и начинается `Vendor\`.
 
 ## 3. Упаковка: обязательный минимум
 
 Тема:
 
-- `composer.json` в `themes/nlb` **отсутствует**, а ядро ищет код продукта
+- `composer.json` в `themes/elv` **отсутствует**, а ядро ищет код продукта
   именно в нём: `ThemeManager::getComposerCode()` читает `composer.json` и без
   файла возвращает пустую строку (`modules/cms/classes/ThemeManager.php:354-366`).
   Без него тема не опознаётся как продукт (установка/обновление через
@@ -78,9 +78,9 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 
 Плагин:
 
-- `composer.json` есть, но имя `nlb/library-plugin` не в форме `vendor/name`.
+- `composer.json` есть, но имя `elv/library-plugin` не в форме `vendor/name`.
 - `updates/version.yaml` есть, `pluginDetails()` реализован
-  (`plugins/nlb/library/Plugin.php`).
+  (`plugins/elv/library/Plugin.php`).
 - `.env.example` есть; `.env`, `storage/`, `vendor/`, `node_modules/` в
   поставку не входят.
 
@@ -94,7 +94,7 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 Демо **остаётся** (решение владельца 13.11.2026): оно показывает покупателю
 возможности — услуги, печать, коворкинг, события, брони, заказы. Механика
 `theme:seed` (`modules/cms/console/ThemeSeed.php:34`) при этом не используется:
-папки `themes/nlb/seeds` в проекте нет, демо-блоки лежат в шаблонах страниц.
+папки `themes/elv/seeds` в проекте нет, демо-блоки лежат в шаблонах страниц.
 
 Что важно:
 
@@ -110,7 +110,7 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 Требование: покупатель выключает **каждый** элемент отдельно, а не «всё или
 ничего».
 
-Механизм — настройки темы: раздел `form:` в `themes/nlb/theme.yaml` уже даёт
+Механизм — настройки темы: раздел `form:` в `themes/elv/theme.yaml` уже даёт
 поля (`meta_title`, `meta_description`), значения доступны в шаблонах как
 `{{ this.theme.<поле> }}`. Тумблер — `type: checkbox` (или `switch`) в этом
 разделе плюс условие в партиале.
@@ -160,7 +160,7 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 акцент `#3b82f6`), свои `logo.svg`, `menu-logo.svg`, `dashboard-icon.svg`,
 `favicon.svg` в `app/assets/images` и `brand_styles.css` в `app/assets/css`
 (акцент сайта `#2563eb`, выделение `#10b981` — токены
-`themes/nlb/assets/css/styles.css:13-21`).
+`themes/elv/assets/css/styles.css:13-21`).
 
 Ловушка ядра, которую надо знать при правке оформления: `custom_css`
 засевается из `brand_styles.css` **только при первом создании** настроек
@@ -183,7 +183,7 @@ HTML — иначе правка файла без пересборки наст
 layouts и ассеты по путям (`Skin::getPath()`, `modules/backend/classes/Skin.php:72-95`),
 ядро при этом не правится.
 
-Наши экраны — `plugins/nlb/library/controllers/{requests,bookings,orders,subscribers}`
+Наши экраны — `plugins/elv/library/controllers/{requests,bookings,orders,subscribers}`
 (свои `index.htm`/`update.htm`) — можно переделывать свободно: это наш код.
 
 Границы: E2E на бэкенд в проекте нет; backend-CSS (205 КБ, `modules/backend/assets/css/october.css`)
@@ -193,11 +193,11 @@ layouts и ассеты по путям (`Skin::getPath()`, `modules/backend/cla
 ### Бренд и контакты сайта — настройки темы (Stage 27)
 
 Название организации, реквизиты, адрес, телефон, почта, часы работы и ссылки на
-соцсети живут в настройках темы (`themes/nlb/theme.yaml`, поля `brand_*`) и
+соцсети живут в настройках темы (`themes/elv/theme.yaml`, поля `brand_*`) и
 читаются из `cms_theme_data`; в шаблонах и PHP — только нейтральные значения.
-Точка входа одна — класс `plugins/nlb/library/classes/Brand.php`
-(`Brand::get('name')` и т.д.), в Twig — `nlb_brand('phone')`, для строк с
-подстановкой — `nlb_brand_text('Контакты — {brand}')`.
+Точка входа одна — класс `plugins/elv/library/classes/Brand.php`
+(`Brand::get('name')` и т.д.), в Twig — `elv_brand('phone')`, для строк с
+подстановкой — `elv_brand_text('Контакты — {brand}')`.
 
 - Шапка, подвал, fab-кнопки, реквизиты, копирайт, RSS, `og:site_name`,
   `apple-mobile-web-app-title`, `manifest.webmanifest`, `sw.js` и JSON-LD

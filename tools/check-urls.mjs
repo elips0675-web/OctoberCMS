@@ -100,7 +100,7 @@ function h1Count(html) {
 }
 
 function inlineCssBytes(html) {
-    const match = /<style data-nlb-css="styles">([\s\S]*?)<\/style>/i.exec(html);
+    const match = /<style data-elv-css="styles">([\s\S]*?)<\/style>/i.exec(html);
 
     return match ? Buffer.byteLength(match[1], 'utf8') : 0;
 }

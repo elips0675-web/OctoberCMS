@@ -1,0 +1,113 @@
+title = "Услуги — {brand}"
+url = "/services/"
+layout = "default"
+seo_description = "Премиальные услуги библиотеки: обзорная площадка, сауна, кафе, лекторий, концертный зал, детская комната, спортзал и коворкинг."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--violet">
+            <svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg>
+            Премиальные услуги
+        </span>
+        <h1 class="page-title">Наши услуги</h1>
+        <p class="page-lead">
+            Библиотека 2026 — это больше, чем просто книги. Мы создали уникальное
+            пространство для вашего комфорта и развития: от обзорной площадки
+            и сауны до лектория и коворкинга.
+        </p>
+    </div>
+</section>
+
+<section class="section pt-0" id="services-list">
+    <div class="container">
+        <div class="row g-4 service-grid">
+            {% for item in elv_records('Elv\\Service') %}
+                {% partial 'cards/service' item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section--soft">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <span class="eyebrow eyebrow--green">Полиграфия</span>
+            <h2 class="section-title">Каталог печатных услуг</h2>
+            <p class="section-lead">
+                Печать документов, сканирование, переплёт, визитки, сувениры
+                и фотопечать — рядом с читальными залами.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            {% for item in elv_records('Elv\\Printing', 8) %}
+                {% partial 'cards/print' item=item level=3 %}
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5" data-reveal>
+            <a class="btn btn-elv-green btn-lg-elv btn-icon" href="/printing/">
+                Перейти в каталог
+                <svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4" data-reveal>
+                <div class="info-card">
+                    <span class="icon-tile icon-tile--blue mb-3">
+                        <svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>
+                    </span>
+                    <h3>График работы</h3>
+                    <p class="text-muted mb-0">
+                        Ежедневно с 8:00 до 22:00.<br>Без выходных.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-reveal>
+                <div class="info-card">
+                    <span class="icon-tile icon-tile--violet mb-3">
+                        <svg class="i" aria-hidden="true"><use href="#i-users"/></svg>
+                    </span>
+                    <h3>Для читателей</h3>
+                    <p class="text-muted mb-0">
+                        Специальные цены для держателей читательского билета.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-reveal>
+                <div class="info-card">
+                    <span class="icon-tile icon-tile--green mb-3">
+                        <svg class="i" aria-hidden="true"><use href="#i-check"/></svg>
+                    </span>
+                    <h3>Бронирование</h3>
+                    <p class="text-muted mb-0">
+                        Онлайн-бронирование доступно 24/7 через сайт или приложение.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section--soft">
+    <div class="container">
+        <div class="cta-banner" data-reveal>
+            <h2>Готовы начать?</h2>
+            <p class="text-white-75 mb-4">
+                Забронируйте любую услугу онлайн или свяжитесь с нами
+                для получения дополнительной информации.
+            </p>
+            <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                <a class="btn btn-elv-white btn-lg-elv" href="#services-list">Забронировать сейчас</a>
+                <a class="btn btn-elv-outline btn-lg-elv" href="/feedback/">Связаться с нами</a>
+            </div>
+        </div>
+    </div>
+</section>
+</main>

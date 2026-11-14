@@ -1,0 +1,4 @@
+name: Обращение
+modelClass: Elv\Library\Models\Request
+form: $/elv/library/models/request/fields.yaml
+defaultRedirect: elv/library/requests
