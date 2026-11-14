@@ -40,18 +40,22 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 `$record->features = [...]` падает с `Nested arrays may not be passed to whereIn method`;
 писать нужно через `$record->features()->make()` / `->create()`.
 
-Заявки, брони, заказы, слоты, подписчики, push и поисковый индекс — **Eloquent-таблицы**
+Заявки, брони, заказы, слоты и подписчики — **Eloquent-таблицы**
 (обычные миграции плагина):
 
-| Таблица | Тип | Источник | Записей при импорте |
+| Таблица | Тип | Источник | Записей (демо) |
 |---|---|---|---|
-| `elv_requests` | Eloquent | `requests` | 0 (истории нет) |
-| `elv_bookings` | Eloquent | `bookings` | 0 (истории нет) |
-| `elv_orders` | Eloquent | `orders` | 0 (истории нет) |
-| `elv_slots` | Eloquent | — (новое, P1-9) | генерируется |
-| `elv_subscribers` | Eloquent | — (P0-5) | 0 |
-| `elv_push_subscriptions` | Eloquent | `elv_push.php` (JSON-файл) | 0 |
-| `elv_search_documents`, `elv_search_terms` | Eloquent | `db/search/index.json` | 99 / 1 340 |
+| `elv_requests` | Eloquent | `requests` | 2 |
+| `elv_bookings` | Eloquent | `bookings` | 2 |
+| `elv_orders` | Eloquent | `orders` | 2 |
+| `elv_slots` | Eloquent | — (новое, P1-9) | 1 440 (`elv:slots-generate`) |
+| `elv_subscribers` | Eloquent | — (P0-5) | 3 |
+
+Проверено 14.11.2026 по живой БД: `elv_*`-таблиц ровно пять. Push-подписок и
+поискового индекса в схеме **нет**: `elv_push_subscriptions`,
+`elv_search_documents` и `elv_search_terms` в БД отсутствуют, файла
+`plugins/elv/library/classes/Search.php` нет (`docs/roadmap.md:25` — M8 не
+начат). Появятся вместе с реализацией, в поставку «как есть» не входят.
 
 Модели — `plugins/elv/library/models/{Request,Booking,Order,Slot,Subscriber}.php`.
 Таблицы создаёт версия плагина **1.0.2** (`plugins/elv/library/updates/create_elv_*.php`),

@@ -11,6 +11,13 @@
 
 ### Изменено
 
+- Этап 29: разбор трёх черновиков владельца (Filament, лендинг, монетизация
+  сборки) — `docs/roadmap.md` §11 с вердиктами по каждому тезису; прайс четырёх
+  моделей продаж помечен как внешние ориентиры (`docs/monetization.md` §7);
+  чек-лист оптимизации при передаче клиенту (`docs/qa-checklist.md` §C2);
+  исправлены ложные факты: `elv_search_*`/`elv_push_subscriptions` в
+  `docs/db.md` (таблиц нет, `Search.php` нет) и устаревшее описание настроек
+  темы в `docs/monetization.md` §3; добавлен пункт P2-31 (платежи и автовыдача).
 - Этап 28: переименование `nlb` → `elv` целиком — тема `themes/elv`
   (`code: elv`), плагин `plugins/elv/library` и namespace `Elv\Library`,
   Tailor-handle `Elv\*`, Twig-функции `elv_*`, классы `.elv-*`, команды
