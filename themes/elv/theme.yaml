@@ -14,6 +14,50 @@ form:
             label: 'Описание для поисковиков'
             type: textarea
             size: small
+        seo_separator:
+            label: 'Разделитель в заголовке'
+            commentAbove: 'Между частями шаблона: «Новости — Ваша организация».'
+            type: text
+            default: '—'
+            span: left
+        seo_default_image:
+            label: 'Картинка для соцсетей'
+            commentAbove: 'Полный адрес или путь от корня. Пусто — картинка темы hero-1.jpg.'
+            type: text
+            span: right
+        seo_title_template:
+            label: 'Шаблон заголовка записи'
+            commentAbove: 'Переменные: {title}, {section}, {brand}, {separator}, {year}.'
+            comment: 'Пусто — «{title} {separator} {brand}».'
+            type: textarea
+            size: small
+            default: '{title} {separator} {brand}'
+        seo_description_template:
+            label: 'Шаблон описания записи'
+            commentAbove: 'Переменные: {description}, {section}, {brand}, {year}.'
+            comment: 'Пусто — описание записи как есть, обрезка по словам до 160 знаков.'
+            type: textarea
+            size: small
+        seo_verify_google:
+            label: 'Google: код подтверждения'
+            commentAbove: 'Значение meta google-site-verification. Пусто — тег не выводится.'
+            type: text
+            span: left
+        seo_verify_yandex:
+            label: 'Яндекс: код подтверждения'
+            commentAbove: 'Значение meta yandex-verification.'
+            type: text
+            span: right
+        seo_verify_bing:
+            label: 'Bing: код подтверждения'
+            commentAbove: 'Значение meta msvalidate.01.'
+            type: text
+            span: left
+        seo_index_service_pages:
+            label: 'Индексировать служебные страницы'
+            commentAbove: 'Поиск, вход и личный кабинет. По умолчанию закрыты в robots.txt.'
+            type: switch
+            default: false
         brand_name:
             label: 'Название организации'
             commentAbove: 'Шапка, подвал, <title>, письма и микроразметка.'

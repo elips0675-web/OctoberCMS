@@ -1,5 +1,7 @@
 <?php namespace Elv\Library\Classes;
 
+use Cms\Classes\Theme;
+
 /**
  * Seo — базовая микроразметка schema.org и robots.txt.
  *
@@ -43,6 +45,245 @@ class Seo
     }
 
     /**
+     * settings — SEO-настройки темы: запасные, затем default из `theme.yaml`,
+     * затем сохранённые настройки.
+     *
+     * @return array<string, string>
+     */
+    public static function settings(): array
+    {
+        if (static::$settings !== null) {
+            return static::$settings;
+        }
+
+        $values = static::SETTINGS_FALLBACK;
+
+        try {
+            $theme = Theme::getActiveTheme();
+        }
+        catch (\Throwable $ex) {
+            return static::$settings = $values;
+        }
+
+        if (!$theme) {
+            return static::$settings = $values;
+        }
+
+        foreach ((array) ($theme->getFormConfig()['fields'] ?? []) as $key => $field) {
+            $key = (string) $key;
+            $default = $field['default'] ?? null;
+
+            if (array_key_exists($key, $values) && is_scalar($default)) {
+                $values[$key] = is_bool($default) ? ($default ? '1' : '0') : (string) $default;
+            }
+        }
+
+        $data = $theme->getCustomData()->getAttribute('data');
+
+        if (is_string($data)) {
+            $data = json_decode($data, true) ?: [];
+        }
+
+        foreach ((array) $data as $key => $value) {
+            $key = (string) $key;
+
+            if (array_key_exists($key, $values) && is_scalar($value) && trim((string) $value) !== '') {
+                $values[$key] = trim((string) $value);
+            }
+        }
+
+        return static::$settings = $values;
+    }
+
+    /**
+     * setting — одно значение SEO-настроек.
+     */
+    public static function setting(string $key, string $default = ''): string
+    {
+        $values = static::settings();
+
+        return $values[$key] ?? $default;
+    }
+
+    /**
+     * forgetSettings — сбросить собранные настройки (тесты и смена настроек).
+     */
+    public static function forgetSettings(): void
+    {
+        static::$settings = null;
+    }
+
+    /**
+     * title собирает `<title>` записи по шаблону из настроек темы.
+     *
+     * Переменные шаблона: `{title}`, `{section}`, `{brand}`, `{separator}`,
+     * `{year}`. Пустой `{title}` не оставляет висящего разделителя.
+     */
+    public static function title(string $title, string $section = ''): string
+    {
+        $template = trim(static::setting('seo_title_template'));
+
+        if ($template === '') {
+            $template = (string) static::SETTINGS_FALLBACK['seo_title_template'];
+        }
+
+        $result = static::applyTemplate($template, [
+            'title' => trim($title),
+            'section' => trim($section),
+            'brand' => static::siteName(),
+            'separator' => trim(static::setting('seo_separator')),
+            'year' => date('Y'),
+        ]);
+
+        return $result !== '' ? $result : static::siteName();
+    }
+
+    /**
+     * description собирает описание записи по шаблону и обрезает по словам.
+     */
+    public static function description(string $text, string $section = ''): string
+    {
+        $text = trim((string) preg_replace('/\s+/u', ' ', strip_tags($text)));
+
+        $template = trim(static::setting('seo_description_template'));
+
+        if ($template !== '') {
+            $applied = static::applyTemplate($template, [
+                'description' => $text,
+                'section' => trim($section),
+                'brand' => static::siteName(),
+                'separator' => trim(static::setting('seo_separator')),
+                'year' => date('Y'),
+            ]);
+
+            if ($applied !== '') {
+                $text = $applied;
+            }
+        }
+
+        return static::truncate($text, static::DESCRIPTION_LIMIT);
+    }
+
+    /**
+     * truncate обрезает текст по границе слова, не длиннее лимита.
+     *
+     * Поисковик режет сниппет сам, но обрывок «…предоставл» в мета-описании
+     * выглядит как ошибка вёрстки, а не как экономия места.
+     */
+    public static function truncate(string $text, int $limit): string
+    {
+        $text = trim($text);
+
+        if ($limit < 1 || mb_strlen($text) <= $limit) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, $limit + 1);
+        $space = mb_strrpos($cut, ' ');
+
+        if ($space !== false && $space > (int) ($limit / 2)) {
+            $cut = mb_substr($cut, 0, $space);
+        }
+        else {
+            $cut = mb_substr($text, 0, $limit);
+        }
+
+        return (string) preg_replace('/[\s.,;:—–-]+$/u', '', $cut);
+    }
+
+    /**
+     * defaultImage — картинка для соцсетей по умолчанию, если у страницы своей нет.
+     */
+    public static function defaultImage(): string
+    {
+        $value = trim(static::setting('seo_default_image'));
+
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $value) ? $value : url($value);
+    }
+
+    /**
+     * verification — коды подтверждения прав на сайт: meta-имя => значение.
+     *
+     * @return array<string, string>
+     */
+    public static function verification(): array
+    {
+        $map = [
+            'google-site-verification' => static::setting('seo_verify_google'),
+            'yandex-verification' => static::setting('seo_verify_yandex'),
+            'msvalidate.01' => static::setting('seo_verify_bing'),
+        ];
+
+        $result = [];
+
+        foreach ($map as $name => $code) {
+            $code = trim($code);
+
+            if ($code !== '') {
+                $result[$name] = $code;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * servicePagesIndexable — открыты ли служебные страницы для поиска.
+     */
+    public static function servicePagesIndexable(): bool
+    {
+        $value = strtolower(trim(static::setting('seo_index_service_pages')));
+
+        return in_array($value, ['1', 'true', 'on', 'yes'], true);
+    }
+
+    /**
+     * applyTemplate подставляет переменные и убирает следы пустых.
+     *
+     * @param  array<string, string>  $values
+     */
+    protected static function applyTemplate(string $template, array $values): string
+    {
+        $result = $template;
+
+        foreach ($values as $key => $value) {
+            $result = str_replace('{' . $key . '}', (string) $value, $result);
+        }
+
+        $result = (string) preg_replace('/\{[a-z_]+\}/u', '', $result);
+        $result = (string) preg_replace('/\s+/u', ' ', $result);
+
+        $separator = trim((string) ($values['separator'] ?? ''));
+
+        if ($separator !== '') {
+            $quoted = preg_quote($separator, '/');
+            $result = (string) preg_replace('/(?:' . $quoted . '\s*){2,}/u', $separator . ' ', $result);
+            $result = (string) preg_replace('/^(?:\s*' . $quoted . '\s*)+/u', '', $result);
+            $result = (string) preg_replace('/(?:\s*' . $quoted . ')+$/u', '', $result);
+        }
+
+        return trim((string) preg_replace('/\s+/u', ' ', $result));
+    }
+
+    /**
+     * sectionFromPage — подпись раздела для шаблона по файлу страницы.
+     */
+    protected static function sectionFromPage($page): string
+    {
+        if (!is_object($page) || !method_exists($page, 'getBaseFileName')) {
+            return '';
+        }
+
+        $handle = (string) preg_replace('/-detail$/', '', (string) $page->getBaseFileName());
+
+        return static::SECTIONS[$handle] ?? '';
+    }
+
+    /**
      * SECTIONS — подписи разделов для хлебных крошек (`BreadcrumbList`).
      *
      * Тексты совпадают с `<h1>` разделов в `themes/elv/pages/*.htm`; сверку
@@ -70,10 +311,42 @@ class Seo
     ];
 
     /**
+     * SERVICE_PAGES — служебные адреса: по умолчанию закрыты в robots.txt.
+     */
+    public const SERVICE_PAGES = ['/search/', '/auth/', '/personal/'];
+
+    /**
+     * SETTINGS_FALLBACK — SEO-настройки темы, значения по умолчанию.
+     *
+     * Ключи совпадают с полями `seo_*` в `themes/elv/theme.yaml`; значение
+     * берётся оттуда же (default), а сохранённые настройки перекрывают его.
+     */
+    public const SETTINGS_FALLBACK = [
+        'seo_separator' => '—',
+        'seo_title_template' => '{title} {separator} {brand}',
+        'seo_description_template' => '',
+        'seo_default_image' => '',
+        'seo_verify_google' => '',
+        'seo_verify_yandex' => '',
+        'seo_verify_bing' => '',
+        'seo_index_service_pages' => '0',
+    ];
+
+    /**
+     * TITLE_LIMIT, DESCRIPTION_LIMIT — ориентиры длины сниппета в поиске.
+     */
+    public const TITLE_LIMIT = 60;
+    public const DESCRIPTION_LIMIT = 160;
+
+    /**
+     * @var array|null SEO-настройки, собранные за текущий запрос
+     */
+    protected static $settings = null;
+
+    /**
      * @var array|null узел микроразметки текущей записи
      */
     protected static $recordGraph = null;
-
     /**
      * @var string|null заголовок текущей записи для последней крошки
      */
@@ -103,6 +376,7 @@ class Seo
     {
         static::$recordGraph = null;
         static::$recordTitle = null;
+        static::$settings = null;
     }
 
     /**
@@ -359,7 +633,9 @@ class Seo
      */
     public static function applyRecord($page, $record, string $schema = ''): void
     {
-        $page->title = $record->title . ' — ' . static::siteName();
+        $section = static::sectionFromPage($page);
+
+        $page->title = static::title((string) $record->title, $section);
 
         $title = trim((string) ($record->seo_title ?? ''));
 
@@ -367,10 +643,10 @@ class Seo
             $page->seo_title = $title;
         }
 
-        $description = static::recordDescription($record);
+        $description = static::description(static::recordDescription($record), $section);
 
         if ($description !== '') {
-            $page->seo_description = mb_substr($description, 0, 160);
+            $page->seo_description = $description;
         }
 
         $image = static::absoluteImage($record->image ?? '');
@@ -669,9 +945,15 @@ class Seo
             'User-agent: *',
             'Allow: /',
             'Disallow: /admin/',
-            'Disallow: /search/',
-            'Disallow: /auth/',
-            'Disallow: /personal/',
+        ];
+
+        if (!static::servicePagesIndexable()) {
+            foreach (static::SERVICE_PAGES as $path) {
+                $lines[] = 'Disallow: ' . $path;
+            }
+        }
+
+        $lines = array_merge($lines, [
             'Disallow: /bitrix/',
             'Disallow: /db/',
             'Disallow: /tools/',
@@ -684,7 +966,7 @@ class Seo
             '',
             'Sitemap: ' . $sitemapUrl,
             '',
-        ];
+        ]);
 
         return implode("\n", $lines);
     }

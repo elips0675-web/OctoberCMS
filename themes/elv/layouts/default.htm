@@ -15,6 +15,9 @@ description = "Основной макет сайта: шапка, подвал 
     {% if this.page.seo_robots %}
         <meta name="robots" content="{{ this.page.seo_robots }}">
     {% endif %}
+    {% for seo_verification_name, seo_verification_code in elv_seo_verification() %}
+        <meta name="{{ seo_verification_name }}" content="{{ seo_verification_code }}">
+    {% endfor %}
     <link rel="canonical" href="{{ elv_canonical() }}">
     <link rel="alternate" type="application/rss+xml" title="Новости — {{ elv_brand('name') }}" href="{{ url('/rss.xml') }}">
     <script type="application/ld+json">{{ elv_jsonld(this.page)|raw }}</script>
@@ -26,7 +29,7 @@ description = "Основной макет сайта: шапка, подвал 
         <meta property="og:description" content="{{ this.page.seo_description }}">
     {% endif %}
     <meta property="og:url" content="{{ elv_canonical() }}">
-    {% set elv_og_image = this.page.seo_image ?: url('/') ~ 'themes/elv/assets/images/hero-1.jpg' %}
+    {% set elv_og_image = elv_seo_image(this.page) %}
     <meta property="og:image" content="{{ elv_og_image }}">
     <meta property="og:locale" content="ru_RU">
     <meta name="twitter:card" content="summary_large_image">

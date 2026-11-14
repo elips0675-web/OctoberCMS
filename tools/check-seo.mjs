@@ -176,6 +176,34 @@ function checkBreadcrumbs(url, graph) {
 }
 
 /**
+ * metaContent возвращает content мета-тега или пустую строку.
+ */
+function metaContent(html, attribute, name) {
+    const pattern = new RegExp(`<meta ${attribute}="${name}" content="([^"]*)">`);
+    const match = pattern.exec(html);
+
+    return match ? match[1] : '';
+}
+
+/**
+ * isAbsoluteAssetUrl проверяет, что это абсолютный адрес с путём.
+ *
+ * Прежняя проверка `https?:\\/\\/[^"]+` пропускала склеенный хост без слэша
+ * (`http://hostthemes/elv/...`): для соцсетей такая ссылка — не картинка,
+ * а проверка была зелёной.
+ */
+function isAbsoluteAssetUrl(value) {
+    try {
+        const parsed = new URL(value);
+
+        return /^https?:$/.test(parsed.protocol) && parsed.pathname !== '/';
+    }
+    catch {
+        return false;
+    }
+}
+
+/**
  * checkDetailPage проверяет микроразметку и карточку шеринга детальной страницы.
  */
 function checkDetailPage(url, html) {
@@ -226,11 +254,14 @@ function checkDetailPage(url, html) {
 
     failures.push(...checkBreadcrumbs(url, graph));
 
-    if (!/<meta property="og:image" content="https?:\/\/[^"]+">/.test(html)) {
-        failures.push(`${url}: нет абсолютного og:image`);
+    const ogImage = metaContent(html, 'property', 'og:image');
+    if (!isAbsoluteAssetUrl(ogImage)) {
+        failures.push(`${url}: og:image не абсолютный адрес картинки («${ogImage}»)`);
     }
-    if (!/<meta name="twitter:image" content="https?:\/\/[^"]+">/.test(html)) {
-        failures.push(`${url}: нет абсолютного twitter:image`);
+
+    const twitterImage = metaContent(html, 'name', 'twitter:image');
+    if (!isAbsoluteAssetUrl(twitterImage)) {
+        failures.push(`${url}: twitter:image не абсолютный адрес картинки («${twitterImage}»)`);
     }
 
     const canonical = /<link rel="canonical" href="([^"]+)">/.exec(html);

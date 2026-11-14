@@ -126,8 +126,7 @@ class Plugin extends PluginBase
                 },
                 'elv_records' => function ($handle, $limit = null) {
                     return Content::records((string) $handle, $limit);
-                },
-                'elv_records_in_section' => function ($handle, $sectionHandle, $code, $limit = null) {
+                },                'elv_records_in_section' => function ($handle, $sectionHandle, $code, $limit = null) {
                     return Content::recordsInSection((string) $handle, (string) $sectionHandle, (string) $code, $limit);
                 },
                 'elv_record' => function ($handle, $slug) {
@@ -201,6 +200,22 @@ class Plugin extends PluginBase
                 },
                 'elv_jsonld' => function ($page = null) {
                     return Seo::jsonld($page);
+                },
+                'elv_seo_image' => function ($page = null) {
+                    $image = is_object($page) ? trim((string) ($page->seo_image ?? '')) : '';
+
+                    if ($image !== '') {
+                        return preg_match('#^https?://#i', $image) ? $image : url($image);
+                    }
+
+                    $default = Seo::defaultImage();
+
+                    return $default !== ''
+                        ? $default
+                        : url('themes/elv/assets/images/hero-1.jpg');
+                },
+                'elv_seo_verification' => function () {
+                    return Seo::verification();
                 },
                 'elv_brand' => function ($key = 'name') {
                     return Brand::get((string) $key);

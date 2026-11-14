@@ -260,3 +260,29 @@ off при пустом ключе и `APP_ENV=local`, при 403 — преду
 Что не взято: сторонние плагины счётчиков, внешние виджеты чисел, событие
 `cms.theme.activated` (его нет), `System\Models\Setting` (его нет), пинг из
 `boot()`, `api_token` как защита, инкремент на дубликате.
+
+## 13. «Лёгкий аналог Yoast»: что уже было и что осталось
+
+Вопрос владельца 14.11.2026 — сделать облегчённый аналог
+[`Yoast/wordpress-seo`](https://github.com/Yoast/wordpress-seo) для этой темы.
+Сверено по репозиторию: большая часть Yoast-паритета уже была, шаг 1 закрыт
+**Stage 32**, остаток — **P2-33** в `Что доделать.txt`.
+
+| Возможность Yoast | Что у нас |
+|---|---|
+| Шаблоны `<title>` и описания | **Stage 32**: `Seo::title()` (`classes/Seo.php:122`), `Seo::description()` (`:144`), переменные `{title}`, `{section}`, `{brand}`, `{separator}`, `{year}`; обрезка по границе слова (`:173`) |
+| `canonical` | `Seo::canonical()` (`classes/Seo.php:361`), в `<head>` — `layouts/default.htm:21`; совпадает с `<loc>` карты (проверяет `check-seo`) |
+| Open Graph и Twitter Card | `layouts/default.htm:25-39`; картинка — страница → настройка → `hero-1.jpg` (`Plugin.php:204`) |
+| Schema.org граф | `Seo::jsonld()` (`classes/Seo.php:533`): организация + `WebSite` + `BreadcrumbList` + `Article`/`Event`/`Product`/`Service` |
+| XML-карта и `robots.txt` | `Sitemap::urls()` (`classes/Sitemap.php:70`, 106 адресов), `Seo::robots()` (`classes/Seo.php:940`) |
+| `noindex` для страницы | `seo_robots` в конфиге страницы (`themes/elv/pages/personal.htm:3`); для служебных разделов — флаг темы (`theme.yaml:56`) |
+| Проверка прав на сайт | **Stage 32**: коды Google/Яндекс/Bing (`theme.yaml:41-51`, `Seo::verification()` `:213`) |
+| Хлебные крошки | `Seo::breadcrumbs()` (`classes/Seo.php:396`) — только JSON-LD; видимой цепочки нет по решению Stage 16 |
+| Редиректы | `classes/Http/LegacyRedirect.php:23` — хардкод-карта старых адресов; менеджер в админке — остаток P2-33 |
+| Панель SEO в записи (превью, счётчики) | **Нет** — остаток P2-33; сейчас только поля `seo_title`/`seo_description` в blueprints (`news/item.yaml:72`, `events/item.yaml:115`, `books/item.yaml:124`, `collections/item.yaml:86`, `printing/item.yaml:91`, `services/item.yaml:117`, `page/structure.yaml:22`) |
+| Анализ контента и «SEO score» | **Не берём**: без морфологии и внешних сервисов цифра фиктивная, а исходящие запросы противоречат офлайн-свойству плагина (P2-32) |
+
+Что это даёт покупателю: разделитель, шаблоны и коды подтверждения меняются в
+настройках темы, а не в коде; тексты страниц по-прежнему сверяются с эталоном
+побайтово (`tools/check-dom-parity.mjs` — `<main>`), потому что правки в `<head>`
+сверку не задевают.
