@@ -63,22 +63,11 @@ class LegacyRedirect
     }
 
     /**
-     * rawPath — путь из REQUEST_URI, а не из `path()`.
-     *
-     * `/index.php` — это `SCRIPT_NAME`, поэтому Symfony срезает его как базовый
-     * путь и `path()` отдаёт `/`: без сырого URI старый адрес не отличить от
-     * главной и редирект не сработал бы.
+     * rawPath — путь из REQUEST_URI, а не из `path()` (см. `RequestPath`).
      */
     protected function rawPath(Request $request): string
     {
-        $uri = (string) $request->server('REQUEST_URI', '/');
-        $path = parse_url($uri, PHP_URL_PATH);
-
-        if (!is_string($path) || $path === '') {
-            return '/';
-        }
-
-        return '/' . ltrim(urldecode($path), '/');
+        return RequestPath::from($request);
     }
 
     /**

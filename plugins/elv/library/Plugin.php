@@ -50,6 +50,10 @@ class Plugin extends PluginBase
                 'label' => 'Подписчики рассылки',
                 'tab' => 'Библиотека',
             ],
+            'elv.library.redirects' => [
+                'label' => 'Редиректы',
+                'tab' => 'Библиотека',
+            ],
         ];
     }
 
@@ -87,6 +91,12 @@ class Plugin extends PluginBase
                         'url' => \Backend::url('elv/library/subscribers'),
                         'permissions' => ['elv.library.subscribers'],
                     ],
+                    'redirects' => [
+                        'label' => 'Редиректы',
+                        'icon' => 'icon-random',
+                        'url' => \Backend::url('elv/library/redirects'),
+                        'permissions' => ['elv.library.redirects'],
+                    ],
                 ],
             ],
         ];
@@ -109,6 +119,10 @@ class Plugin extends PluginBase
         $this->app
             ->make(\Illuminate\Contracts\Http\Kernel::class)
             ->pushMiddleware(SecurityHeaders::class);
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(\Elv\Library\Classes\Http\ManagedRedirect::class);
     }
 
     public function registerContentFields()

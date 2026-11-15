@@ -10,3 +10,6 @@
 2.0.0:
     - 'Переименование плагина и темы: Elv\Library, themes/elv, таблицы elv_*'
     - rename_legacy_tables_to_elv.php
+2.1.0:
+    - 'Редиректы из админки: таблица elv_redirects'
+    - create_elv_redirects_table.php

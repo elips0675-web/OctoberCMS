@@ -1,0 +1,40 @@
+fields:
+    from_path:
+        label: Старый адрес
+        span: left
+        placeholder: /news/old-page
+        comment: 'Путь на сайте, без домена и параметров. Регистр и хвостовой слэш не важны.'
+    to_path:
+        label: Новый адрес
+        span: right
+        placeholder: /news/new-page
+        comment: 'Путь на этот сайт или полная ссылка https://… для внешнего адреса.'
+    status_code:
+        label: Код ответа
+        type: dropdown
+        span: left
+        default: 301
+        comment: '301 — страница переехала навсегда; 302 — временно; 307/308 сохраняют метод запроса.'
+        options:
+            301: '301 — постоянно'
+            302: '302 — временно'
+            307: '307 — временно, метод сохраняется'
+            308: '308 — постоянно, метод сохраняется'
+    is_enabled:
+        label: Включён
+        type: switch
+        span: right
+        default: true
+        comment: 'Снятый флаг оставляет правило в списке, но не отдаёт редирект.'
+    hit_count:
+        label: Срабатываний
+        type: number
+        span: left
+        disabled: true
+        comment: 'Счётчик пишется при каждом переходе; ошибка записи редирект не ломает.'
+    last_hit_at:
+        label: Последнее срабатывание
+        type: datepicker
+        mode: datetime
+        span: right
+        disabled: true

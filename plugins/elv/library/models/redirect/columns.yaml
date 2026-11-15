@@ -1,0 +1,23 @@
+columns:
+    from_path:
+        label: Старый адрес
+        searchable: true
+    to_path:
+        label: Новый адрес
+        searchable: true
+    status_code:
+        label: Код
+        type: number
+        width: 70px
+    is_enabled:
+        label: Включён
+        type: switch
+        width: 90px
+    hit_count:
+        label: Срабатываний
+        type: number
+        width: 110px
+    last_hit_at:
+        label: Последнее
+        type: datetime
+        width: 150px
