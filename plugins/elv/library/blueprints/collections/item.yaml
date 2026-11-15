@@ -83,6 +83,10 @@ fields:
         type: textarea
         size: small
 
+    seo_focus_keyphrase:
+        label: 'Ключевая фраза'
+        commentAbove: 'Одна фраза, под которую пишется запись. Панель ниже проверяет заголовок, описание, адрес и текст.'
+        type: seo_panel
     seo_title:
         label: 'Заголовок для поиска'
         commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'

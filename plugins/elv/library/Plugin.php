@@ -111,6 +111,20 @@ class Plugin extends PluginBase
             ->pushMiddleware(SecurityHeaders::class);
     }
 
+    public function registerContentFields()
+    {
+        return [
+            \Elv\Library\Classes\ContentFields\SeoPanelField::class => 'seo_panel',
+        ];
+    }
+
+    public function registerFormWidgets()
+    {
+        return [
+            \Elv\Library\FormWidgets\SeoPanel::class => 'elvseopanel',
+        ];
+    }
+
     public function registerMarkupTags()
     {
         return [
