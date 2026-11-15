@@ -257,6 +257,8 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
 | PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/elv/`; версия кеша — `mtime` файлов, восемь hex |
 | Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
+| Панель SEO в записи | `formwidgets/SeoPanel.php:14` | поле `seo_focus_keyphrase` типа `seo_panel` (поле Tailor — `classes/ContentFields/SeoPanelField.php:17`, регистрация — `Plugin.php:114` и `:121`): превью сниппета, счётчики длин, пересчёт без сохранения через `onAnalyze` (`:61`); шаблоны и ассеты — `formwidgets/seopanel/` |
+| Анализ контента | `classes/SeoAnalyzer.php:67` | 18 проверок светофором `good/ok/bad`; числа — только эвристики гайда (плотность 0,75–3 %, title 40–60, description 120–155, пассив до 10 %), без выдуманной «оценки SEO»; пустой черновик не приговаривается, но разметка без текста проверяется |
 
 Карта сайта собирается из тех же записей, что показывает тема: отключённая или
 удалённая запись в карту не попадает, а новая страница темы без строки в
@@ -276,8 +278,10 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 собирается как `getSchemeAndHttpHost() . $path` (`Seo::canonical()`,
 `classes/Seo.php:84`), иначе `url('/x/')` срезает хвостовой слэш и адрес
 расходится с `<loc>` карты. Микроразметка записи (`Article`, `Event`,
-`Product`, `Service`) — `Seo::recordNode()` (`classes/Seo.php:399`), Stage 9;
-остаток расширенного SEO (BreadcrumbList, FAQ, CWV) — P2-22.
+`Product`, `Service`) — `Seo::recordNode()` (`classes/Seo.php:399`), Stage 9.
+Панель в записи и разбор контента — Stage 33 (таблица выше). Остаток: менеджер
+редиректов в админке (P2-33), сводка по всем записям (P2-35), CWV после домена
+(M17); FAQ отклонён — на сайте нет видимого блока «вопрос-ответ».
 
 ## 7. Очереди и планировщик
 
