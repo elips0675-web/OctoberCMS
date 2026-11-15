@@ -50,18 +50,20 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 | `elv_orders` | Eloquent | `orders` | 2 |
 | `elv_slots` | Eloquent | — (новое, P1-9) | 1 440 (`elv:slots-generate`) |
 | `elv_subscribers` | Eloquent | — (P0-5) | 3 |
+| `elv_redirects` | Eloquent | — (новое, Stage 34) | 0 (правит редактор) |
 
-Проверено 14.11.2026 по живой БД: `elv_*`-таблиц ровно пять. Push-подписок и
+Проверено 15.11.2026 по живой БД: `elv_*`-таблиц ровно шесть. Push-подписок и
 поискового индекса в схеме **нет**: `elv_push_subscriptions`,
 `elv_search_documents` и `elv_search_terms` в БД отсутствуют, файла
 `plugins/elv/library/classes/Search.php` нет (`docs/roadmap.md:25` — M8 не
 начат). Появятся вместе с реализацией, в поставку «как есть» не входят.
 
-Модели — `plugins/elv/library/models/{Request,Booking,Order,Slot,Subscriber}.php`.
+Модели — `plugins/elv/library/models/{Request,Booking,Order,Slot,Subscriber,Redirect}.php`.
 Таблицы создаёт версия плагина **1.0.2** (`plugins/elv/library/updates/create_elv_*.php`),
 версия **2.0.0** переименовывает их из старых `nlb_*`
 (`updates/rename_legacy_tables_to_elv.php`; create-миграции делают то же,
-если видят старую таблицу). Применяется `php artisan october:migrate`
+если видят старую таблицу), версия **2.1.0** добавляет `elv_redirects`
+(`updates/create_elv_redirects_table.php`). Применяется `php artisan october:migrate`
 (не `tailor:migrate`, это не Tailor).
 Валидация полей — `$rules` моделей (трейт `October\Rain\Database\Traits\Validation`):
 ограничение схемы отбивается до записи, а не `QueryException` из MySQL.

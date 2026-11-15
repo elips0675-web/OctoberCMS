@@ -255,21 +255,24 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Elv\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
+| Редиректы из админки | `classes/Http/ManagedRedirect.php:18` | `models/Redirect.php` поверх таблицы `elv_redirects` (версия плагина 2.1.0): включённое правило отдаёт 301/302/307/308 и переносит параметры запроса, счётчик переходов пишется «как получится», кэш на 600 с снимается на `saved`/`deleted`; идёт после `LegacyRedirect`, а недоступная БД пропускает запрос, а не отдаёт 500; страница — `controllers/Redirects.php` под правом `elv.library.redirects` |
 | PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/elv/`; версия кеша — `mtime` файлов, восемь hex |
 | Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
-| Панель SEO в записи | `formwidgets/SeoPanel.php:14` | поле `seo_focus_keyphrase` типа `seo_panel` (поле Tailor — `classes/ContentFields/SeoPanelField.php:17`, регистрация — `Plugin.php:114` и `:121`): превью сниппета, счётчики длин, пересчёт без сохранения через `onAnalyze` (`:61`); шаблоны и ассеты — `formwidgets/seopanel/` |
+| Панель SEO в записи | `formwidgets/SeoPanel.php:14` | поле `seo_focus_keyphrase` типа `seo_panel` (поле Tailor — `classes/ContentFields/SeoPanelField.php:17`, регистрация — `Plugin.php:128` и `:135`): превью сниппета, счётчики длин, пересчёт без сохранения через `onAnalyze` (`:61`); шаблоны и ассеты — `formwidgets/seopanel/` |
 | Анализ контента | `classes/SeoAnalyzer.php:67` | 18 проверок светофором `good/ok/bad`; числа — только эвристики гайда (плотность 0,75–3 %, title 40–60, description 120–155, пассив до 10 %), без выдуманной «оценки SEO»; пустой черновик не приговаривается, но разметка без текста проверяется |
 
 Карта сайта собирается из тех же записей, что показывает тема: отключённая или
 удалённая запись в карту не попадает, а новая страница темы без строки в
 `Sitemap::PAGES` роняет `tests/SeoTest.php`, а не выпадает из индекса молча.
 
-`LegacyRedirect` читает сырой `REQUEST_URI` (`:72`): Symfony принимает
-`/index.php` за `SCRIPT_NAME` и `path()` отдаёт `/`, иначе старый адрес главной
-не отличить от самой главной. `CODE` отбрасывается, остальные параметры
-(`utm_*`, `PAGEN_1`) переносятся в новый адрес. Middleware подключён в
-`Plugin.php:100` только вне консоли — юнит-тесты гоняют его напрямую; рядом
-`SecurityHeaders` (`Plugin.php:104`) и `CompressResponse` (`Plugin.php:96`).
+`LegacyRedirect` читает сырой `REQUEST_URI` через `RequestPath::from()`
+(`classes/Http/RequestPath.php:18`): Symfony принимает `/index.php` за
+`SCRIPT_NAME` и `path()` отдаёт `/`, иначе старый адрес главной не отличить от
+самой главной. `CODE` отбрасывается, остальные параметры (`utm_*`, `PAGEN_1`)
+переносятся в новый адрес. Middleware подключён в `Plugin.php:117` только вне
+консоли — юнит-тесты гоняют его напрямую; рядом `ManagedRedirect`
+(`Plugin.php:125`, идёт после), `SecurityHeaders` (`Plugin.php:121`) и
+`CompressResponse` (`Plugin.php:113`).
 
 Мета записи: у шести blueprints (`news`, `events`, `books`, `services`,
 `printing`, `collections`) есть `seo_title` и `seo_description`,
@@ -279,8 +282,8 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 `classes/Seo.php:84`), иначе `url('/x/')` срезает хвостовой слэш и адрес
 расходится с `<loc>` карты. Микроразметка записи (`Article`, `Event`,
 `Product`, `Service`) — `Seo::recordNode()` (`classes/Seo.php:399`), Stage 9.
-Панель в записи и разбор контента — Stage 33 (таблица выше). Остаток: менеджер
-редиректов в админке (P2-33), сводка по всем записям (P2-35), CWV после домена
+Панель в записи и разбор контента — Stage 33, редиректы редактора — Stage 34
+(таблица выше). Остаток: сводка по всем записям (P2-35), CWV после домена
 (M17); FAQ отклонён — на сайте нет видимого блока «вопрос-ответ».
 
 ## 7. Очереди и планировщик
