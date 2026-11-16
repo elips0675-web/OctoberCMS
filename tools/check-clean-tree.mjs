@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const OWNER_DRAFTS = ['Архитектура', 'Продажа шаблона', 'Оценка', 'Что взять из WPShop', 'конструктор страниц', 'Как монетизировать', 'Laravel + Filament', 'Стучалка', 'Как сделать стучалку', 'Монетизация сборки', 'Бренд Elv шаблон', 'October CMS для лендинга', 'Аудит безопасности', 'Стратегия безопасности', 'Что полезного есть в репозитории', 'гайд по Yoast SEO', 'Yoast SEO, в October CMS', 'Production-Ready Yoast SEO'];
+const OWNER_DRAFTS = ['Архитектура', 'Продажа шаблона', 'Оценка', 'Что взять из WPShop', 'конструктор страниц', 'Как монетизировать', 'Laravel + Filament', 'Стучалка', 'Как сделать стучалку', 'Монетизация сборки', 'Бренд Elv шаблон', 'October CMS для лендинга', 'Аудит безопасности', 'Стратегия безопасности', 'Что полезного есть в репозитории', 'гайд по Yoast SEO', 'Yoast SEO, в October CMS', 'Production-Ready Yoast SEO', 'Структура трех проектов'];
 
 function git(...args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' });
