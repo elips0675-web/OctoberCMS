@@ -254,8 +254,11 @@ Double opt-in: подписка активна только после подт�
 ## 7. Импорт
 
 ```
-php artisan elv:import --source="D:/nlbbootstrap-main/db/config/data" [--dry-run]
+php artisan elv:import --source="<каталог выгрузки>/data" [--dry-run]
 ```
+
+Источник обязателен: `--source` или переменная окружения `ELV_IMPORT_SOURCE`;
+локального пути по умолчанию нет (Stage 37, было `Import.php:65`).
 
 Факт прогона 10.11.2026: первый запуск — 91 элемент и 12 разделов, второй — 0 новых,
 91 обновление (таблица в выводе команды).

@@ -697,14 +697,16 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 (13.11.2026); план и проверенные факты — `docs/monetization.md`, вердикты —
 `docs/roadmap.md` §10.
 
-Факты: локальный путь в поставляемом коде ровно один —
-`plugins/elv/library/console/Import.php:65` (`'D:/nlbbootstrap-main/db/config/data'`
-по умолчанию). У темы нет `composer.json`, а ядро ищет код продукта именно там
-(`modules/cms/classes/ThemeManager.php:354-366`); в `theme.yaml` нет
-`authorCode` (`:229-231`); `screenshot.png` отсутствует (ядром не используется,
+Факты (срез до Stage 37; закрыто — см. статус ниже): локальный путь в поставляемом
+коде был ровно один — `plugins/elv/library/console/Import.php:65`
+(`'D:/nlbbootstrap-main/db/config/data'` по умолчанию). У темы не было
+`composer.json`, а ядро ищет код продукта именно там
+(`modules/cms/classes/ThemeManager.php:354-366`); в `theme.yaml` не было
+`authorCode` (`:229-231`); `screenshot.png` отсутствовал (ядром не используется,
 но нужен карточке Marketplace). У плагина
-`plugins/elv/library/composer.json`: имя `elv/library-plugin` не в форме
-`vendor/name`, `"license": "proprietary"` без файла `LICENSE`.
+`plugins/elv/library/composer.json`: имя `elv/library-plugin` (проверка Stage 37
+показала, что это валидная форма `vendor/name`, см. статус),
+`"license": "proprietary"` без файла `LICENSE`.
 
 Нужно: убрать дефолт с абсолютным путём (только `--source`/env), добавить
 `themes/elv/composer.json` и `authorCode`, привести `composer.json` плагина к
@@ -721,6 +723,20 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 Приёмка: `grep` не находит абсолютных путей в `plugins/`, `themes/`, `config/`;
 `php artisan theme:list`/Marketplace-код видит тему; `composer validate` в
 плагине зелёный; тесты плагина и живые гейты без изменений.
+
+Статус (Stage 37, 16.11.2026): минимум закрыт, гейт `node tools/check-package.mjs`
+— exit 0. `themes/elv/composer.json` (`elv/elv-theme`, `october-theme`,
+`proprietary`), `authorCode: elv` (`themes/elv/theme.yaml:3`) и
+`themes/elv/version.yaml` `1.0.0` — ядро видит продукт `elv.elv`
+(`ThemeManager::getInstalled()`; сверка кода — `modules/cms/classes/ThemeManager.php:229-231`).
+`screenshot.png` 1200×630, `LICENSE.md` в теме и плагине (тексты совпадают),
+абсолютный дефолт из `Import.php` убран (`--source` или `ELV_IMPORT_SOURCE`,
+`Import.php:63-78`, `:137-145`), `composer validate` зелёный у обоих пакетов.
+Гейт ловит пропажу лицензии — проверено откатом (файл убран → FAIL, возвращён → OK).
+Прежняя формулировка «имя `elv/library-plugin` не в форме `vendor/name`» не
+подтвердилась: имя даёт код `elv.library` (`modules/system/helpers/System.php:150-164`),
+то есть ровно код плагина `Elv\Library`. Осталось вне этого пункта: команда
+сборки ZIP (`elv:library:package`), страница установки и демо-данные в админке.
 
 ### P2-27. Демо-контент остаётся, бренд библиотеки — убирается
 

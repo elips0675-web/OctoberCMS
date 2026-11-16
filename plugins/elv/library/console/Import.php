@@ -8,7 +8,7 @@ use Tailor\Models\StructureRecord;
 class Import extends Command
 {
     protected $signature = 'elv:import
-        {--source= : Каталог с data/*.php (по умолчанию выгрузка источника)}
+        {--source= : Каталог с data/*.php (по умолчанию переменная ELV_IMPORT_SOURCE)}
         {--dry-run : Только посчитать, ничего не записывать}';
 
     protected $description = 'Импорт контента (идемпотентно по xml_id)';
@@ -62,8 +62,14 @@ class Import extends Command
 
     public function handle()
     {
-        $source = rtrim((string) ($this->option('source') ?: 'D:/nlbbootstrap-main/db/config/data'), '/\\');
+        $source = $this->resolveSource();
         $dryRun = (bool) $this->option('dry-run');
+
+        if ($source === '') {
+            $this->error('Укажите каталог с data/*.php: --source=<путь> или переменную окружения ELV_IMPORT_SOURCE.');
+
+            return 1;
+        }
 
         if (!is_dir($source)) {
             $this->error("Каталог не найден: {$source}");
@@ -126,6 +132,16 @@ class Import extends Command
         ));
 
         return 0;
+    }
+
+    /**
+     * resolveSource returns the export directory from --source or the environment.
+     */
+    protected function resolveSource(): string
+    {
+        $source = (string) ($this->option('source') ?: getenv('ELV_IMPORT_SOURCE'));
+
+        return rtrim(trim($source), '/\\');
     }
 
     /**

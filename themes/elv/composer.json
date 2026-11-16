@@ -1,0 +1,9 @@
+{
+    "name": "elv/elv-theme",
+    "type": "october-theme",
+    "description": "Универсальная тема: услуги, каталог, события, брони и заказы; контент из Tailor-записей.",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2"
+    }
+}

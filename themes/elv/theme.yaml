@@ -1,5 +1,6 @@
 name: 'Универсальный шаблон'
 code: elv
+authorCode: elv
 description: 'Универсальная тема: услуги, каталог, события, брони и заказы; контент из Tailor-записей.'
 author: ELV
 homepage: 'https://github.com/elips0675-web/OctoberCMS'

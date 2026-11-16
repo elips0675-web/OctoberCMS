@@ -118,7 +118,7 @@
 ```powershell
 $php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
 $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
-& $php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml  # тесты плагина: 231 тест, 0 упавших
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml  # тесты плагина: 305 тестов, 0 упавших
 & $php vendor/phpunit/phpunit/phpunit             # ядро October: 1171 тест, 0 упавших (artisan test в 4.x нет)
 & $php artisan october:migrate           # схема поднимается, 0 ошибок
 Get-ChildItem -Path app,config,database,plugins,themes,tests -Recurse -Filter *.php -File |
@@ -133,6 +133,7 @@ node tools/check-pwa.mjs                  # manifest, sw.js с версией и
 node tools/check-health.mjs               # /health 200, no-store, без cookie и внутренних деталей (нужен serve)
 node tools/check-orphans.mjs              # ни одной страницы без входящей ссылки (нужен serve)
 node tools/check-api.mjs                  # контракт /api/v1 и страницы всех записей (нужен serve)
+node tools/check-package.mjs              # упаковка: composer.json темы/плагина, authorCode, LICENSE, screenshot, нет абсолютных путей
 node tools/check-clean-tree.mjs           # дерево чистое, черновики владельца не в индексе
 ```
 

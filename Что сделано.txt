@@ -7,6 +7,69 @@
 
 ---
 
+(Stage 37 — 16.11.2026) — **Упаковка продукта: тема и плагин как товар (P2-26).**
+
+Минимум упаковки закрыт, чтобы ZIP собирался из продукта, а не из проектной
+папки: тема опознаётся ядром как товар, у обоих пакетов есть лицензия
+на продажу, локальный путь машины владельца из кода убран.
+
+Что сделано:
+
+- `themes/elv/composer.json` (новый) — `elv/elv-theme`, тип `october-theme`,
+  лицензия `proprietary`, `php ^8.2`.
+- `themes/elv/theme.yaml:3` — `authorCode: elv`; связка `authorCode.code`
+  даёт `elv.elv` (`modules/cms/classes/ThemeManager.php:229-231`), а `name`
+  из composer преобразуется в тот же код (`:354-366`).
+- `themes/elv/version.yaml` — `1.0.0` (без файла история версий пуста,
+  `ThemeManager.php:371-393`).
+- `themes/elv/screenshot.png` — 1200×630, 1,9 МБ (карточка Marketplace,
+  ядром не используется).
+- `themes/elv/LICENSE.md` и `plugins/elv/library/LICENSE.md` — текст лицензии
+  покупателя (один сайт, правки разрешены, перепродажа запрещена, демо-материалы
+  не передаются); тексты совпадают (sha256 `060F6AA3…`).
+- `plugins/elv/library/console/Import.php` — абсолютный дефолт
+  `D:/nlbbootstrap-main/db/config/data` убран: источник из `--source` или
+  `ELV_IMPORT_SOURCE`, иначе отказ с кодом 1 (`:63-78`, `:137-145`).
+- `plugins/elv/library/tests/ImportTest.php:148-167` — два теста: пустой
+  источник и источник из окружения.
+- `tools/check-package.mjs` (новый гейт) — composer.json темы и плагина,
+  `authorCode`, `version.yaml`, `LICENSE.md` (и совпадение текстов),
+  `screenshot.png` (сигнатура PNG), отсутствие абсолютных путей
+  в `plugins/elv/library`, `themes/elv`, `config/*.php`.
+
+Чем проверено:
+
+- `ThemeManager::getInstalled()` → `array('elv.elv' => '1.0.0')`;
+  `php artisan theme:list` → `[*] elv` (активная), ошибок нет.
+- `composer validate` в теме и в плагине — `./composer.json is valid`.
+- `node tools/check-package.mjs` — exit 0; обратная проверка: убран
+  `plugins/elv/library/LICENSE.md` → `FAIL: 1 проблем упаковки`, файл
+  возвращён → OK (гейт не декоративный).
+- `phpunit -c phpunit.elv.xml` — **305 тестов, 1086 проверок, 0 падений**
+  (было 303).
+- Живые гейты: `check-urls` (110 страниц 200, `/non-existent/` — 404),
+  `check-dom-parity --structure` (110 страниц), `check-seo` (107 адресов),
+  `check-headers` (12 страниц), `check-pwa`, `check-orphans` (106),
+  `check-health`, `check-api` (91 запись), `check-admin-brand`,
+  `purge-css --check`, `check-css-budget` — все exit 0.
+- Документация сверена с фактом: `docs/monetization.md` §2-3 (таблица
+  «что отделяет продукт» — 0 бренда, 0 контактов, 0 путей), `README.md:46,69,73`,
+  `docs/db.md:257-261`, `AGENTS.md:121,136`, `Что доделать.txt` P2-26 (статус).
+
+Что **не** проверено:
+
+- Сборка ZIP (`elv:library:package`), страница установки в админке
+  и демо-данные на чистой October — следующий блок; на стенде `D:\Elv test`
+  проверяется установкой распакованного продукта.
+- `screenshot.png` 1,9 МБ — лимит загрузки карточки Marketplace не проверялся
+  (внешний сервис).
+- Заявление P2-26 «имя `elv/library-plugin` не в форме `vendor/name`»
+  не подтвердилось: `System::composerToOctoberCode()` даёт `elv.library`
+  (`modules/system/helpers/System.php:150-164`), `composer validate` зелёный;
+  ложный факт исправлен в `docs/monetization.md` §3.
+
+---
+
 (Stage 36 — 16.11.2026) — **Универсальные тексты: бренд `ELV`, без «библиотеки» и «НББ».**
 
 Шаблон продаётся как универсальный, поэтому видимые тексты переписаны: книги,

@@ -39,18 +39,18 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 
 | Что | Сколько | Где |
 |---|---|---|
-| Бренд «Библиотека 2026» | **61** вхождение | `themes/elv`, `plugins/elv/library` (в т.ч. `themes/elv/assets/js/script.js` и `assets/pwa/sw.js`) |
-| Телефон и адрес | **26** строк | `themes/elv/pages/*.htm`, `assets/js/script.js` |
-| Локальный путь | **1** | `plugins/elv/library/console/Import.php:65` — `'D:/nlbbootstrap-main/db/config/data'` как значение по умолчанию |
+| Бренд «Библиотека 2026» | **0** (было 61) | `themes/elv`, `plugins/elv/library`; бренд — поля `brand_*` в `theme.yaml` (Stage 27, тексты — Stage 36) |
+| Телефон и адрес | **0** в коде (было 26 строк) | контакты — `brand_phone`/`brand_street` в настройках темы |
+| Локальный путь | **0** (было 1) | `--source` или `ELV_IMPORT_SOURCE` (`plugins/elv/library/console/Import.php:63-78`, `:137-145`), Stage 37 |
 | Вендор `Elv\Library` | **75** файлов (60 с `namespace`) | `plugins/elv/library`, `themes/elv` |
 | Хендлы blueprints | 9 сущностей | `plugins/elv/library/blueprints/*`, карты `Content::SECTIONS`, `Sitemap::SECTIONS`, `Seo::SECTIONS` |
 
 Важные уточнения, которые меняют оценку стоимости:
 
-- `themes/elv/assets/js/script.js` **побайтово** равен источнику; правка бренда
-  и телефона в нём ломает паритет с эталоном источника, то есть переупаковка
-  начинается с решения: либо скрипт остаётся как есть и адреса берутся из
-  разметки, либо паритет осознанно теряется.
+- `themes/elv/assets/js/script.js` **побайтово** совпадал с источником до
+  Stage 36; после универсализации текстов паритет с источником осознанно
+  потерян (обращения «библиотекарь», телефон и адрес заменены на настройки
+  темы), сверка структуры — `node tools/check-dom-parity.mjs --structure`.
 - Таблицы Tailor называются по UUID blueprint (`xc_<uuid без дефисов>`), а не
   по хендлу: переименование `Elv\Book` → `Article` **не теряет данные**, но
   карты разделов в коде (`Content`, `Sitemap`, `Seo`, JSON-LD, тесты) надо
@@ -60,35 +60,52 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 
 ## 3. Упаковка: обязательный минимум
 
+Статус Stage 37 (16.11.2026): минимум закрыт, проверка — `node tools/check-package.mjs`
+(exit 0). Гейт падает, если пропадает лицензия, `authorCode`, карточка или
+появляется абсолютный путь.
+
 Тема:
 
-- `composer.json` в `themes/elv` **отсутствует**, а ядро ищет код продукта
-  именно в нём: `ThemeManager::getComposerCode()` читает `composer.json` и без
-  файла возвращает пустую строку (`modules/cms/classes/ThemeManager.php:354-366`).
-  Без него тема не опознаётся как продукт (установка/обновление через
-  Marketplace).
-- `authorCode` в `theme.yaml` — вторая половина того же кода
-  (`authorCode.code`, `modules/cms/classes/ThemeManager.php:229-231`). Сейчас в
-  `theme.yaml` его нет.
-- `version.yaml` у темы **необязателен**: без файла история версий пустая
-  (`modules/cms/classes/ThemeManager.php:391-393`), но для обновлений он нужен.
-- `screenshot.png` — требование карточки Marketplace, ядром не используется
-  (в `modules/cms` и `modules/backend` строка `screenshot` не встречается).
-  У нас файла нет.
+- `themes/elv/composer.json` — `elv/elv-theme`, тип `october-theme`, лицензия
+  `proprietary`. Ядро опознаёт продукт как `elv.elv` версии `1.0.0`:
+  `authorCode: elv` + `code: elv` (`themes/elv/theme.yaml:2-4`) дают этот код
+  (`modules/cms/classes/ThemeManager.php:229-231`, `:354-366`), проверено
+  `ThemeManager::getInstalled()`.
+- `themes/elv/version.yaml` — `1.0.0`: без файла история версий пуста и
+  обновления не работают (`ThemeManager.php:371-393`).
+- `themes/elv/screenshot.png` — 1200×630, ~1,9 МБ; требование карточки
+  Marketplace, ядром не используется (в `modules/cms` и `modules/backend`
+  строки `screenshot` нет).
+- `themes/elv/LICENSE.md` — текст лицензии покупателя (один сайт, правки
+  разрешены, перепродажа запрещена, демо-изображения не передаются).
 
 Плагин:
 
-- `composer.json` есть, но имя `elv/library-plugin` не в форме `vendor/name`.
+- `plugins/elv/library/composer.json`: имя `elv/library-plugin` — это форма
+  `vendor/name` (vendor `elv`, пакет `library`), тип `october-plugin`,
+  `composer validate` зелёный. Прежняя запись «не в форме `vendor/name`» не
+  подтвердилась: `System::composerToOctoberCode()`
+  (`modules/system/helpers/System.php:150-164`) даёт `elv.library`, то есть
+  ровно код плагина `Elv\Library`.
+- `plugins/elv/library/LICENSE.md` — тот же текст, что у темы (гейт сверяет
+  совпадение, чтобы у покупателя не оказалось двух разных лицензий).
 - `updates/version.yaml` есть, `pluginDetails()` реализован
   (`plugins/elv/library/Plugin.php`).
-- `.env.example` есть; `.env`, `storage/`, `vendor/`, `node_modules/` в
-  поставку не входят.
+
+Локальный путь:
+
+- `plugins/elv/library/console/Import.php` больше не подставляет
+  `D:/nlbbootstrap-main/...`: источник берётся из `--source` или переменной
+  `ELV_IMPORT_SOURCE`, иначе команда отказывает с кодом 1
+  (`Import.php:63-78`, `:137-145`). Тесты — `ImportTest` (пустой источник,
+  источник из окружения).
 
 Бренд и контакты — уже настройки темы: в `themes/elv/theme.yaml` **19 полей
 `brand_*`** (название, подпись, телефон, адрес, e-mail, соцсети, тип организации
 schema.org и т. д., Stage 27), в Twig — `elv_brand()` / `elv_brand_text()`,
-в PHP — `Elv\Library\Classes\Brand`. Остаётся обезличить сами тексты страниц
-(«Библиотека», «Минск») — это P2-27, следующий блок (Stage 29).
+в PHP — `Elv\Library\Classes\Brand`. Тексты страниц обезличены в Stage 36:
+«Библиотека 2026» и реальные адреса в `themes/elv` и `plugins/elv/library`
+не встречаются.
 
 ## 4. Демо-контент в шаблоне
 

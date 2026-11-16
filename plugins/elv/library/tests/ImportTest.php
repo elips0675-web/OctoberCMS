@@ -144,4 +144,25 @@ class ImportTest extends PluginTestCase
     {
         $this->assertSame(1, Artisan::call('elv:import', ['--source' => dirname(__DIR__) . '/tests/fixtures/missing']));
     }
+
+    public function testImportFailsWithoutSourceOptionOrEnv()
+    {
+        putenv('ELV_IMPORT_SOURCE');
+
+        $this->assertSame(1, Artisan::call('elv:import'));
+    }
+
+    public function testImportUsesSourceFromEnvironment()
+    {
+        putenv('ELV_IMPORT_SOURCE=' . $this->sourcePath());
+
+        try {
+            $this->assertSame(0, Artisan::call('elv:import'));
+        }
+        finally {
+            putenv('ELV_IMPORT_SOURCE');
+        }
+
+        $this->assertNotNull(EntryRecord::inSection('Elv\News')->where('xml_id', 'elv-news-001')->first());
+    }
 }

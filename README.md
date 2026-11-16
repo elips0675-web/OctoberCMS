@@ -43,7 +43,7 @@ $env:PATH = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;' + $env:PATH
 Set-Location 'D:\October CMS'
 php artisan october:migrate
 php artisan tailor:migrate            # таблицы контента Tailor
-php artisan elv:import --source="D:/nlbbootstrap-main/db/config/data"
+php artisan elv:import --source="<каталог выгрузки>/data"   # или ELV_IMPORT_SOURCE
 php artisan serve --host=127.0.0.1 --port=8080
 ```
 
@@ -66,11 +66,11 @@ php artisan serve --host=127.0.0.1 --port=8080
 | Команда | Что делает |
 |---|---|
 | `php vendor/phpunit/phpunit/phpunit` | PHPUnit ядра на реальной БД (`artisan test` в 4.x нет) |
-| `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` | тесты плагина на живой MySQL (231 тест) |
+| `php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` | тесты плагина на живой MySQL (305 тестов) |
 | `php artisan october:about` | версия October, Laravel, PHP (`october:version` нет) |
 | `php artisan october:fresh` | **сносит контент**: схема + демо с нуля; для этапа 4 не использовался |
 | `php artisan migrate:fresh` | схема с нуля |
-| `php artisan elv:import` | идемпотентный импорт 91 элемента и 12 разделов |
+| `php artisan elv:import --source=…` | идемпотентный импорт 91 элемента и 12 разделов (или `ELV_IMPORT_SOURCE`) |
 | `php artisan elv:slots-generate` | генерация слотов услуг |
 | `node tools/purge-css.mjs` | урезание `bootstrap.min.css` |
 | `node tools/check-css-budget.mjs` | бюджет встроенного CSS и отсутствие внешних таблиц |

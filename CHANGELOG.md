@@ -11,6 +11,14 @@
 
 ### Добавлено
 
+- Этап 37: упаковка продукта (P2-26) — `themes/elv/composer.json`
+  (`elv/elv-theme`, тип `october-theme`, лицензия `proprietary`),
+  `authorCode: elv` в `themes/elv/theme.yaml:3`, `themes/elv/version.yaml`
+  `1.0.0` (ядро видит продукт `elv.elv` через `ThemeManager::getInstalled()`),
+  `themes/elv/screenshot.png` 1200×630, `LICENSE.md` с текстом лицензии
+  покупателя в теме и плагине (тексты совпадают), гейт
+  `tools/check-package.mjs` (проверяет composer.json, authorCode, версию,
+  лицензию, карточку и отсутствие абсолютных путей).
 - Этап 35: собственный блог на Tailor — `/blog/` (список + рубрики),
   `/blog/:slug` (статья), `/blog/rss.xml`; blueprint'ы `Elv\Post` и
   `Elv\PostCategory`, партиал карточки, пункт меню, `/blog/` в `Sitemap::PAGES`
@@ -18,6 +26,14 @@
 
 ### Изменено
 
+- Этап 37: `elv:import` больше не подставляет локальный путь
+  `D:/nlbbootstrap-main/db/config/data` (было `Import.php:65`): источник
+  берётся из `--source` или переменной `ELV_IMPORT_SOURCE`, иначе команда
+  отказывает с кодом 1 (`Import.php:63-78`, `:137-145`). Добавлены тесты
+  «без источника» и «источник из окружения». Попутно исправлен ложный факт
+  в `docs/monetization.md` §3: имя плагина `elv/library-plugin` — валидная
+  форма `vendor/name`, `composer validate` зелёный, код сходится с
+  `Elv\Library` (`modules/system/helpers/System.php:150-164`).
 - Этап 36: шаблон переведён на универсальные тексты — бренд `ELV` вместо
   «Библиотека 2026», «библиотека»/«НББ»/«читательский билет»/«читальные залы»/
   «фонд» убраны из темы, конфига админки и демо-контента БД; смысловые правки
