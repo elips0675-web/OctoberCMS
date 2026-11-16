@@ -1,0 +1,31 @@
+uuid: 758a9e2b-83a2-4c56-8ae6-63ca4a29cb0b
+handle: Elv\PostCategory
+type: structure
+name: Рубрика блога
+drafts: false
+
+structure:
+    maxDepth: 1
+
+navigation:
+    label: Рубрики
+    parent: Elv\Post
+    icon: octo-icon-list-ul
+    order: 90
+
+fields:
+    code:
+        label: Код
+        commentAbove: 'Латиница. Используется в фильтре: /blog/?category={код}.'
+        type: text
+        required: true
+
+    is_enabled:
+        label: Опубликована
+        type: checkbox
+        default: true
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100

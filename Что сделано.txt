@@ -1,8 +1,80 @@
 # Что сделано
 
-Журнал этапов переноса сайта библиотеки с 1С-Битрикс на October CMS.
+Журнал этапов: шаблон сайта (универсальный, бренд ELV) переносится с 1С-Битрикс
+на October CMS; источник разметки — сайт библиотеки.
 Сверху — свежее. Формат записи: этап, дата, что сделано, где лежит
 (`file:line`), чем проверено, что **не** проверено.
+
+---
+
+(Stage 36 — 16.11.2026) — **Универсальные тексты: бренд `ELV`, без «библиотеки» и «НББ».**
+
+Шаблон продаётся как универсальный, поэтому видимые тексты переписаны: книги,
+печать, события остаются демо-разделами, но слов «библиотека»/«НББ» в интерфейсе нет.
+
+Что сделано:
+
+- 28 файлов темы, конфига и blueprint'ов: `themes/elv/pages/*.htm`,
+  `themes/elv/assets/js/script.js`, `themes/elv/partials/footer.htm`,
+  `config/backend.php:47-48` (`app_name`/`tagline`), `.env.example`.
+  `themes/elv/theme.yaml:65,76` — бренд по умолчанию `ELV`.
+- Смысловые правки, а не только замена слова: «О ELV» → «О нас»,
+  «Современная ELV с 500 000 книг» → «ELV — пространство с 500 000 книг»,
+  «ELV находится…» → «Мы находимся…», «ELV — общее пространство» →
+  «Наше пространство — общее», «Ещё нет билета?» → «Ещё нет карты посетителя?».
+- Демо-контент в БД (`xc_*`, `elv_orders`,
+  `system_settings.backend_brand_settings`): «Библиотека 2026» → `ELV`,
+  «читательский билет» → «карта посетителя», «читальные залы» → «залы»,
+  «фонд» → «коллекция/каталог», «библиотекарь» → «менеджер», «Служба читателей»
+  → «Служба поддержки», «Библионочь» → «Ночь открытых дверей» (заголовок).
+  Правки идемпотентны (по `REPLACE` в текстовых колонках), адреса-слаги не менялись.
+- `tools/check-dom-parity.mjs:35,147,170` — режим `--structure`: тексты намеренно
+  не сравниваются, структура (карточки, h1/h2, блоки) сверяется с `preview/`.
+  `AGENTS.md` п. 4.2 и §5 обновлены, `docs/content.md` §1 — блог/универсальные тексты.
+
+Проверено:
+
+- `node tools/check-dom-parity.mjs --structure` — 110/110 страниц по структуре.
+- `check-urls` (110×200), `check-seo` (sitemap 107, все 200), `check-headers`,
+  `check-pwa`, `check-health`, `check-orphans`, `check-api`, `check-css-budget`,
+  `check-admin-brand` (`/admin` отдаёт `ELV`).
+- PHPUnit — 303 теста, 0 падений.
+- Повторный скан `themes/`, `plugins/elv/library/`, `config/`: `nlb`/«НББ» — 0,
+  «библиотек» — только технический комментарий `assets/css/styles.css:788`
+  («без внешних библиотек»), он смысла не меняет.
+
+Не проверено:
+
+- Демо-данные **чистой установки**: сид берётся из источника библиотеки,
+  универсализация сида — задача упаковки ZIP.
+- `docs/*` и тесты сохраняют упоминания источника намеренно (история и гейты).
+
+---
+
+(Stage 35 — 16.11.2026) — **Собственный блог на Tailor: `/blog/`.**
+
+Что сделано:
+
+- `plugins/elv/library/blueprints/posts/item.yaml` — `Elv\Post`
+  (title, slug, published_at, is_enabled, category, is_featured, image, excerpt,
+  seo_focus_keyphrase, seo_title, seo_description, content, author, read_time,
+  tags) и `section.yaml` — рубрики `Elv\PostCategory`. Поле `sort` обязательно:
+  `Content::records()` сортирует по нему, без него `/blog/` падал 500.
+- `themes/elv/pages/blog.htm:1` — список статей и чипы рубрик;
+  `themes/elv/pages/blog-detail.htm:1` — статья `/blog/:slug`
+  (имя `*-detail.htm` — иначе `SeoTest` требует страницу в `Sitemap::PAGES`);
+  партиал `themes/elv/partials/cards/post.htm`.
+- `classes/Rss.php:40` — `xml($base, $handle, $prefix, $feedPath, $title, $description)`;
+  `classes/Http/SeoController.php:41` — `blogRss()`;
+  `routes.php:32` — `blog/rss.xml`; `/blog/rss.xml` и `/rss.xml` отвечают 200.
+- `classes/Sitemap.php:28,46` — `Elv\Post` в `SECTIONS`, `/blog/` в `PAGES`;
+  `themes/elv/partials/header.htm:47` — пункт «Блог» в навигации.
+- Гейты: `tools/check-urls.mjs:55` (`/blog/` в корневых, 110 страниц),
+  `tools/check-seo.mjs` (`/blog/` в rootPages, 107 адресов),
+  `docs/content.md` §1 — блог помечен как собственный, вне эталона.
+
+Не проверено: демо-статьи (ждут текстов владельца), `BlogPosting` JSON-LD
+и видимые крошки статьи — следующий шаг.
 
 ---
 

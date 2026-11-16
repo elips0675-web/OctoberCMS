@@ -1,0 +1,36 @@
+title = "Блог — {brand}"
+url = "/blog/"
+layout = "default"
+seo_description = "Блог ELV: как выбрать книгу, что заказать в печать, идеи подарков и разборы оформления."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--green">Статьи</span>
+        <h1 class="page-title">Блог</h1>
+        <p class="page-lead">
+            Длинные тексты о книгах, печати и подарках: что выбрать, как оформить
+            и на что смотреть, прежде чем заказывать.
+        </p>
+
+        <ul class="section-chips" aria-label="Рубрики блога" data-elv-filter>
+            <li><button class="section-chip is-active" type="button" data-filter="all">Все статьи</button></li>
+            {% for section in elv_sections('Elv\\PostCategory') %}
+                <li><button class="section-chip" type="button" data-filter="{{ section.code }}">{{ section.title }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4">
+            {% for item in elv_records('Elv\\Post') %}
+                {% partial 'cards/post' item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% partial 'filter-script' %}
+</main>

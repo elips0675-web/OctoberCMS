@@ -7,8 +7,9 @@
  * DOM-сверку с `preview/`, он отвечает на другой вопрос: адрес отвечает,
  * отдаёт непустую страницу и не тянет внешний CSS.
  *
- * 110 адресов инвентаря = 109 страниц (12 корневых + 6 списков + 91 детальная)
- * плюс 404, который проверяется адресом `/non-existent/`.
+ * 111 адресов инвентаря = 110 страниц (13 корневых + 6 списков + 91 детальная)
+ * плюс 404, который проверяется адресом `/non-existent/`. Корневой `/blog/`
+ * добавлен позже источника: блог собран на Tailor, в эталоне его нет.
  *
  *   node tools/check-urls.mjs [--base=http://127.0.0.1:8080]
  *
@@ -51,6 +52,7 @@ const rootPages = [
     '/sitemap/',
     '/subscribe/',
     '/terms/',
+    '/blog/',
 ];
 
 function readInventory() {
@@ -109,8 +111,8 @@ async function main() {
     const { urls, problems: inventoryProblems } = readInventory();
     const failures = [...inventoryProblems];
 
-    if (urls.length !== 109) {
-        failures.push(`адресов ${urls.length}, ожидалось 109 (110-й — 404 по /non-existent/)`);
+    if (urls.length !== 110) {
+        failures.push(`адресов ${urls.length}, ожидалось 110 (111-й — 404 по /non-existent/)`);
     }
 
     let checked = 0;

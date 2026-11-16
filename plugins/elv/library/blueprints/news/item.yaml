@@ -75,7 +75,7 @@ fields:
         type: seo_panel
     seo_title:
         label: 'Заголовок для поиска'
-        commentAbove: 'Если пусто — «Название — Библиотека 2026». До 60 символов.'
+        commentAbove: 'Если пусто — «Название — ELV». До 60 символов.'
         type: text
 
     seo_description:
@@ -107,7 +107,7 @@ fields:
             events: События
             kids: Дети
             science: Наука
-            library: Библиотека
+            library: ELV
 
     source_url:
         label: Ссылка на источник

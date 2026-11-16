@@ -29,6 +29,7 @@ Route::middleware('web')->group(function () {
     Route::get('unsubscribe/{token}', [SubscriberController::class, 'unsubscribe']);
     Route::get('sitemap.xml', [SeoController::class, 'sitemap']);
     Route::get('rss.xml', [SeoController::class, 'rss']);
+    Route::get('blog/rss.xml', [SeoController::class, 'blogRss']);
     Route::get('robots.txt', [SeoController::class, 'robots']);
     Route::get('manifest.webmanifest', [PwaController::class, 'manifest']);
     Route::get('sw.js', [PwaController::class, 'serviceWorker']);

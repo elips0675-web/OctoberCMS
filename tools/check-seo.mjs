@@ -87,6 +87,7 @@ const rootPages = [
     '/sitemap/',
     '/subscribe/',
     '/terms/',
+    '/blog/',
 ];
 
 const redirects = [

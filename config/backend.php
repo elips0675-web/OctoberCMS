@@ -44,8 +44,8 @@ return [
 
     'brand' => [
         'enabled' => true,
-        'app_name' => env('APP_NAME', 'Библиотека 2026'),
-        'tagline' => 'Панель управления библиотекой',
+        'app_name' => env('APP_NAME', 'ELV'),
+        'tagline' => 'Панель управления ELV',
         'menu_mode' => 'icons',
         'color_mode' => 'auto',
         'color_palette' => 'classic',

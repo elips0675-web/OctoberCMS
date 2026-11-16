@@ -32,23 +32,35 @@ class Rss
 
     /**
      * xml собирает готовый документ ленты.
+     *
+     * Параметры с умолчаниями отдают новости (`/rss.xml`); блог вызывает
+     * тот же код со своим разделом и адресом (`/blog/rss.xml`), чтобы формат
+     * ленты не расползался на две копии.
      */
-    public static function xml(string $baseUrl): string
-    {
+    public static function xml(
+        string $baseUrl,
+        string $handle = self::HANDLE,
+        string $prefix = self::PREFIX,
+        string $feedPath = '/rss.xml',
+        string $channelTitle = '',
+        string $channelDescription = ''
+    ): string {
         $base = rtrim($baseUrl, '/');
+        $channelTitle = $channelTitle !== '' ? $channelTitle : Seo::siteName() . ' — новости';
+        $channelDescription = $channelDescription !== '' ? $channelDescription : 'Новости: услуги, встречи и события.';
 
         $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">' . "\n";
         $out .= "  <channel>\n";
-        $out .= '    <title>' . static::escape(Seo::siteName() . ' — новости') . "</title>\n";
-        $out .= '    <link>' . static::escape($base . static::PREFIX) . "</link>\n";
-        $out .= '    <description>' . static::escape('Новости: услуги, встречи и события.') . "</description>\n";
+        $out .= '    <title>' . static::escape($channelTitle) . "</title>\n";
+        $out .= '    <link>' . static::escape($base . $prefix) . "</link>\n";
+        $out .= '    <description>' . static::escape($channelDescription) . "</description>\n";
         $out .= "    <language>ru</language>\n";
         $out .= '    <lastBuildDate>' . date(DATE_RSS) . "</lastBuildDate>\n";
-        $out .= '    <atom:link href="' . static::escape($base . '/rss.xml') . '" rel="self" type="application/rss+xml"/>' . "\n";
+        $out .= '    <atom:link href="' . static::escape($base . $feedPath) . '" rel="self" type="application/rss+xml"/>' . "\n";
 
-        foreach (static::items() as $record) {
-            $link = $base . static::PREFIX . trim((string) $record->slug) . '/';
+        foreach (static::items($handle) as $record) {
+            $link = $base . $prefix . trim((string) $record->slug) . '/';
             $title = trim((string) $record->title);
             $description = trim((string) $record->excerpt);
 
@@ -76,13 +88,13 @@ class Rss
     }
 
     /**
-     * items — опубликованные новости, свежие сверху.
+     * items — опубликованные записи раздела, свежие сверху.
      *
      * @return array<int, \Tailor\Models\EntryRecord>
      */
-    public static function items(): array
+    public static function items(string $handle = self::HANDLE): array
     {
-        $records = Content::records(static::HANDLE);
+        $records = Content::records($handle);
 
         usort($records, function ($left, $right) {
             $order = static::timestamp($right) <=> static::timestamp($left);

@@ -62,7 +62,7 @@ form:
             label: 'Название организации'
             commentAbove: 'Шапка, подвал, <title>, письма и микроразметка.'
             type: text
-            default: 'Ваша организация'
+            default: 'ELV'
             span: left
         brand_tagline:
             label: 'Подпись под названием'
@@ -73,7 +73,7 @@ form:
             label: 'Юридическое наименование'
             commentAbove: 'Для реквизитов и микроразметки.'
             type: text
-            default: 'Ваша организация'
+            default: 'ELV'
             span: left
         brand_kind:
             label: 'Тип организации'

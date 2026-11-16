@@ -1,0 +1,112 @@
+uuid: e7acb90b-b6e0-40a2-9ccb-d379ead069c5
+handle: Elv\Post
+type: stream
+name: Статья
+drafts: true
+
+primaryNavigation:
+    label: Блог
+    icon: octo-icon-pencil
+    order: 90
+
+navigation:
+    label: Все статьи
+    icon: octo-icon-pencil
+    order: 100
+
+fields:
+    sort:
+        label: Сортировка
+        type: number
+        default: 100
+        span: left
+
+    title:
+        label: Заголовок
+        type: text
+        required: true
+        span: right
+
+    slug:
+        label: Адрес (slug)
+        commentAbove: 'Латиница и дефисы. Адрес страницы: /blog/{slug}/'
+        type: text
+        required: true
+
+    published_at:
+        label: Дата публикации
+        type: datepicker
+        mode: datetime
+        span: left
+
+    is_enabled:
+        label: Опубликовано
+        type: checkbox
+        default: true
+        span: right
+
+    category:
+        label: Рубрика
+        type: entries
+        source: Elv\PostCategory
+        maxItems: 1
+        span: left
+
+    is_featured:
+        label: На главной блога
+        commentAbove: 'Статья выводится крупной карточкой первой.'
+        type: checkbox
+        default: false
+        span: right
+
+    image:
+        label: Обложка
+        type: mediafinder
+        mode: image
+
+    excerpt:
+        label: Анонс
+        commentAbove: '1–2 предложения для карточки и для поиска, если описание пустое.'
+        type: textarea
+        size: small
+
+    seo_focus_keyphrase:
+        label: 'Ключевая фраза'
+        commentAbove: 'Одна фраза, под которую пишется статья. Панель ниже проверяет заголовок, описание, адрес и текст.'
+        type: seo_panel
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Блог — ELV». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — анонс. До 160 символов.'
+        type: textarea
+        size: small
+
+    content:
+        label: Текст статьи
+        type: richeditor
+
+    author:
+        label: Автор
+        type: text
+        span: left
+
+    read_time:
+        label: Время чтения
+        type: text
+        span: right
+
+    tags:
+        label: Теги
+        type: taglist
+        options:
+            books: Книги
+            print: Печать
+            gifts: Подарки
+            kids: Детям
+            design: Оформление
+            howto: Инструкции
+            library: Бренд

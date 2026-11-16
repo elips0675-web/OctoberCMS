@@ -25,6 +25,7 @@ class Sitemap
         'services' => 'Elv\Service',
         'events' => 'Elv\Event',
         'collections' => 'Elv\Collection',
+        'blog' => 'Elv\Post',
     ];
 
     /**
@@ -42,6 +43,7 @@ class Sitemap
         '/services/' => ['page' => 'services', 'priority' => '0.8', 'changefreq' => 'weekly'],
         '/events/' => ['page' => 'events', 'priority' => '0.8', 'changefreq' => 'weekly'],
         '/collections/' => ['page' => 'collections', 'priority' => '0.7', 'changefreq' => 'weekly'],
+        '/blog/' => ['page' => 'blog', 'priority' => '0.7', 'changefreq' => 'weekly'],
         '/contacts/' => ['page' => 'contacts', 'priority' => '0.7', 'changefreq' => 'monthly'],
         '/about/' => ['page' => 'about', 'priority' => '0.6', 'changefreq' => 'monthly'],
         '/feedback/' => ['page' => 'feedback', 'priority' => '0.5', 'changefreq' => 'monthly'],

@@ -14,7 +14,7 @@
                 {% if item.event_date %}
                     <span><svg class="i i-20" aria-hidden="true"><use href="#i-clock"/></svg>{{ elv_time(item.event_date) }}</span>
                 {% endif %}
-                <span><svg class="i i-20" aria-hidden="true"><use href="#i-pin"/></svg>{{ item.place ?: 'Библиотека' }}</span>
+                <span><svg class="i i-20" aria-hidden="true"><use href="#i-pin"/></svg>{{ item.place ?: 'ELV' }}</span>
                 {% if item.seats > 0 %}
                     <span><svg class="i i-20" aria-hidden="true"><use href="#i-users"/></svg>{{ item.seats }} мест</span>
                 {% endif %}

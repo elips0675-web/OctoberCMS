@@ -36,6 +36,25 @@ class SeoController
     }
 
     /**
+     * blogRss отдаёт `/blog/rss.xml` — лента статей.
+     */
+    public function blogRss(): Response
+    {
+        return response(
+            Rss::xml(
+                url('/'),
+                'Elv\Post',
+                '/blog/',
+                '/blog/rss.xml',
+                Seo::siteName() . ' — блог',
+                'Статьи о книгах, печати и подарках.'
+            ),
+            200,
+            ['Content-Type' => 'application/rss+xml; charset=UTF-8']
+        );
+    }
+
+    /**
      * robots отдаёт `/robots.txt`.
      */
     public function robots(): Response

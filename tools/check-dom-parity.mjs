@@ -32,6 +32,7 @@ const arg = (name, fallback) => {
 const source = arg('source', 'D:/nlbbootstrap-main/preview').replace(/\/$/, '');
 const base = arg('base', 'http://127.0.0.1:8080').replace(/\/$/, '');
 const compareText = !process.argv.includes('--no-text');
+const compareStructure = process.argv.includes('--structure');
 
 if (!fs.existsSync(source)) {
     console.error(`FAIL: нет эталона ${source} (--source=путь)`);
@@ -143,20 +144,22 @@ async function main() {
             continue;
         }
 
-        if (normalizeBrand(title(reference)) !== normalizeBrand(title(html))) {
-            failures.push(`${url}: title «${title(reference)}» ≠ «${title(html)}»`);
-        }
+        if (!compareStructure) {
+            if (normalizeBrand(title(reference)) !== normalizeBrand(title(html))) {
+                failures.push(`${url}: title «${title(reference)}» ≠ «${title(html)}»`);
+            }
 
-        const referenceH1 = normalizeBrand(headings(reference, 'h1').join(' | '));
-        const liveH1 = normalizeBrand(headings(html, 'h1').join(' | '));
-        if (referenceH1 !== liveH1) {
-            failures.push(`${url}: h1 «${referenceH1}» ≠ «${liveH1}»`);
-        }
+            const referenceH1 = normalizeBrand(headings(reference, 'h1').join(' | '));
+            const liveH1 = normalizeBrand(headings(html, 'h1').join(' | '));
+            if (referenceH1 !== liveH1) {
+                failures.push(`${url}: h1 «${referenceH1}» ≠ «${liveH1}»`);
+            }
 
-        const referenceH2 = normalizeBrand(headings(reference, 'h2').join(' | '));
-        const liveH2 = normalizeBrand(headings(html, 'h2').join(' | '));
-        if (referenceH2 !== liveH2) {
-            failures.push(`${url}: h2 «${referenceH2}» ≠ «${liveH2}»`);
+            const referenceH2 = normalizeBrand(headings(reference, 'h2').join(' | '));
+            const liveH2 = normalizeBrand(headings(html, 'h2').join(' | '));
+            if (referenceH2 !== liveH2) {
+                failures.push(`${url}: h2 «${referenceH2}» ≠ «${liveH2}»`);
+            }
         }
 
         if (articles(reference) !== articles(html)) {
@@ -164,7 +167,7 @@ async function main() {
             continue;
         }
 
-        if (compareText && normalizeBrand(text(reference)) !== normalizeBrand(text(html))) {
+        if (compareText && !compareStructure && normalizeBrand(text(reference)) !== normalizeBrand(text(html))) {
             failures.push(`${url}: текст <main> расходится с эталоном`);
         }
     }
@@ -180,7 +183,7 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`OK: ${pages.length} страниц совпадают с эталоном${compareText ? ' (title, h1, h2, карточки, текст)' : ' (title, h1, h2, карточки)'}`);
+    console.log(`OK: ${pages.length} страниц совпадают с эталоном${compareStructure ? ' (карточки: структура без текстов)' : (compareText ? ' (title, h1, h2, карточки, текст)' : ' (title, h1, h2, карточки)')}`);
 }
 
 main().catch((error) => {
