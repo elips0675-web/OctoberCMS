@@ -21,11 +21,11 @@
 
 Три площадки и их роли (подробно — `Структура трех проектов.txt`):
 
-| Площадка | Роль | Гит |
+| Площадка | Роль | GitHub |
 |---|---|---|
-| `D:\October CMS` | продукт: тема + плагин | `github.com/elips0675-web/OctoberCMS` |
-| `D:\Elv Landing` | витрина Elv Kit: продажа, лицензии, блог, демо на Vercel | `github.com/elips0675-web/elvstudio` |
-| `D:\Elv test` | чистый стенд установки/апгрейда (продукт пока не установлен) | `github.com/elips0675-web/Elvtest` |
+| `D:\October CMS` | продукт: тема + плагин | https://github.com/elips0675-web/OctoberCMS |
+| `D:\Elv Landing` | витрина Elv Kit: продажа, лицензии, блог, демо на Vercel | https://github.com/elips0675-web/elvstudio |
+| `D:\Elv test` | чистый стенд установки/апгрейда (продукт пока не установлен) | https://github.com/elips0675-web/Elvtest |
 
 ## 2. Стек и окружение
 

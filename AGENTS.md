@@ -3,6 +3,10 @@
 Короткий вход для агента. Полная карта — `docs/README.md`, состояние — `Что сделано.txt`,
 открытые пункты — `Что доделать.txt`. Не пересказывай этот файл в ответе.
 
+Репозитории: `D:\October CMS` → https://github.com/elips0675-web/OctoberCMS,
+`D:\Elv Landing` → https://github.com/elips0675-web/elvstudio,
+`D:\Elv test` → https://github.com/elips0675-web/Elvtest.
+
 ## 1. Что это за проект
 
 Сайт (шаблон `elv_bootstrap`) переносится с **1С-Битрикс** на **October CMS

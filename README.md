@@ -1,10 +1,19 @@
 # ELV on October CMS
 
-Сайт библиотеки «Библиотека 2026» (Минск), перенесённый с **1С-Битрикс** на
-**October CMS (Laravel + Tailor)**.
+Универсальный шаблон на **October CMS (Laravel + Tailor)**: тема `elv` и плагин
+`Elv\Library`. Разметка и контент перенесены с **1С-Битрикс**; демо-наполнение —
+библиотека, бренд и тексты универсальные (`ELV`, Stage 36).
 
 Источник переезда — `D:\nlbbootstrap-main` (только чтение): шаблон `elv_bootstrap`,
 110 статических страниц, 9 инфоблоков, 74 свойства, 91 элемент, BM25-поиск, чат, PWA.
+
+## Репозитории
+
+| Локально | GitHub |
+|---|---|
+| `D:\October CMS` | https://github.com/elips0675-web/OctoberCMS |
+| `D:\Elv Landing` | https://github.com/elips0675-web/elvstudio |
+| `D:\Elv test` | https://github.com/elips0675-web/Elvtest |
 
 ## Статус
 

@@ -14,6 +14,10 @@
 | `../CHANGELOG.md` | версии сайта |
 | `../test/Для анализа.txt` | срез для внешнего AI-аудита (DeepSeek/Qwen): стек, карта кода, гейты, бэклог; `../test/README.md` — как пользоваться |
 
+Репозитории: `D:\October CMS` → https://github.com/elips0675-web/OctoberCMS,
+`D:\Elv Landing` → https://github.com/elips0675-web/elvstudio,
+`D:\Elv test` → https://github.com/elips0675-web/Elvtest.
+
 ### Домен: контент и данные
 
 | Файл | Роль |
