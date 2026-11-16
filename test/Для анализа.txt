@@ -1,0 +1,206 @@
+# D:\October CMS — продукт «ELV Library»: срез для внешнего анализа
+
+> **Что это за файл.** Самодостаточный срез проекта для AI-аудита в браузере
+> (DeepSeek, Qwen и т. п.): что за проект, на чём сделан, что куплено/взято
+> из ядра, где кастомный код, чем проверено, что осталось. Числа и пути
+> перепроверены на HEAD 16.11.2026 (Stage 37, коммит `c5f7e01`) командами,
+> которые указаны в разделе «Как проверить».
+>
+> **Как пользоваться.** Загрузить этот файл в чат целиком и задать вопросы
+> из раздела «Что смотреть аудитору». Кода в файле нет — только карта и факты;
+> для деталей просить конкретный файл по пути из карты.
+>
+> Первоисточники: `AGENTS.md` (правила), `README.md` (запуск), `Что сделано.txt`
+> (журнал), `Что доделать.txt` (бэклог), `docs/README.md` (карта документов).
+
+## 1. Что это
+
+`D:\October CMS` — **продукт на продажу**: универсальная тема `elv` и плагин
+`Elv\Library` для October CMS 4.x. Демо-наполнение — библиотека (книги, события,
+услуги, печать, новости, блог), но тексты и бренд универсальные (Stage 36).
+
+Три площадки и их роли (подробно — `Структура трех проектов.txt`):
+
+| Площадка | Роль | Гит |
+|---|---|---|
+| `D:\October CMS` | продукт: тема + плагин | `github.com/elips0675-web/OctoberCMS` |
+| `D:\Elv Landing` | витрина Elv Kit: продажа, лицензии, блог, демо на Vercel | `github.com/elips0675-web/elvstudio` |
+| `D:\Elv test` | чистый стенд установки/апгрейда (продукт пока не установлен) | `github.com/elips0675-web/Elvtest` |
+
+## 2. Стек и окружение
+
+| Что | Значение |
+|---|---|
+| CMS | October CMS **4.4.13** (`php artisan october:about`; `composer.lock`: `october/rain v4.4.13`) |
+| Framework | Laravel **12.71.0** |
+| PHP | **8.3.30** (`C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe`) |
+| БД | MySQL **8.4.3**, база `elv_october`, `127.0.0.1`, пользователь `root` без пароля (локально) |
+| Адрес | `http://localhost:8080`, админка `/admin` |
+| Тема | `elv` (`ACTIVE_THEME=elv`) |
+| Локаль | `ru` |
+
+Запуск: `php artisan serve --host=127.0.0.1 --port=8080`.
+Пароль админки в репозитории **не хранится** (`.local/admin-credentials.md`
+исключён); суперпользователь `admin`, сброс — `php artisan october:passwd admin`.
+
+## 3. Что откуда: ядро, магазин, кастом
+
+**Магазин October CMS — 0 позиций.** Плагинов и тем из Marketplace не
+установлено: в `plugins/` только `elv` (плюс пустой `plugins/october`),
+в `themes/` только `elv`. Лицензионного ключа/аккаунта нет (пункт M3 бэклога),
+поэтому установка из Marketplace недоступна. RainLab.Blog рассматривался
+и отклонён: своя модель новостей уже есть (`docs/plugins.md:82`); сторонние
+плагины допускаются только из списка `docs/plugins.md` (`AGENTS.md:101`).
+
+**Ядро из composer (бесплатно, не правится):** `october/rain` + модули
+`modules/{backend,cms,dashboard,editor,media,system,tailor}`. Контент и блог
+сделаны на встроенном **Tailor** (blueprints), а не на покупном плагине.
+
+**Кастом (всё, что продаётся):**
+
+| Путь | Объём | Роль |
+|---|---|---|
+| `plugins/elv/library` | 89 PHP-файлов | плагин: blueprints, классы, админка, миграции, консоль, тесты |
+| `themes/elv` | 28 страниц `.htm` + assets | тема: layouts, pages, partials, CSS/JS, PWA, картинки |
+| `tools/*.mjs` | 13+ гейтов | проверки URL/SEO/DOM/заголовков/PWA/сирот/API/упаковки |
+
+Третьи библиотеки — внутри темы, не плагинами: Bootstrap 5.3
+(`themes/elv/assets/vendor/bootstrap.min.css`, `bootstrap.bundle.min.js`),
+иконки инлайном, внешних CDN нет. Ядро October не патчится.
+
+## 4. Карта кастомного кода
+
+Плагин `plugins/elv/library`:
+
+- `Plugin.php` — регистрация, `pluginDetails()` (`:15-17`), хуки, компоненты;
+- `blueprints/` — **9 сущностей Tailor**: news, events, books, collections,
+  services, printing, posts, page, blocks;
+- `classes/` — `Content` (разделы и ленты), `PageBuilder` (конструктор
+  страниц), `Seo`, `SeoAnalyzer`, `Sitemap`, `Rss`, `Brand`, `BookingService`,
+  `Pwa`, `Health`, `Labels`, `Media`, `FormFields`, `ContentFields/*`,
+  `Http/*`, `Mail/*`;
+- `controllers/` — админка: bookings, orders, requests, subscribers, redirects;
+- `models/` — Eloquent: booking, order, request, subscriber, redirect;
+- `updates/` — миграции (forward-only) и `version.yaml`;
+- `console/Import.php` — идемпотентный импорт источника по `xml_id`;
+  каталог обязателен: `--source` или `ELV_IMPORT_SOURCE`, иначе exit 1
+  (`:63-78`, `:137-145`);
+- `tests/` — PHPUnit: **305 тестов, 1086 проверок**;
+- `formwidgets/seopanel` — панель SEO в админке.
+
+Тема `themes/elv`:
+
+- `theme.yaml` — настройки темы (19 полей `brand_*`), `authorCode: elv` (`:3`),
+  SEO-поля, `version.yaml` `1.0.0`; `composer.json` `elv/elv-theme`;
+- `layouts/default.htm` — общий макет (шапка, подвал, meta, JSON-LD);
+- `pages/` — 28 страниц: главная, каталоги, карточки, новости, блог, события,
+  услуги, печать, бронь, поиск, 404 и т. д. (инвентарь — `docs/content.md`);
+- `partials/` — шапка, подвал, карточки, блоки, формы, крошки;
+- `assets/{css,js,images,pwa}` — стили, скрипты, картинки, manifest и `sw.js`.
+
+Упаковка (Stage 37): тема опознаётся ядром как продукт `elv.elv` версии
+`1.0.0` (`ThemeManager::getInstalled()`), `LICENSE.md` в теме и плагине,
+`screenshot.png` 1200×630, отсутствие абсолютных путей проверяет
+`node tools/check-package.mjs`.
+
+## 5. Контент и данные
+
+- Демо-контент: **91 запись и 12 разделов**, импорт идемпотентен по `xml_id`
+  (`elv-news-001`, `elv-book-001`...), повторный прогон — 0 новых
+  (`docs/db.md:260-261`).
+- Таблицы Tailor называются по UUID blueprint: `xc_<uuid без дефисов>`,
+  а не по хендлу (`docs/db.md`).
+- Слоты услуг: гонка закрывается `UNIQUE`, а не проверкой
+  (пункт P1-20 бэклога — ограничение БД принято, серверная проверка нужна).
+- 110 адресов сайта — `docs/content.md`, они же в `tools/check-urls.mjs`.
+
+## 6. Тесты и гейты (команды и факт)
+
+```powershell
+$php = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe'
+& $php vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml   # 305 тестов, 1086 проверок
+& $php artisan october:migrate                             # 0 ошибок
+node tools/check-urls.mjs                                  # 110 страниц 200, /non-existent/ 404
+node tools/check-dom-parity.mjs --structure                # 110 страниц: структура, без текстов
+node tools/check-seo.mjs                                   # robots, sitemap 107 адресов, 301, JSON-LD
+node tools/check-headers.mjs                               # 12 страниц, CSP nonce, админка без CSP
+node tools/check-pwa.mjs                                   # manifest, sw.js, офлайн, регистрация
+node tools/check-orphans.mjs                               # 106 адресов, у каждого входящая ссылка
+node tools/check-api.mjs                                   # 6 разделов, 91 запись, контракт, 404/422
+node tools/check-health.mjs                                # /health, db/cache/queue
+node tools/check-admin-brand.mjs                           # брендинг админки
+node tools/check-css-budget.mjs                            # бюджет CSS
+node tools/purge-css.mjs --check                           # bootstrap.min.css = сборка
+node tools/check-package.mjs                               # упаковка (Stage 37)
+node tools/check-clean-tree.mjs                            # дерево чистое
+```
+
+Живые гейты требуют запущенный сервер на `:8080`.
+
+## 7. Что проверено на HEAD (16.11.2026, Stage 37)
+
+- Тесты: 305/305 зелёные, 1086 проверок, 0 падений (~4 минуты).
+- Все живые гейты выше — exit 0; `check-package` дополнительно проверен
+  обратным тестом: убрали `LICENSE.md` → FAIL, вернули → OK.
+- `composer validate` — зелёный у темы и у плагина.
+- `git status` чистый, HEAD запушен в `origin/main`.
+
+## 8. Что осталось доделать (кратко)
+
+Полный список — `Что доделать.txt`: **57 пунктов** (6 P0, 20 P1, 31 P2).
+
+- **P0 до публикации (6):** хостинг/домен/SSL; демо-контакты, соцсети,
+  реквизиты; права на демо-изображения; ключ October для продакшена и
+  Marketplace; бэкапы + проверка восстановления на проде; CI/CD + staging.
+- **P1 (20):** доступность на живом сайте; подсказка «часть слотов занята»;
+  фото у 59 из 91 позиции; ИИ-помощник и ИИ-чат; REST брони; гонка слотов
+  через `UNIQUE`; одна роль superuser; английские подписи дашборда; поиск
+  BM25; Web Push; текст слотов; аудит версии October; отзывы `elv_reviews`;
+  ошибки брони; 2FA и `BACKEND_URI`; валюта; поиск по библиотеке; nginx.
+- **Упаковка:** `elv:library:package` (ZIP тема+плагин), страница «Установка»
+  в админке (образец — витрина `plugins/elv/kit/controllers/Install.php:61,68`),
+  демо-данные, прогон «чистая установка → демо → гейты → апгрейд» на стенде.
+- **Контент:** 5–6 демо-статей блога (ждут текстов владельца).
+- **SEO:** перенести из витрины JSON-LD `@graph` (Organization, WebSite,
+  BlogPosting, BreadcrumbList), видимые крошки, canonical/OG, `robots`
+  с Clean-param, `llms.txt` — только после сверки с `classes/Seo.php`.
+
+## 9. Известные ограничения (не баги)
+
+- Marketplace недоступен без ключа/аккаунта October; ядро обновляется только
+  composer-ом, не через админку.
+- `screenshot.png` 1,9 МБ — лимит карточки Marketplace не проверялся.
+- Демо-изображения — плейсхолдеры, права не зафиксированы (P0-7).
+- Пароль админки и `.env` в репозитории отсутствуют — это норма, не дефект.
+- Один сервер, in-memory кэш/лимитеры: горизонтального масштабирования нет.
+
+## 10. Что смотреть аудитору (вопросы для DeepSeek/Qwen)
+
+1. Безопасность: где в публичных маршрутах возможны IDOR, XSS, SSRF,
+   инъекции; как устроены формы брони/заказа/подписки.
+2. SEO: достаточно ли JSON-LD и canonical; что даст перенос `@graph`
+   из витрины; нет ли конфликтов с `Seo.php`.
+3. Производительность: N+1 в лентах Tailor, вес CSS/HTML, кэш.
+4. Упаковка: что ещё нужно в ZIP, чтобы покупатель поставил продукт
+   без разработчика (миграции, демо, установка, обновления).
+5. Тесты: 305 тестов — какое покрытие критичных путей (оплата, бронь,
+   роли), где фиктивные проверки.
+6. Данные: forward-only миграции, `UNIQUE` слотов, идемпотентность импорта.
+7. Доступность и UX: подписи форм, клавиатура, контраст.
+8. Что из P1 действительно блокирует продажу, а что можно после релиза.
+
+## 11. Первоисточники (что читать дальше)
+
+| Файл | Зачем |
+|---|---|
+| `AGENTS.md` | правила работы, гейты, границы |
+| `README.md` | запуск, доступы, состав поставки |
+| `project-context.md` | стек, решения, структура |
+| `docs/architecture.md` | устройство плагина и Tailor |
+| `docs/db.md` | схема, импорт, `UNIQUE` |
+| `docs/content.md` | 110 адресов и разделы |
+| `docs/monetization.md` | лицензия, упаковка, брендинг |
+| `docs/plugins.md` | лицензия October, что ставим и что нет |
+| `docs/qa-checklist.md` | что проверять перед релизом |
+| `Что сделано.txt` | журнал этапов (Stage 37 — упаковка) |
+| `Что доделать.txt` | открытый бэклог (57 пунктов) |
