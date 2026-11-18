@@ -15,6 +15,16 @@
 | `D:\Elv Landing` | https://github.com/elips0675-web/elvstudio |
 | `D:\Elv test` | https://github.com/elips0675-web/Elvtest |
 
+## Демо
+
+**https://elvstudio.vercel.app** — живой сайт на October CMS: витрина набора ELV
+Kit (запись, заказы, блог, поиск). Открывается без входа и регистрации,
+проверено 18.11.2026: HTTP 200, заголовков авторизации нет.
+
+Шаблон `elv` из этого репозитория — PHP 8.3 + MySQL: на Vercel он не
+разворачивается. По ссылке — статическая сборка витрины (`D:\Elv Landing`,
+тема `elv-studio` + плагин `Elv.Kit`), а не тема `elv`.
+
 ## Статус
 
 | Этап | Состояние |
