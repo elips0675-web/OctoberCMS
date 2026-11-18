@@ -1170,3 +1170,21 @@ RU» в карточке товара; бренд и контакты — из �
 Приёмка: `grep -ri "библиотек"` по `themes/elv` и `plugins/elv/site` не находит
 вхождений (кроме `preview/`, `tests/`, демо-контента и журналов); смена бренда в
 одном месте меняет шапку, подвал, письма, PWA и JSON-LD; тесты плагина зелёные.
+
+### P2-41. `GET /order/` и `GET /booking/` — 404, страниц-приёмников нет
+
+Формы отправляются на эти адреса: `themes/elv/pages/books-detail.htm:63`
+(`action="/order/"`) и `themes/elv/pages/services-detail.htm:147`
+(`action="/booking/"`), а в `plugins/elv/site/routes.php:20-25` объявлены только
+`POST order` и `POST booking`. Проверено 18.11.2026 на живом сервере:
+`GET /order/` → 404, `GET /booking/` → 404, `POST /order/` и `POST /booking/` →
+302 (без JS форма работает, уходит редиректом). Открытая в новой вкладке или
+найденная роботом ссылка ведёт на 404.
+
+Нужно: страницы-приёмники `/order/` и `/booking/` (или `GET`-маршруты) с
+`<noscript>`-сообщением и ссылкой на каталог — тогда `action` совпадает с
+существующим адресом.
+
+Приёмка: `curl -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/order/` →
+200, `node tools/check-urls.mjs` — 110×200, `check-api`/`check-orphans` без
+новых находок, тесты `FormController` не меняются.

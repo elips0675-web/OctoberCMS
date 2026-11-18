@@ -17,13 +17,23 @@
 
 ## Демо
 
-**https://elvstudio.vercel.app** — живой сайт на October CMS: витрина набора ELV
-Kit (запись, заказы, блог, поиск). Открывается без входа и регистрации,
-проверено 18.11.2026: HTTP 200, заголовков авторизации нет.
+Локально шаблон работает так: `php artisan serve --port=8080` →
+**http://127.0.0.1:8080/** (PHP 8.3 + MySQL, October 4.4.13, БД `elv_october`).
+Публичного PHP-хостинга у шаблона нет.
 
-Шаблон `elv` из этого репозитория — PHP 8.3 + MySQL: на Vercel он не
-разворачивается. По ссылке — статическая сборка витрины (`D:\Elv Landing`,
-тема `elv-studio` + плагин `Elv.Kit`), а не тема `elv`.
+Для показа собран статический снимок — `demo-static/`: 110 страниц и 404,
+`sitemap.xml`, `robots.txt`, `rss.xml`, `blog/rss.xml`, `manifest.webmanifest`,
+`sw.js`, `offline.html`. Сборка — `php tools/export-static.php --origin=https://<домен>`
+с поднятого сервера, проверка — `node tools/check-static-demo.mjs --origin=https://<домен>`.
+Формы, брони и заказы в снимке отключены плашкой и скриптом.
+
+`vercel.json` уже задаёт `outputDirectory: demo-static`, поэтому на Vercel
+достаточно импортировать этот репозиторий. До импорта публичной ссылки у
+шаблона **нет**: `https://octobercms.vercel.app` ещё не развёрнут
+(18.11.2026 — 404), а поле Website в GitHub указывает на витрину.
+
+Витрина Elv Kit на October CMS (тема `elv-studio`) — https://elvstudio.vercel.app,
+открывается без входа и регистрации.
 
 ## Статус
 

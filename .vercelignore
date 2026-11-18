@@ -1,0 +1,12 @@
+/vendor
+/node_modules
+/modules
+/storage
+/bootstrap/cache
+/test
+/tests
+/docs
+/backup
+/.git
+/.github
+/.devcontainer

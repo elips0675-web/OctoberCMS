@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, follow">
+    <meta http-equiv="refresh" content="0; url=/auth/">
+    <title>Личный кабинет — Ваша организация</title>
+    <link rel="icon" href="/themes/elv/assets/icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/themes/elv/assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="/themes/elv/assets/icons/apple-touch-icon.png" sizes="180x180">
+    <link rel="canonical" href="https://octobercms.vercel.app/auth">
+</head>
+<body><div id="elv-demo-bar" role="status">Статическая демо-версия шаблона ELV на October CMS: формы, брони и заказы отключены. Рабочая версия — на PHP-хостинге.</div>
+<h1>Личный кабинет</h1>
+<p>Страница доступна после входа. Если переадресация не сработала,
+    откройте <a href="/auth/">вход в личный кабинет</a>.</p>
+<style>#elv-demo-bar{position:relative;z-index:80;background:#0b1220;color:#dfe6f5;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:9px 16px;text-align:center}#elv-static-note{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);background:#0b1220;color:#fff;padding:12px 18px;border-radius:12px;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:200;max-width:90vw;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35)}#elv-static-note.is-visible{opacity:1;transform:translateX(-50%) translateY(0)}</style><script>
+(function () {
+    window.ELV_STATIC_DEMO = true;
+
+    var note = function (text) {
+        var box = document.getElementById('elv-static-note');
+
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'elv-static-note';
+            box.setAttribute('role', 'status');
+            document.body.appendChild(box);
+        }
+
+        box.textContent = text;
+        box.classList.add('is-visible');
+        window.clearTimeout(box.elvTimer);
+        box.elvTimer = window.setTimeout(function () {
+            box.classList.remove('is-visible');
+        }, 6000);
+    };
+
+    document.addEventListener('submit', function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        note('Формы отключены в статической демо-версии. Рабочая версия — на PHP-хостинге.');
+    }, true);
+
+    document.addEventListener('click', function (event) {
+        var node = event.target instanceof Element ? event.target : null;
+
+        if (!node) {
+            return;
+        }
+
+        if (node.closest('[data-chat-open]')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            note('Консультант доступен в полной версии на PHP-хостинге.');
+            return;
+        }
+
+        if (node.closest('a[href*="/subscribe/confirm/"], a[href*="/unsubscribe/"]')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            note('Подтверждение подписки работает только в полной версии.');
+        }
+    }, true);
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (items) {
+            items.forEach(function (item) { item.unregister(); });
+        });
+    }
+})();
+</script></body>
+</html>

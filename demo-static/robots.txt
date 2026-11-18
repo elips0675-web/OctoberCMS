@@ -1,0 +1,19 @@
+# robots.txt — Ваша организация
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /search/
+Disallow: /auth/
+Disallow: /personal/
+Disallow: /bitrix/
+Disallow: /db/
+Disallow: /tools/
+Disallow: /*?section=
+Disallow: /*?past=
+Disallow: /*?PAGEN
+
+# Яндекс: параметры фильтров не создают новых страниц
+Clean-param: section&past&PAGEN_1 /
+
+Sitemap: https://octobercms.vercel.app/sitemap.xml

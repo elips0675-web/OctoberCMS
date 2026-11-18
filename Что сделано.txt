@@ -7,6 +7,41 @@
 
 ---
 
+(Stage 44 — 18.11.2026) — **Статическая демо-копия шаблона для Vercel.**
+
+- `tools/export-static.php` — снимает живой сайт (`http://127.0.0.1:8080`) в
+  `demo-static/`: 110 страниц + `404.html`, плюс `sitemap.xml`, `robots.txt`,
+  `rss.xml`, `blog/rss.xml`, `manifest.webmanifest`, `sw.js`, `offline.html`.
+  Инвентарь — `sitemap.xml` живого сайта (107 адресов) ∪ корневые адреса из
+  `tools/check-urls.mjs:36-56`; `/admin` и `/api/` пропускаются.
+- В каждой странице: плашка `#elv-demo-bar`, скрипт `ELV_STATIC_DEMO`
+  (перехват `submit`, отключение `serviceWorker`), стабильные `nonce`/`csrf`
+  (`nonce="static-demo"`), canonical и `og:url` — на `--origin`.
+- Инлайн CSS вынесен: блоки `data-elv-css="bootstrap"` (52 867 байт) и
+  `"styles"` (57 795 байт) совпадают на всех страницах, поэтому лежат в
+  `themes/elv/assets/css/static-*.css`, а в HTML — `<link>`. Экономия 11.9 МБ:
+  было 25.1 МБ, стало **13.6 МБ** (HTML 4.6 + ассеты темы 8.8).
+- `vercel.json` — `outputDirectory: demo-static`, `trailingSlash`, заголовки
+  (HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`)
+  и годовой кэш для `/themes/`. `.vercelignore` не отправляет на Vercel
+  `vendor/`, `modules/`, `storage/`, `test/`, `tests/`, `docs/`, `.github/`.
+- Гейт `tools/check-static-demo.mjs`: 113 страниц, 5 913 внутренних ссылок,
+  1 104 ассета, 220 ссылок на вынесенный CSS — **OK**; проверяет плашку,
+  скрипт, отсутствие `127.0.0.1`/`localhost:8080`, наличие файла у каждой
+  ссылки, canonical на `--origin`, `Sitemap:` в `robots.txt`, 100+ адресов в
+  `sitemap.xml`. Страницы `offline.html` (корень и `assets/pwa/`) исключены из
+  проверки плашки — это офлайн-заглушка PWA.
+- Живая проверка: главная и карточка книги на `http://127.0.0.1:8092` — стили
+  применились, битых картинок нет, ошибок в консоли нет, `submit` формы даёт
+  «Формы отключены в статической демо-версии».
+- Не сделано: деплой на Vercel — ни `vercel` CLI, ни токена в системе нет
+  (`auth.json` отсутствует), импорт репозитория делает владелец. Поэтому
+  `https://octobercms.vercel.app` пока 404, и публичной ссылки у шаблона нет;
+  поле Website в GitHub оставлено на витрине.
+- Побочная находка: `GET /order/` и `GET /booking/` отдают 404 (в
+  `plugins/elv/site/routes.php:20-25` только POST), POST — 302. Записано в
+  бэклог как P2-41.
+
 (Stage 43.1 — 18.11.2026) — **Ссылка на демо в `README.md`.**
 
 - В `README.md` добавлен раздел «Демо» со ссылкой

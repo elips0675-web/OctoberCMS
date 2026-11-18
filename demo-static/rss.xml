@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ваша организация — новости</title>
+    <link>https://octobercms.vercel.app/news/</link>
+    <description>Новости: услуги, встречи и события.</description>
+    <language>ru</language>
+    <lastBuildDate>Wed, 18 Nov 2026 15:28:05 +0000</lastBuildDate>
+    <atom:link href="https://octobercms.vercel.app/rss.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>ELV открыл цифровой зал</title>
+      <link>https://octobercms.vercel.app/news/cifrovoy-chitalnyy-zal/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/cifrovoy-chitalnyy-zal/</guid>
+      <pubDate>Mon, 02 Nov 2026 10:00:00 +0000</pubDate>
+      <description>Двадцать рабочих мест с доступом к лицензионным базам, сканером и тихим Wi-Fi — на третьем этаже, рядом с общим залом.</description>
+    </item>
+    <item>
+      <title>Новые поступления: 250 книг в ноябре</title>
+      <link>https://octobercms.vercel.app/news/novye-postupleniya-noyabr/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/novye-postupleniya-noyabr/</guid>
+      <pubDate>Fri, 30 Oct 2026 09:30:00 +0000</pubDate>
+      <description>Современная проза, научпоп, книги по истории Беларуси и большая детская полка — список поступлений уже в каталоге.</description>
+    </item>
+    <item>
+      <title>Лекторий «Читаем вместе»: расписание на декабрь</title>
+      <link>https://octobercms.vercel.app/news/lektoriy-chitaem-vmeste-dekabr/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/lektoriy-chitaem-vmeste-dekabr/</guid>
+      <pubDate>Wed, 28 Oct 2026 12:00:00 +0000</pubDate>
+      <description>Четыре встречи о современной прозе, поэзии и нон-фикшене. Вход свободный, регистрация — на странице события.</description>
+    </item>
+    <item>
+      <title>Как записаться за пять минут</title>
+      <link>https://octobercms.vercel.app/news/kak-zapisatsya-v-biblioteku/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/kak-zapisatsya-v-biblioteku/</guid>
+      <pubDate>Sun, 25 Oct 2026 08:00:00 +0000</pubDate>
+      <description>Паспорт, номер телефона и адрес электронной почты — всё, что нужно для карты посетителя.</description>
+    </item>
+    <item>
+      <title>Коворкинг на втором этаже: новые места</title>
+      <link>https://octobercms.vercel.app/news/kovorking-novye-mesta/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/kovorking-novye-mesta/</guid>
+      <pubDate>Wed, 21 Oct 2026 14:15:00 +0000</pubDate>
+      <description>Двенадцать новых рабочих мест, розетки у каждого стола, переговорная на четыре человека и тихая зона.</description>
+    </item>
+    <item>
+      <title>Подкаст «Между строк»: вышел второй сезон</title>
+      <link>https://octobercms.vercel.app/news/podkast-mezhdu-strok-sezon-2/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/podkast-mezhdu-strok-sezon-2/</guid>
+      <pubDate>Sun, 18 Oct 2026 11:00:00 +0000</pubDate>
+      <description>Шесть разговоров с писателями, переводчиками и авторами — по одному выпуску каждые две недели.</description>
+    </item>
+    <item>
+      <title>Детская мастерская: набор в кружок</title>
+      <link>https://octobercms.vercel.app/news/detskaya-masterskaya-nabor/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/detskaya-masterskaya-nabor/</guid>
+      <pubDate>Wed, 14 Oct 2026 10:00:00 +0000</pubDate>
+      <description>Для детей 7–10 лет: читаем вслух, пересказываем и делаем самодельные книжки. Занятия по средам.</description>
+    </item>
+    <item>
+      <title>Редкие издания оцифрованы</title>
+      <link>https://octobercms.vercel.app/news/redkie-izdaniya-ocifrovany/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/redkie-izdaniya-ocifrovany/</guid>
+      <pubDate>Sat, 10 Oct 2026 15:40:00 +0000</pubDate>
+      <description>Сорок книг XIX века из коллекции редких изданий доступны в цифровом виде — с постраничным просмотром.</description>
+    </item>
+    <item>
+      <title>Ночь открытых дверей: как это было</title>
+      <link>https://octobercms.vercel.app/news/biblionoch-2026-itogi/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/biblionoch-2026-itogi/</guid>
+      <pubDate>Mon, 05 Oct 2026 09:00:00 +0000</pubDate>
+      <description>Восемь часов, 1 200 гостей, 14 площадок и один книжный обмен, который не закрывался до полуночи.</description>
+    </item>
+    <item>
+      <title>Новый сервис: бронирование переговорных</title>
+      <link>https://octobercms.vercel.app/news/bronirovanie-peregovornyh/</link>
+      <guid isPermaLink="true">https://octobercms.vercel.app/news/bronirovanie-peregovornyh/</guid>
+      <pubDate>Wed, 30 Sep 2026 13:20:00 +0000</pubDate>
+      <description>Две переговорные комнаты можно забронировать онлайн на час или два — бесплатно для посетителей.</description>
+    </item>
+  </channel>
+</rss>
