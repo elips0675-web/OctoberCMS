@@ -2,7 +2,7 @@
 
 Проверено 10.11.2026 на этой машине: October **v4.4.13**, Laravel **12.71.0**,
 PHP **8.3.30**, MySQL **8.4.3**, БД `elv_october` — 44 таблицы после установки,
-95 после плагина `elv/library` и `php artisan tailor:migrate`.
+95 после плагина `elv/site` и `php artisan tailor:migrate`.
 
 ## 1. Что нужно
 
@@ -226,3 +226,29 @@ php artisan october:passwd admin
 
 Каталог — целиком, база — `DROP DATABASE elv_october`. Источник
 `D:\nlbbootstrap-main` не затрагивается.
+
+## 11. Обновление с 2.1.x (плагин `Elv\Library` → `Elv\Site`)
+
+Версия **2.2.0** переименовала плагин: папка `plugins/elv/library` стала
+`plugins/elv/site`, namespace `Elv\Library` — `Elv\Site`, права
+`elv.library.*` — `elv.site.*`, адреса админки — `/admin/elv/site/...`.
+Схема БД, таблицы `elv_*`, Twig-функции `elv_*` и сигнатуры `elv:import` /
+`elv:slots-generate` / `elv:health-report` не менялись.
+
+1. Снимок БД до обновления (`mysqldump`, см. §2).
+2. Удалить каталог `plugins/elv/library`, распаковать `plugins/elv/site` из
+   архива 2.2.0.
+3. `php artisan cache:clear` и `php artisan october:migrate` — October увидит
+   новый код плагина и прогонит `updates/` до 2.2.0. Миграции создания таблиц
+   обёрнуты в `Schema::hasTable`, поэтому на существующей базе это no-op:
+   данные заявок, броней, заказов, слотов и подписчиков остаются.
+4. Проверить `/`, `/admin`, списки заявок по `/admin/elv/site/requests` и
+   остальным разделам меню «Контент».
+5. Группам бэкенда переназначить права: ключи `elv.library.*` заменены на
+   `elv.site.*` (у superuser права есть всегда, у остальных ролей — нет).
+6. В `system_plugin_versions` останется унаследованная строка `Elv.Library` —
+   это запись истории, удалять её не нужно.
+
+Откат кода — вернуть каталог `plugins/elv/library` и выполнить
+`php artisan cache:clear`: схема БД версией 2.2.0 не менялась. Снимок из шага 1
+нужен на случай ошибки в миграциях (они forward-only).

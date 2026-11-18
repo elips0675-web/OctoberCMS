@@ -2,9 +2,10 @@
 
 ## 1. Что это
 
-Сайт библиотеки (Библиотека 2026, Минск) переносится с 1С-Битрикс на **October CMS
-(Laravel + Tailor)**. Переносится не дизайн, а платформа: разметка, тексты, URL и CSS
-остаются 1:1 с источником `D:\nlbbootstrap-main`.
+Универсальный шаблон для October CMS (тема `elv` + плагин `Elv\Site`)
+перенесён с 1С-Битрикс. Перенесена не только платформа: разметка, тексты и URL
+сохранены 1:1 с источником `D:\nlbbootstrap-main`; демо-наполнение — библиотека,
+бренд и тексты универсальные (`ELV`, Stage 36).
 
 Источник правды по внешнему виду и контенту на время переезда — репозиторий источника:
 `preview/**` (110 страниц), `local/templates/elv_bootstrap/styles.css` (81 179 байт),
@@ -17,24 +18,24 @@
 | CMS | October CMS **4.4.13**, Laravel 12.71.0 | `composer.lock` в git |
 | Язык | PHP 8.3.30 (Laragon, ZTS) | `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe` |
 | Фреймворк | Laravel 12.71.0 (внутри October): Eloquent, миграции, очереди, планировщик | `vendor/laravel` |
-| Контент | Tailor blueprints (6 сущностей) | `plugins/elv/library/blueprints/` |
-| Заявки | Eloquent-модели + миграции (3 сущности) | `plugins/elv/library/models/`, `updates/` |
+| Контент | Tailor blueprints (6 сущностей) | `plugins/elv/site/blueprints/` |
+| Заявки | Eloquent-модели + миграции (3 сущности) | `plugins/elv/site/models/`, `updates/` |
 | CSS-фреймворк | Bootstrap 5.3.3, урезанный `tools/purge-css.mjs`, инлайн | layout темы |
 | Свой CSS | `styles.css` без переписывания + минификация на PHP | тема |
 | JS | `bootstrap.bundle.min.js` + `script.js` как есть | тема |
-| Поиск | свой Okapi BM25, индекс в БД, команда переиндексации | `plugins/elv/library/classes/Search` |
+| Поиск | свой Okapi BM25, индекс в БД, команда переиндексации | `plugins/elv/site/classes/Search` |
 | БД | MySQL 8.4.3, `127.0.0.1:3306`, БД `elv_october` | `.env` |
 | Письма | `Mail` + `ShouldQueue`; SMTP у владельца нет → `MAIL_MAILER=log` | `.env` |
 | PWA | `manifest.webmanifest`, `sw.js`, `offline.html` — файлы в `themes/elv/assets/pwa/`, маршруты с корня | `classes/Pwa.php`, `classes/Http/PwaController.php` |
 | Сборка | `tools/*` (purge-css, build-image-variants, гейты) | `tools/` |
-| Тесты | PHPUnit + `RefreshDatabase` | `plugins/elv/library/tests/` |
+| Тесты | PHPUnit + `RefreshDatabase` | `plugins/elv/site/tests/` |
 
 Заглушка ядра `db/tests/stub/bitrix.php` (31 750 байт) **выбрасывается**: тесты пишутся
 на PHPUnit с реальной БД, данные — фабрики.
 
 ## 3. Принятые решения (не пересматривать)
 
-1. **Один плагин** `elv/library`, vendor `elv`. Никаких демо-плагинов и RainLab.Blog.
+1. **Один плагин** `elv/site`, vendor `elv`. Никаких демо-плагинов и RainLab.Blog.
 2. **Tailor — только контент**: `news`, `events`, `collections`, `books`, `services`,
    `printing`. Read-mostly сущности правятся blueprints-полями в админке.
 3. **Заявки — Eloquent**: `requests`, `bookings`, `orders` + миграции. Причина: транзакции,
@@ -65,7 +66,7 @@
 ## 4. Структура каталога (цель)
 
 ```
-plugins/elv/library/
+plugins/elv/site/
   Plugin.php
   blueprints/            # 6 контентных сущностей (Tailor)
   models/                # Request, Booking, Order, Slot, Subscriber, ...
@@ -136,7 +137,7 @@ docs/                    # документация (карта — docs/README.
 ## 8. Ограничения и что ещё не проверено
 
 - **October установлен, контент в БД, сайт собран.** v4.4.13, Laravel 12.71.0,
-  БД `elv_october`. Плагин `elv/library` версии 2.0.0 (переименован из `nlb`
+  БД `elv_october`. Плагин `elv/site` версии 2.0.0 (переименован из `nlb`
   в Stage 28, миграция `rename_legacy_tables_to_elv.php` хранит старые имена
   таблиц): 9 blueprints,
   `elv:import` перенёс 91 элемент и 12 разделов, тесты плагина — 231 зелёный
@@ -148,7 +149,7 @@ docs/                    # документация (карта — docs/README.
   мета записи и микроразметка `Article`/`Event`/`Product`/`Service` —
   `tests/SeoTest.php` (67 тестов). Публичный JSON контента —
   `GET /api/v1/{handle}` и `/api/v1/{handle}/{slug}`
-  (`plugins/elv/library/classes/Http/ApiController.php`, гейт
+  (`plugins/elv/site/classes/Http/ApiController.php`, гейт
   `tools/check-api.mjs`): 6 разделов, 91 запись, только опубликованное.
 - **Формы, админка, SEO и заголовки подключены** (этапы 5–10): `POST /feedback/`,
   `/booking/`, `/order/`, `/subscribe/`, подтверждение и отписка; админка
@@ -174,7 +175,7 @@ docs/                    # документация (карта — docs/README.
 
 ## 9. Соглашения
 
-- Классы плагина — namespace `Elv\Library\...`, PSR-4.
+- Классы плагина — namespace `Elv\Site\...`, PSR-4.
 - Модели — единственное число (`Booking`), таблицы — множественное (`elv_bookings`).
 - Blueprint-хендлы — как коды инфоблоков: `news`, `events`, `collections`, `books`,
   `services`, `printing`.

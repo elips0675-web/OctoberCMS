@@ -10,8 +10,8 @@
          stopOnFailure="false"
 >
     <testsuites>
-        <testsuite name="ELV Library Plugin Test Suite">
-            <directory>./plugins/elv/library/tests</directory>
+        <testsuite name="ELV Site Plugin Test Suite">
+            <directory>./plugins/elv/site/tests</directory>
         </testsuite>
     </testsuites>
 

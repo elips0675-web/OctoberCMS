@@ -1,4 +1,0 @@
-name: Бронь
-modelClass: Elv\Library\Models\Booking
-form: $/elv/library/models/booking/fields.yaml
-defaultRedirect: elv/library/bookings

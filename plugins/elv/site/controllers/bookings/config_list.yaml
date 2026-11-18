@@ -1,0 +1,14 @@
+title: Брони
+list: $/elv/site/models/booking/columns.yaml
+modelClass: Elv\Site\Models\Booking
+recordUrl: elv/site/bookings/update/:id
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: false
+noRecordsMessage: 'Броней пока нет — форма на странице услуги пишет сюда автоматически.'
+defaultSort:
+    column: id
+    direction: desc
+toolbar:
+    search:
+        prompt: 'Поиск по имени, телефону или услуге'

@@ -1,9 +1,9 @@
 # Конструктор страниц: как собрать страницу в админке
 
 Документ для контент-менеджера и для того, кто будет дорабатывать блоки.
-Код: `plugins/elv/library/classes/PageBuilder.php`, blueprint
-`plugins/elv/library/blueprints/page/structure.yaml` и
-`plugins/elv/library/blueprints/blocks/builder.yaml`, шаблон
+Код: `plugins/elv/site/classes/PageBuilder.php`, blueprint
+`plugins/elv/site/blueprints/page/structure.yaml` и
+`plugins/elv/site/blueprints/blocks/builder.yaml`, шаблон
 `themes/elv/pages/builder.htm`, партиалы `themes/elv/partials/blocks/*.htm`.
 
 ## 1. Что это и чего это не касается
@@ -94,12 +94,12 @@
 
 ## 6. Что проверяет приёмка
 
-- `plugins/elv/library/tests/PageBuilderTest.php` (12 тестов): рендер блока,
+- `plugins/elv/site/tests/PageBuilderTest.php` (12 тестов): рендер блока,
   404 на неизвестный адрес и на выключенную страницу, якоря и дубли, фильтр
   третьего уровня, неизвестная группа, сетка записей и лимит, запрет внешнего
   видео, **совпадение групп blueprint с партиалами** и **разделов сетки с
   белым списком**, **наличие правил CSS для каждого класса блоков**.
-- `plugins/elv/library/tests/SeoTest.php`: страница попадает в
+- `plugins/elv/site/tests/SeoTest.php`: страница попадает в
   `/sitemap.xml`, выключенная — нет; перечень статических страниц карты
   по-прежнему сверяется с `themes/elv/pages/*.htm`, причём страницы с
   параметром в адресе (`url = "/:slug"`) из сверки исключены.
@@ -110,7 +110,7 @@
 
 ## 7. Как добавить новый блок
 
-1. Группа в `plugins/elv/library/blueprints/blocks/builder.yaml` (`groups:`) —
+1. Группа в `plugins/elv/site/blueprints/blocks/builder.yaml` (`groups:`) —
    ключ группы совпадает с именем партиала.
 2. Партиал `themes/elv/partials/blocks/<группа>.htm`; данные приходят в
    `block.data`, поля перечислены в `PageBuilder::FIELDS`.

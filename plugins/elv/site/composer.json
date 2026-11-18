@@ -1,0 +1,9 @@
+{
+    "name": "elv/site-plugin",
+    "type": "october-plugin",
+    "description": "Универсальный сайт: контент, заявки, слоты услуг, поиск.",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2"
+    }
+}

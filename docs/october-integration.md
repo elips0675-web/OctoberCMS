@@ -102,7 +102,7 @@
 | Что | Источник | Цель |
 |---|---|---|
 | meta, OG, canonical | `elv_seo.php` (229 строк) | layout `themes/elv/layouts/default.htm:10-35` |
-| JSON-LD | `elv_seo.php` | `Seo::jsonld()` (`plugins/elv/library/classes/Seo.php:255`) |
+| JSON-LD | `elv_seo.php` | `Seo::jsonld()` (`plugins/elv/site/classes/Seo.php:255`) |
 | `/sitemap.xml` | `sitemap.php` | `Sitemap::xml()` — 106 адресов (15 статических + 91 детальная) с `lastmod` |
 | `/sitemap/` (HTML) | страница | CMS-страница |
 | `robots.txt` | корень | маршрут `Seo::robots()`: домен из запроса, а не статический файл |

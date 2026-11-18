@@ -29,6 +29,6 @@ foreach ($files as $file) {
     echo json_encode([
         'file' => $file,
         'raw' => strlen($raw),
-        'minified' => strlen(\Elv\Library\Classes\Media::minifyCss($raw)),
+        'minified' => strlen(\Elv\Site\Classes\Media::minifyCss($raw)),
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL;
 }

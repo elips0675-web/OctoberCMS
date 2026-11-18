@@ -1,0 +1,4 @@
+name: Заказ
+modelClass: Elv\Site\Models\Order
+form: $/elv/site/models/order/fields.yaml
+defaultRedirect: elv/site/orders

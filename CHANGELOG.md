@@ -26,6 +26,18 @@
 
 ### Изменено
 
+- Этап 42: плагин переименован `Elv\Library` → `Elv\Site` — каталог
+  `plugins/elv/library` → `plugins/elv/site`, `composer.json`
+  (`elv/site-plugin`, описание «Универсальный сайт…»), `pluginDetails`
+  «ELV Site», версия **2.2.0**; права `elv.library.*` → `elv.site.*`, ключ
+  backend-меню `library` → `site`, адреса админки `/admin/elv/site/...`.
+  Тексты «библиотека» заменены нейтральными в `views/action.htm` (название из
+  `elv_brand('name')`), письмах брони и подписки,
+  `themes/elv/assets/pwa/offline.html` и `avatar-tatyana.svg`;
+  `themes/elv/theme.yaml:6` — `homepage` на `https://elv-studio.by`.
+  Демо-контент (books/printing/collections), таблицы `elv_*`, Twig `elv_*` и
+  сигнатуры команд не менялись; путь обновления — `docs/installation.md` §11,
+  запись в `updates/version.yaml` — 2.2.0 без файла миграции.
 - Этап 37: `elv:import` больше не подставляет локальный путь
   `D:/nlbbootstrap-main/db/config/data` (было `Import.php:65`): источник
   берётся из `--source` или переменной `ELV_IMPORT_SOURCE`, иначе команда

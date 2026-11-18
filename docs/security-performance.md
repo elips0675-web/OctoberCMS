@@ -16,7 +16,7 @@
 | `Strict-Transport-Security` | nginx 443 (PHP — только если запрос уже HTTPS) | за прокси `isSecure()` не видит `X-Forwarded-Proto`, HSTS обязан ставить периметр |
 | `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` | `SecurityHeaders` **и** `nginx.conf` | одинаковы для всех; nginx скрывает версию PHP (`fastcgi_hide_header`), чтобы не было дублей |
 
-Middleware — `plugins/elv/library/classes/Http/SecurityHeaders.php`, регистрация
+Middleware — `plugins/elv/site/classes/Http/SecurityHeaders.php`, регистрация
 в `Plugin.php::boot()` рядом с `CompressResponse` и `LegacyRedirect`.
 
 CSP и инлайн-стили: CSS встраивается в документ намеренно (это и даёт FCP 0,9 с),
@@ -91,7 +91,7 @@ LCP 1,7 с, TBT 0–60 мс, CLS 0). Причина одна: 188 КБ HTML ка
 
 1. `nginx.conf` — `gzip on` + `expires` в статических `location`. Это прод:
    статику и HTML на проде отдаёт периметр, приложение до этого не доходит.
-2. `plugins/elv/library/classes/Http/CompressResponse.php` — глобальный
+2. `plugins/elv/site/classes/Http/CompressResponse.php` — глобальный
    middleware (регистрация в `Plugin.php::boot()`): gzip для текстовых
    ответов и `Cache-Control` для ассетов. Нужен там, где nginx нет
    (shared-хостинг, `php artisan serve`). Уже сжатый ответ middleware не

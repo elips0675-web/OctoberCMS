@@ -1,0 +1,4 @@
+name: Редирект
+modelClass: Elv\Site\Models\Redirect
+form: $/elv/site/models/redirect/fields.yaml
+defaultRedirect: elv/site/redirects

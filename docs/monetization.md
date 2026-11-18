@@ -32,18 +32,18 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
   Marketplace их нет: там своя карточка продукта и свои условия. В документации
   продукта нельзя смешивать две модели.
 - `composer.json` плагина сейчас `"license": "proprietary"`
-  (`plugins/elv/library/composer.json`): для продажи нужен файл `LICENSE` в
+  (`plugins/elv/site/composer.json`): для продажи нужен файл `LICENSE` в
   пакете и текст лицензии покупателя, иначе поле противоречит продаже.
 
 ## 2. Что отделяет проектный код от продукта
 
 | Что | Сколько | Где |
 |---|---|---|
-| Бренд «Библиотека 2026» | **0** (было 61) | `themes/elv`, `plugins/elv/library`; бренд — поля `brand_*` в `theme.yaml` (Stage 27, тексты — Stage 36) |
+| Бренд «Библиотека 2026» | **0** (было 61) | `themes/elv`, `plugins/elv/site`; бренд — поля `brand_*` в `theme.yaml` (Stage 27, тексты — Stage 36) |
 | Телефон и адрес | **0** в коде (было 26 строк) | контакты — `brand_phone`/`brand_street` в настройках темы |
-| Локальный путь | **0** (было 1) | `--source` или `ELV_IMPORT_SOURCE` (`plugins/elv/library/console/Import.php:63-78`, `:137-145`), Stage 37 |
-| Вендор `Elv\Library` | **75** файлов (60 с `namespace`) | `plugins/elv/library`, `themes/elv` |
-| Хендлы blueprints | 9 сущностей | `plugins/elv/library/blueprints/*`, карты `Content::SECTIONS`, `Sitemap::SECTIONS`, `Seo::SECTIONS` |
+| Локальный путь | **0** (было 1) | `--source` или `ELV_IMPORT_SOURCE` (`plugins/elv/site/console/Import.php:63-78`, `:137-145`), Stage 37 |
+| Вендор `Elv\Site` | **75** файлов (60 с `namespace`) | `plugins/elv/site`, `themes/elv` |
+| Хендлы blueprints | 9 сущностей | `plugins/elv/site/blueprints/*`, карты `Content::SECTIONS`, `Sitemap::SECTIONS`, `Seo::SECTIONS` |
 
 Важные уточнения, которые меняют оценку стоимости:
 
@@ -81,20 +81,20 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 
 Плагин:
 
-- `plugins/elv/library/composer.json`: имя `elv/library-plugin` — это форма
+- `plugins/elv/site/composer.json`: имя `elv/site-plugin` — это форма
   `vendor/name` (vendor `elv`, пакет `library`), тип `october-plugin`,
   `composer validate` зелёный. Прежняя запись «не в форме `vendor/name`» не
   подтвердилась: `System::composerToOctoberCode()`
-  (`modules/system/helpers/System.php:150-164`) даёт `elv.library`, то есть
-  ровно код плагина `Elv\Library`.
-- `plugins/elv/library/LICENSE.md` — тот же текст, что у темы (гейт сверяет
+  (`modules/system/helpers/System.php:150-164`) даёт `elv.site`, то есть
+  ровно код плагина `Elv\Site`.
+- `plugins/elv/site/LICENSE.md` — тот же текст, что у темы (гейт сверяет
   совпадение, чтобы у покупателя не оказалось двух разных лицензий).
 - `updates/version.yaml` есть, `pluginDetails()` реализован
-  (`plugins/elv/library/Plugin.php`).
+  (`plugins/elv/site/Plugin.php`).
 
 Локальный путь:
 
-- `plugins/elv/library/console/Import.php` больше не подставляет
+- `plugins/elv/site/console/Import.php` больше не подставляет
   `D:/nlbbootstrap-main/...`: источник берётся из `--source` или переменной
   `ELV_IMPORT_SOURCE`, иначе команда отказывает с кодом 1
   (`Import.php:63-78`, `:137-145`). Тесты — `ImportTest` (пустой источник,
@@ -103,8 +103,8 @@ Responsiv Pty Ltd: ключ активирует один сайт (`LICENSE.md:
 Бренд и контакты — уже настройки темы: в `themes/elv/theme.yaml` **19 полей
 `brand_*`** (название, подпись, телефон, адрес, e-mail, соцсети, тип организации
 schema.org и т. д., Stage 27), в Twig — `elv_brand()` / `elv_brand_text()`,
-в PHP — `Elv\Library\Classes\Brand`. Тексты страниц обезличены в Stage 36:
-«Библиотека 2026» и реальные адреса в `themes/elv` и `plugins/elv/library`
+в PHP — `Elv\Site\Classes\Brand`. Тексты страниц обезличены в Stage 36:
+«Библиотека 2026» и реальные адреса в `themes/elv` и `plugins/elv/site`
 не встречаются.
 
 ## 4. Демо-контент в шаблоне
@@ -201,7 +201,7 @@ HTML — иначе правка файла без пересборки наст
 layouts и ассеты по путям (`Skin::getPath()`, `modules/backend/classes/Skin.php:72-95`),
 ядро при этом не правится.
 
-Наши экраны — `plugins/elv/library/controllers/{requests,bookings,orders,subscribers}`
+Наши экраны — `plugins/elv/site/controllers/{requests,bookings,orders,subscribers}`
 (свои `index.htm`/`update.htm`) — можно переделывать свободно: это наш код.
 
 Границы: E2E на бэкенд в проекте нет; backend-CSS (205 КБ, `modules/backend/assets/css/october.css`)
@@ -213,7 +213,7 @@ layouts и ассеты по путям (`Skin::getPath()`, `modules/backend/cla
 Название организации, реквизиты, адрес, телефон, почта, часы работы и ссылки на
 соцсети живут в настройках темы (`themes/elv/theme.yaml`, поля `brand_*`) и
 читаются из `cms_theme_data`; в шаблонах и PHP — только нейтральные значения.
-Точка входа одна — класс `plugins/elv/library/classes/Brand.php`
+Точка входа одна — класс `plugins/elv/site/classes/Brand.php`
 (`Brand::get('name')` и т.д.), в Twig — `elv_brand('phone')`, для строк с
 подстановкой — `elv_brand_text('Контакты — {brand}')`.
 

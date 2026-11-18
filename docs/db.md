@@ -15,7 +15,7 @@ Tailor-записи поверх своих таблиц.
 Контентные таблицы создаёт **Tailor**, а не миграции плагина: имя строится из `uuid`
 blueprint-а (`EntryBlueprint::makeBlueprintTableName`) как `xc_<uuid без дефисов>c`.
 Поэтому таблиц `elv_news`/`elv_books` в этой схеме нет — есть таблица с uuid в имени.
-`uuid` живёт в `plugins/elv/library/blueprints/**/*.yaml` и не меняется, иначе исчезнет
+`uuid` живёт в `plugins/elv/site/blueprints/**/*.yaml` и не меняется, иначе исчезнет
 связь с уже созданной таблицей.
 
 | Blueprint | `uuid` | Таблица | Источник | Записей |
@@ -55,11 +55,11 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 Проверено 15.11.2026 по живой БД: `elv_*`-таблиц ровно шесть. Push-подписок и
 поискового индекса в схеме **нет**: `elv_push_subscriptions`,
 `elv_search_documents` и `elv_search_terms` в БД отсутствуют, файла
-`plugins/elv/library/classes/Search.php` нет (`docs/roadmap.md:25` — M8 не
+`plugins/elv/site/classes/Search.php` нет (`docs/roadmap.md:25` — M8 не
 начат). Появятся вместе с реализацией, в поставку «как есть» не входят.
 
-Модели — `plugins/elv/library/models/{Request,Booking,Order,Slot,Subscriber,Redirect}.php`.
-Таблицы создаёт версия плагина **1.0.2** (`plugins/elv/library/updates/create_elv_*.php`),
+Модели — `plugins/elv/site/models/{Request,Booking,Order,Slot,Subscriber,Redirect}.php`.
+Таблицы создаёт версия плагина **1.0.2** (`plugins/elv/site/updates/create_elv_*.php`),
 версия **2.0.0** переименовывает их из старых `nlb_*`
 (`updates/rename_legacy_tables_to_elv.php`; create-миграции делают то же,
 если видят старую таблицу), версия **2.1.0** добавляет `elv_redirects`
@@ -93,7 +93,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 объявить нельзя: колонка `text`, а MySQL требует длину ключа. Поэтому идемпотентность
 держит не схема, а код: перед записью импортёр делает
 `EntryRecord::inSection(<blueprint>)->where('xml_id', $id)->first()`; второй прогон даёт
-0 новых строк (тест `plugins/elv/library/tests/ImportTest.php`,
+0 новых строк (тест `plugins/elv/site/tests/ImportTest.php`,
 `testSecondRunUpdatesWithoutCreatingDuplicates`).
 
 ## 4. Поля контента
@@ -218,7 +218,7 @@ Repeater-поля (`services.features`, `services.tariffs`) живут **не к
 на дубликат → `409`. Проверка «прочитал-записал» без уникального индекса — дефект,
 а не реализация.
 
-Реализация: `plugins/elv/library/classes/BookingService.php` (`book`, `confirm`, `cancel`,
+Реализация: `plugins/elv/site/classes/BookingService.php` (`book`, `confirm`, `cancel`,
 `availableTimes`), исключение `classes/SlotUnavailableException.php`. Условный
 `UPDATE … WHERE taken < capacity` плюс блокировка строки не дают двум запросам занять
 одно место; дубликат `INSERT` слота ловится как `QueryException` с SQLSTATE `23000`.
@@ -277,7 +277,7 @@ php artisan elv:import --source="<каталог выгрузки>/data" [--dry-
 - Дата: `active_from` парсится как `Y-m-d H:i:s`/`Y-m-d` и сохраняется без сдвига на
   сутки (`2026-11-02 10:00:00` читается обратно как `2026-11-02 10:00`).
 - Тесты: `vendor/phpunit/phpunit/phpunit -c phpunit.elv.xml` (sqlite `:memory:`,
-  фикстуры в `plugins/elv/library/tests/fixtures/db/config`).
+  фикстуры в `plugins/elv/site/tests/fixtures/db/config`).
 
 ## 8. Что переносится из миграций источника
 

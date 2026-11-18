@@ -5,13 +5,13 @@ layout = "default"
 <?php
 function onStart()
 {
-    $record = \Elv\Library\Classes\Content::record('Elv\\Service', $this->param('slug'));
+    $record = \Elv\Site\Classes\Content::record('Elv\\Service', $this->param('slug'));
     if (!$record) {
         $this->controller->setStatusCode(404);
-        $this->page->title = 'Страница не найдена — ' . \Elv\Library\Classes\Brand::get('name');
+        $this->page->title = 'Страница не найдена — ' . \Elv\Site\Classes\Brand::get('name');
     }
     else {
-        \Elv\Library\Classes\Seo::applyRecord($this->page, $record, 'service');
+        \Elv\Site\Classes\Seo::applyRecord($this->page, $record, 'service');
     }
 
     $this['record'] = $record;

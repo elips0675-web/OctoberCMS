@@ -17,7 +17,7 @@
  *     противоречит продаже);
  *   - `composer.json` плагина — форма `vendor/name`, тип `october-plugin`;
  *   - в поставляемом коде нет абсолютных путей вида `D:/` или `C:\`
- *     (`plugins/elv/library`, `themes/elv`, `config/*.php`) — локальный путь
+ *     (`plugins/elv/site`, `themes/elv`, `config/*.php`) — локальный путь
  *     в `Import.php` был ровно один и удалён в этом же этапе.
  *
  *   node tools/check-package.mjs
@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const themeDir = path.join(root, 'themes/elv');
-const pluginDir = path.join(root, 'plugins/elv/library');
+const pluginDir = path.join(root, 'plugins/elv/site');
 const failures = [];
 
 function fail(message) {
@@ -147,15 +147,15 @@ function checkPlugin() {
     }
 
     if (!/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(String(composer.name || ''))) {
-        fail(`plugins/elv/library/composer.json: name «${composer.name || '—'}» не в форме vendor/name`);
+        fail(`plugins/elv/site/composer.json: name «${composer.name || '—'}» не в форме vendor/name`);
     }
 
     if (!String(composer.name || '').endsWith('-plugin')) {
-        fail('plugins/elv/library/composer.json: имя пакета плагина должно кончаться на -plugin');
+        fail('plugins/elv/site/composer.json: имя пакета плагина должно кончаться на -plugin');
     }
 
     if (composer.type !== 'october-plugin') {
-        fail(`plugins/elv/library/composer.json: type «${composer.type || '—'}» вместо october-plugin`);
+        fail(`plugins/elv/site/composer.json: type «${composer.type || '—'}» вместо october-plugin`);
     }
 }
 

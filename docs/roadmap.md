@@ -20,9 +20,9 @@
 |---|---|
 | «В репозитории уже есть `tools/gen-vapid.php`» | Файла нет: в `tools/` только `css-size.php` и `serve-static.php`. VAPID — план, M9 |
 | «Проект уже учитывает CSP» | CSP не было: `Plugin.php:95,99` подключал только сжатие и 301, в `nginx.conf` не было ни одного `add_header`. Закрыто на Stage 10: `classes/Http/SecurityHeaders.php` + `nginx.conf` (P1-4) |
-| «Добавьте rate limiting на формы» | Уже есть: `plugins/elv/library/routes.php:10` — `throttle:30,1` на `feedback`, `booking`, `order`, `subscribe` |
+| «Добавьте rate limiting на формы» | Уже есть: `plugins/elv/site/routes.php:10` — `throttle:30,1` на `feedback`, `booking`, `order`, `subscribe` |
 | «О бэкапах ни слова» | Пункт P2-10 (переехал в P0-8) и `docs/security-performance.md:122`; скрипта нет — это верно, «ни слова» — нет |
-| «BM25 заявлен, проверьте, что не `LIKE`» | BM25 не портирован вообще: `plugins/elv/library/classes/Search.php` отсутствует, M8 открыт |
+| «BM25 заявлен, проверьте, что не `LIKE`» | BM25 не портирован вообще: `plugins/elv/site/classes/Search.php` отсутствует, M8 открыт |
 | «Замените `flush()` в `Content.php` на тегированный кэш» | `Content::flush()` (`classes/Content.php:26`) сбрасывает request-local массив, а не `Cache`; полностраничного кэша нет (`docs/security-performance.md:55`) |
 | «Смените `backend.uri` в `config/cms.php`» | В October 4.4 адрес задаёт `config/backend.php` → `'uri' => env('BACKEND_URI', 'admin')` |
 | «Храните загрузки через `Storage::disk('local')`» | Загрузок файлов в формах нет: `hasFile`/`file()` не встречаются в `classes/Http/*` |
@@ -63,7 +63,7 @@
 ## 4. Отклонено
 
 - **Fortify, CSP-плагин, Meilisearch, RainLab.Revisionable, Spatie Backup как
-  плагины.** Правило «один плагин `elv/library`» (`AGENTS.md`, правило 5,
+  плагины.** Правило «один плагин `elv/site`» (`AGENTS.md`, правило 5,
   `docs/plugins.md`) не отменяется: то же делается кодом плагина или
   штатными таблицами. Исключение — только из списка `docs/plugins.md`.
 - **Замена `Content::flush()` на тегированный кэш сейчас.** Кэш запроса не
@@ -94,7 +94,7 @@
 
 | Тезис оценки | Решение и проверка |
 |---|---|
-| «Миксины Tailor для повторяющихся полей (`meta_title`, `meta_description`)» | **Принято, но вместе с ближайшей правкой blueprints.** `seo_title` и `seo_description` продублированы в шести файлах `plugins/elv/library/blueprints/*/item.yaml` (по 6 вхождений каждого), а ядро умеет переиспользуемые наборы: `modules/tailor/classes/blueprint/MixinBlueprint.php:11`. `seo_image` и `seo_robots` — свойства страниц CMS, не Tailor (`themes/elv/pages/personal.htm:3`), их mixin не касается. Делать на одной сущности и проверять `elv:import` + `october:migrate`, иначе схема Tailor меняется вслепую. Строка добавлена в P2-19 |
+| «Миксины Tailor для повторяющихся полей (`meta_title`, `meta_description`)» | **Принято, но вместе с ближайшей правкой blueprints.** `seo_title` и `seo_description` продублированы в шести файлах `plugins/elv/site/blueprints/*/item.yaml` (по 6 вхождений каждого), а ядро умеет переиспользуемые наборы: `modules/tailor/classes/blueprint/MixinBlueprint.php:11`. `seo_image` и `seo_robots` — свойства страниц CMS, не Tailor (`themes/elv/pages/personal.htm:3`), их mixin не касается. Делать на одной сущности и проверять `elv:import` + `october:migrate`, иначе схема Tailor меняется вслепую. Строка добавлена в P2-19 |
 | «Критический функционал работает без JS» | **Принято частично.** Формы — обычный `POST` и без JS работают, но мобильное меню (`themes/elv/partials/header.htm:38`), выпадающие меню «Услуги»/«Печать» (`:48`, `:56`), модалки поиска (`:69`), реквизитов (`themes/elv/pages/contacts.htm:44`) и обратной связи (`themes/elv/partials/footer.htm:105`) держатся на `data-bs-toggle` и без JS не открываются. Полный `<noscript>`-дубль ломает 1:1 и `check-dom-parity`, поэтому проверка и минимальный фикс — в P1-5 |
 | «Разбейте шаблон на атомарные паршалы (`button.htm`, `section-header.htm`)» | **Отклонено.** Карточки уже вынесены — `themes/elv/partials/cards/` (6 файлов: `book`, `collection`, `event`, `news`, `print`, `service`); остальное — уникальная разметка конкретных страниц. Дробление ради дробления добавляет Twig-вызовы и мешает сверке 1:1 |
 | `ml_`-префиксы для будущей мультиязычности | **Принято как заметка, не как работа.** Второй язык — P2-1; переименование полей сейчас сломало бы `elv:import` и JSON-LD (`classes/Seo.php`), поэтому имена фиксируются в P2-1 и меняются одновременно с появлением второго языка |
@@ -121,7 +121,7 @@
 
 | Тезис WPShop | Решение и проверка |
 |---|---|
-| Конструктор страниц из блоков (Tailor `structure` + repeater, `{% partial 'blocks/' ~ block.type %}`) | **Принято для новых страниц, пункт P2-24.** Сейчас страницы — файлы `themes/elv/pages/*.htm` (26 шаблонов), Tailor хранит только контент (`type: stream` в `plugins/elv/library/blueprints/*/item.yaml:5`). Перевести 110 существующих адресов на конструктор нельзя: их разметка и текст сверяются с `preview/` (`tools/check-dom-parity.mjs`) |
+| Конструктор страниц из блоков (Tailor `structure` + repeater, `{% partial 'blocks/' ~ block.type %}`) | **Принято для новых страниц, пункт P2-24.** Сейчас страницы — файлы `themes/elv/pages/*.htm` (26 шаблонов), Tailor хранит только контент (`type: stream` в `plugins/elv/site/blueprints/*/item.yaml:5`). Перевести 110 существующих адресов на конструктор нельзя: их разметка и текст сверяются с `preview/` (`tools/check-dom-parity.mjs`) |
 | TOC из `<h2>/<h3>` | **Принято как блок конструктора** (`P2-24`): PHP-парсер в плагине. На существующих страницах отклонено — оглавление добавляет текст и рвёт `check-dom-parity` |
 | Прогресс-бар чтения, переключатель размера шрифта | **Отложено.** `themes/elv/assets/js/script.js` побайтово равен источнику (73,6 КБ), эталона для новых элементов нет; решать вместе с тёмной темой, отдельным решением |
 | Тёмная тема (`dark-theme` на `<body>`, CSS-переменные) | **Отложено, это решение владельца.** В `themes/elv/assets/css/styles.css` тёмной темы нет; P2-15 уже фиксирует «тёмная тема — отдельное решение, не побочный эффект» |
@@ -185,8 +185,8 @@ October CMS deepseek.html», 13.11.2026) — не про код сайта, а �
 | «Комиссия маркетплейса 30 %, PayPal» | Внешний факт, в репозитории не проверяется — так и помечено |
 | «`screenshot.png` обязателен» | Требование карточки Marketplace, ядром не используется (в `modules/cms`/`modules/backend` строки `screenshot` нет). У нас файла нет |
 | «`version.yaml` обязателен для темы» | **Необязателен:** без файла история версий пустая (`modules/cms/classes/ThemeManager.php:391-393`) |
-| «Убрать локальные пути» | Верно и дёшево: такой путь ровно один — `plugins/elv/library/console/Import.php:65` (`D:/nlbbootstrap-main/…`) |
-| «Сменить вендора `elv/library`» | Дороже, чем звучит: `Elv\Library` в **75** файлах (60 с `namespace`), плюс карты разделов в `Content`, `Sitemap::SECTIONS`, `Seo::SECTIONS`, JSON-LD и тестах. Таблицы `xc_*` от UUID переживут, но карты надо править синхронно |
+| «Убрать локальные пути» | Верно и дёшево: такой путь ровно один — `plugins/elv/site/console/Import.php:65` (`D:/nlbbootstrap-main/…`) |
+| «Сменить вендора `elv/site`» | Дороже, чем звучит: `Elv\Site` в **75** файлах (60 с `namespace`), плюс карты разделов в `Content`, `Sitemap::SECTIONS`, `Seo::SECTIONS`, JSON-LD и тестах. Таблицы `xc_*` от UUID переживут, но карты надо править синхронно |
 | «Вынести хардкод в `theme.yaml`» | Объём: «Библиотека 2026» — **61** вхождение, телефон/адрес — **26** строк, часть в `assets/js/script.js` (файл побайтово равен источнику) |
 | «Тема упаковывается через `composer.json`» | Верно и обязательно: без `composer.json` в теме `ThemeManager::getComposerCode()` вернёт пусто (`modules/cms/classes/ThemeManager.php:354-366`), второго кода — `authorCode` в `theme.yaml` (`:229-231`) — тоже нет |
 | «`theme:seed` для демо» | **Верно:** команда есть (`modules/cms/console/ThemeSeed.php:34`), читает `seeds/blueprints` и `seeds/data.yaml` и сама мигрирует Tailor (`modules/cms/models/ThemeSeed.php:150`, `:165`) |
@@ -210,10 +210,10 @@ October CMS deepseek.html», 13.11.2026) — не про код сайта, а �
 | «Laravel + Filament»: `mhstudio/filament-booking-engine` существует | Внешний факт, по репозиторию не проверяется. Брать нельзя: альфа v0.1.0, требует Filament v5 / Laravel 12+, официальной интеграции Filament ↔ October нет — это кастомный слой поверх чужой админки |
 | «Не переписывать на Laravel, остаться на October» | Совпадает с решением проекта; работы 0 |
 | «Winter CMS — бесплатный форк (MIT)» | Внешний факт; резерв на случай проблем с лицензией, не миграция |
-| «Усилить бизнес-логику: платежи + автовыдача после оплаты» | **Верно и это единственный реальный пробел**: в `plugins/elv/library/routes.php:16-30` только `health`, `/api/v1/*` и 4 формы; платёжных маршрутов и таблицы платежей нет. Пункт P2-31 в `Что доделать.txt` |
+| «Усилить бизнес-логику: платежи + автовыдача после оплаты» | **Верно и это единственный реальный пробел**: в `plugins/elv/site/routes.php:16-30` только `health`, `/api/v1/*` и 4 формы; платёжных маршрутов и таблицы платежей нет. Пункт P2-31 в `Что доделать.txt` |
 | «Бронирование: `lockForUpdate` + UNIQUE» | Подтверждено: `BookingService.php:13-14`, `:28`, `:66-67` |
-| «CSP с nonce, HSTS, X-Frame-Options» | Подтверждено: `plugins/elv/library/classes/Http/SecurityHeaders.php` |
-| «Картинки: WebP/AVIF + srcset» | Уже сделано: `plugins/elv/library/classes/Media.php:130-138` (`<picture>` + `srcset`), аналог его `build-image-variants.php` |
+| «CSP с nonce, HSTS, X-Frame-Options» | Подтверждено: `plugins/elv/site/classes/Http/SecurityHeaders.php` |
+| «Картинки: WebP/AVIF + srcset» | Уже сделано: `plugins/elv/site/classes/Media.php:130-138` (`<picture>` + `srcset`), аналог его `build-image-variants.php` |
 | «Лёгкие заказы вместо Shopaholic» | Уже так: `OrderController` + `elv_orders`, без корзины; Shopaholic не берём (десятки таблиц, удар по Lighthouse) |
 | «Чат: ImbaChat / Chatwoot» | Не берём: чат свой (`themes/elv/assets/js/script.js:142`), Chatwoot — PostgreSQL + Redis + Sidekiq ради одного лендинга |
 | «Кэшировать доступность слотов (Redis)» | Сейчас `CACHE_STORE=file` (`.env:28`), Redis прописан, но не используется; делать только после замера, не «на всякий случай» |
@@ -237,7 +237,7 @@ October CMS deepseek.html» и парный `«Стучалка» установ
 | Тезис черновика | Что показала проверка |
 |---|---|
 | «В October нет единой кнопки счётчика установок» | Верно для установки вручную/через Composer. Для Marketplace статистика есть в панели автора — внешний факт, локально не проверяется |
-| «Надёжнее всего — инкремент в миграции плагина» | Считает установки **на одном сайте**: таблица в БД клиента, `count()` всегда 1. Наша база: `system_plugin_versions` — 1 строка (`Elv.Library 2.0.0`), `system_plugin_history` — 11 строк, типы только `comment` и `script`, события `install` нет |
+| «Надёжнее всего — инкремент в миграции плагина» | Считает установки **на одном сайте**: таблица в БД клиента, `count()` всегда 1. Наша база после Stage 42: `system_plugin_versions` — 2 строки (`Elv.Site 2.2.0` и унаследованная `Elv.Library 2.1.0`), на чистой установке — 1; `system_plugin_history` — 11 строк, типы только `comment` и `script`, события `install` нет |
 | «У темы миграций нет — слушайте `cms.theme.activated`» | **События не существует.** В `modules/cms/classes/ThemeManager.php` и `modules/system/classes/PluginManager.php` нет ни одного `fire(`; по `modules/` нет ни `theme.activated`, ни `plugin.installed`. События CMS — только `cms.form.beforeSubmit`/`cms.form.submit` (`modules/cms/behaviors/FormComponent.php:215`, `:229`) |
 | «SunLab.Measures — готовое поведение» | Внешний плагин, по репозиторию не проверяется. Противоречит `docs/free-plan.md` §2: сторонний плагин — только если без него нельзя, не больше трёх на проект. Счётчик — одна таблица и один запрос |
 | «DashMetrics для графиков в бэкенде» | То же: внешняя зависимость ради цифры, которую смотрят на витрине, а не в админке клиента |
@@ -281,7 +281,7 @@ off при пустом ключе и `APP_ENV=local`, при 403 — преду
 | Хлебные крошки | `Seo::breadcrumbs()` (`classes/Seo.php:396`) — только JSON-LD; видимой цепочки нет по решению Stage 16 |
 | Панель SEO в записи (превью, счётчики) | **Stage 33**: поле `seo_focus_keyphrase` типа `seo_panel` в шести разделах (`news/item.yaml`, `events/item.yaml`, `books/item.yaml`, `collections/item.yaml`, `printing/item.yaml`, `services/item.yaml`), обычное поле в `page/structure.yaml`; виджет `formwidgets/SeoPanel.php:14` (сниппет, счётчики, пересчёт через `onAnalyze` `:61`), поле Tailor — `classes/ContentFields/SeoPanelField.php:17`, регистрация — `Plugin.php:114` и `:121` |
 | Анализ контента | **Stage 33**: `classes/SeoAnalyzer.php:67` — 18 проверок светофором `good/ok/bad`: ключ в заголовке/описании/адресе/первом абзаце, плотность `:489`, длины title/description, H1 и порядок уровней, подзаголовки, длина предложений и абзацев, пассив, переходные слова, ссылки, alt у картинок; транслит адреса — `:520`. Числовой «SEO score» по-прежнему **не берём**: без морфологии цифра фиктивная |
-| Редиректы | **Stage 34**: карта старых адресов 1С-Битрикс — `classes/Http/LegacyRedirect.php:23` (работает первой); редиректы редактора — `models/Redirect.php` + таблица `elv_redirects` (`updates/create_elv_redirects_table.php`, версия плагина 2.1.0) и `classes/Http/ManagedRedirect.php:18`: 301/302/307/308, кэш 600 с с инвалидацией на сохранении, счётчик переходов, параметры запроса переносятся, недоступная БД пропускает запрос, а не отдаёт 500; админка — `controllers/Redirects.php` под правом `elv.library.redirects` |
+| Редиректы | **Stage 34**: карта старых адресов 1С-Битрикс — `classes/Http/LegacyRedirect.php:23` (работает первой); редиректы редактора — `models/Redirect.php` + таблица `elv_redirects` (`updates/create_elv_redirects_table.php`, версия плагина 2.1.0) и `classes/Http/ManagedRedirect.php:18`: 301/302/307/308, кэш 600 с с инвалидацией на сохранении, счётчик переходов, параметры запроса переносятся, недоступная БД пропускает запрос, а не отдаёт 500; админка — `controllers/Redirects.php` под правом `elv.site.redirects` |
 
 Что это даёт покупателю: разделитель, шаблоны и коды подтверждения меняются в
 настройках темы, а не в коде; тексты страниц по-прежнему сверяются с эталоном

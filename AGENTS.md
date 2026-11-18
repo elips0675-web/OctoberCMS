@@ -35,7 +35,7 @@
 
 | Каталог | Роль | Что внутри |
 |---|---|---|
-| `D:\October CMS` | продукт (универсальный шаблон сайта) | тема `themes/elv` + плагин `plugins/elv/library` (`Elv\Library`: Tailor-blueprints, блог `Elv\Post`, SEO, формы, тесты) |
+| `D:\October CMS` | продукт (универсальный шаблон сайта) | тема `themes/elv` + плагин `plugins/elv/site` (`Elv\Site`: Tailor-blueprints, блог `Elv\Post`, SEO, формы, тесты) |
 | `D:\Elv Landing` | сайт продаж | тема `themes/elv-studio` + плагин `plugins/elv/kit` (`Elv\Kit`: Booking, Shop, Feedback, Blog, лицензии, оплата, ZIP) |
 | `D:\Elv test` | стенд приёмки | пустая инсталляция October CMS: сюда ставится ZIP, проверяется чистая установка и апгрейд |
 
@@ -55,8 +55,8 @@
 
 ### Имена
 
-Тема — `themes/elv` (`code: elv`), плагин — `plugins/elv/library` (namespace
-`Elv\Library`), таблицы — `elv_*`, БД — `elv_october`, тесты — `phpunit.elv.xml`.
+Тема — `themes/elv` (`code: elv`), плагин — `plugins/elv/site` (namespace
+`Elv\Site`), таблицы — `elv_*`, БД — `elv_october`, тесты — `phpunit.elv.xml`.
 Прежний `nlb` остался только в миграции `rename_legacy_tables_to_elv.php`
 и в `create_elv_*.php` (детект старых таблиц при обновлении) — это не опечатка.
 
@@ -101,7 +101,7 @@
 4. **Bootstrap 5.3.3 остаётся.** Урезанный CSS собирается `tools/purge-css.mjs`, встраивается
    в layout **инлайном** и минифицируется хелпером плагина с кешем по `mtime`. Ни одного
    внешнего CSS-запроса, никаких Google Fonts, Tailwind, React, Vite.
-5. **Один плагин** `elv/library` (vendor `elv`). Никаких демо-плагинов, тем и
+5. **Один плагин** `elv/site` (vendor `elv`). Никаких демо-плагинов, тем и
    RainLab.Blog. Сторонний плагин — только из списка `docs/plugins.md` (не больше
    трёх на проект), с проверкой строки «Platform Compatibility» 4.x, даты
    обновления и `composer audit` после установки.
@@ -197,7 +197,7 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 ## 8. Стиль ответа
 
 - По-русски, коротко, по делу.
-- Ссылки на файлы — от корня этого каталога, например `plugins/elv/library/Plugin.php:18`.
+- Ссылки на файлы — от корня этого каталога, например `plugins/elv/site/Plugin.php:18`.
 - «Не найдено» — только со списком проверенных файлов.
 - Не предлагать «переписать на React/Vue/Tailwind»: стек зафиксирован.
 
@@ -208,19 +208,19 @@ Lighthouse: Chrome + профиль PSI (simulated, mobile), **три прого
 
 | Задача | Файл |
 |---|---|
-| выборка записей Tailor для темы | `plugins/elv/library/classes/Content.php` |
-| мета, canonical, JSON-LD, robots | `plugins/elv/library/classes/Seo.php` |
-| `sitemap.xml` | `plugins/elv/library/classes/Sitemap.php` |
-| картинки, `<picture>`, инлайн-CSS | `plugins/elv/library/classes/Media.php` |
+| выборка записей Tailor для темы | `plugins/elv/site/classes/Content.php` |
+| мета, canonical, JSON-LD, robots | `plugins/elv/site/classes/Seo.php` |
+| `sitemap.xml` | `plugins/elv/site/classes/Sitemap.php` |
+| картинки, `<picture>`, инлайн-CSS | `plugins/elv/site/classes/Media.php` |
 | формы (заявка, бронь, заказ, подписка) | `classes/Http/*Controller.php`, `classes/FormFields.php` |
 | бронь и гонка слота | `classes/BookingService.php`, `models/Slot.php` |
-| Eloquent-модели заявок | `plugins/elv/library/models/*.php` |
-| маршруты и регистрация middleware | `plugins/elv/library/routes.php`, `Plugin.php` |
-| контент Tailor (поля, blueprints) | `plugins/elv/library/blueprints/*/item.yaml` |
+| Eloquent-модели заявок | `plugins/elv/site/models/*.php` |
+| маршруты и регистрация middleware | `plugins/elv/site/routes.php`, `Plugin.php` |
+| контент Tailor (поля, blueprints) | `plugins/elv/site/blueprints/*/item.yaml` |
 | шапка, подвал, меню, карточки | `themes/elv/partials/` |
 | страницы 110 адресов | `themes/elv/pages/*.htm` |
 | `<head>`, инлайн CSS, JSON-LD в разметке | `themes/elv/layouts/default.htm` |
-| тесты плагина | `plugins/elv/library/tests/` |
+| тесты плагина | `plugins/elv/site/tests/` |
 | гейты | `tools/*.mjs` |
 | схема и индексы | `docs/db.md` |
 | инвентарь адресов и контента | `docs/content.md` |

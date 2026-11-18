@@ -1,0 +1,14 @@
+title: Редиректы
+list: $/elv/site/models/redirect/columns.yaml
+modelClass: Elv\Site\Models\Redirect
+recordUrl: elv/site/redirects/update/:id
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: false
+noRecordsMessage: 'Редиректов пока нет. Старые адреса из 1С-Битрикс работают из кода, эта страница — для новых случаев.'
+defaultSort:
+    column: from_path
+    direction: asc
+toolbar:
+    search:
+        prompt: 'Поиск по старому или новому адресу'

@@ -31,7 +31,7 @@ const target = path.join(vendor, 'bootstrap.min.css');
 
 const check = process.argv.includes('--check');
 
-const scanRoots = [path.join(root, 'themes/elv'), path.join(root, 'plugins/elv/library')];
+const scanRoots = [path.join(root, 'themes/elv'), path.join(root, 'plugins/elv/site')];
 // `controllers` — разметка админки: её стилизует тема backend, а не CSS сайта,
 // поэтому классы `btn btn-primary` из index/update.htm не должны тянуть
 // правила Bootstrap в файл, который встраивается в публичные страницы.

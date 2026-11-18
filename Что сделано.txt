@@ -7,6 +7,55 @@
 
 ---
 
+(Stage 42 — 18.11.2026) — **Плагин переименован: `Elv\Library` → `Elv\Site`.**
+
+- `git mv plugins/elv/library plugins/elv/site` — история файлов сохранена
+  (git видит rename, не удаление/создание). Namespace заменён в 139 файлах
+  плагина и во внешних ссылках на путь: `phpunit.elv.xml`, `tools/*.mjs`,
+  `nginx.conf:6,35`, `README.md`, `AGENTS.md`, `project-context.md:5`,
+  `docs/*.md`, `test/`.
+- `composer.json` плагина — имя `elv/site-plugin`, описание «Универсальный сайт:
+  контент, заявки, слоты услуг, поиск.»; `pluginDetails()` — «ELV Site»
+  (`plugins/elv/site/Plugin.php:16`); права `elv.site.*`, вкладка «Сайт»
+  (`Plugin.php:39-55`); ключ backend-меню `library` → `site`
+  (`Plugin.php:63`, `controllers/*.php` — `setContext('Elv.Site', 'site', …)`).
+- Тексты: `views/action.htm:7` — название из `elv_brand('name')` вместо
+  «Библиотека 2026»; `views/mail/booking-client.htm:12` — «позвоните в
+  организацию»; `views/mail/subscribe-confirm.htm:3` — «новости сайта»;
+  `themes/elv/assets/pwa/offline.html:8,137` — нейтральный заголовок, реальные
+  адрес и телефон убраны (заглушка вместо выдуманных данных);
+  `themes/elv/assets/images/avatar-tatyana.svg:1` — «ИИ-помощник сайта».
+- `themes/elv/theme.yaml:6` — `homepage` с GitHub-репозитория на
+  `https://elv-studio.by`; `updates/version.yaml` — запись **2.2.0** (файла
+  миграции нет: переименование кода, схема не меняется).
+- Не менялись: таблицы `elv_*`, Twig-функции `elv_*`, сигнатуры `elv:import` /
+  `elv:slots-generate` / `elv:health-report` (`console/*.php:10,15,16`),
+  blueprints и демо-разделы `books`/`printing`/`collections`, JSON-LD-тип
+  `Library` (тип schema.org, а не имя плагина).
+- Проверено: `php artisan cache:clear` и `config:clear` — OK;
+  `composer dump-autoload` — OK; `php artisan october:migrate` — exit 0
+  («Elv.Site not installed -> v2.2.0», 6 миграций безопасны: все обёрнуты в
+  `Schema::hasTable`); `php -l` по `app,config,database,plugins,themes,tests` —
+  109 файлов, 0 ошибок; PHPUnit `phpunit.elv.xml` — **305 тестов, 1086
+  проверок**; `node tools/check-package.mjs` — exit 0. Живые гейты на
+  перезапущенном `artisan serve:8080`: `check-urls` (110 страниц 200,
+  `/non-existent/` 404), `check-seo`, `check-headers`, `check-pwa`,
+  `check-health`, `check-orphans`, `check-api` — все exit 0.
+- БД после переименования: `system_plugin_versions` — две строки,
+  `Elv.Site 2.2.0` и унаследованная `Elv.Library 2.1.0` (October её не
+  переписывает; на чистой установке строка одна). Таблиц `elv_*` по-прежнему 6.
+- Путь обновления для покупателя 2.1.x описан в `docs/installation.md` §11:
+  замена каталога, `cache:clear`, `october:migrate`, переназначение прав
+  `elv.library.*` → `elv.site.*`.
+- Старое имя осталось только там, где оно и есть факт: исторические записи
+  (`CHANGELOG.md` этапы 28 и 37, журнал Stage 28), запись 2.2.0 в
+  `updates/version.yaml:16` (перечисляет, что переименовано), путь обновления
+  `docs/installation.md` §11 и факт о двух строках `system_plugin_versions` в
+  `docs/roadmap.md:240`. В коде, конфигах, письмах и актуальных доках без
+  upgrade-раздела — 0 вхождений.
+- Не проверено: вход в админку под ролью, отличной от superuser, — новые ключи
+  `elv.site.*` у существующих групп не появятся сами.
+
 (Stage 41 — 16.11.2026) — **Бэклог: партнёрская программа отдельным пунктом.**
 
 - `Что доделать.txt:519` — P1-29 «Партнёрская программа: условия, учёт

@@ -101,7 +101,7 @@ Winter оправдан, только если сайт форкается и п
   `SubmissionBlueprint`, `SubmissionComponent`, письмо `tailor:submission`,
   модерация и honeypot.
 - `type: structure` существует (`Blueprint.php:530`) и уже используется:
-  `plugins/elv/library/blueprints/*/section.yaml` (`Elv\NewsSection`,
+  `plugins/elv/site/blueprints/*/section.yaml` (`Elv\NewsSection`,
   `Elv\BookSection`, `Elv\EventSection`).
 - Блог на Tailor для контентных новостей достаточен — у нас уже так.
 - `{% cache %}` для анонимных тяжёлых блоков — верно.

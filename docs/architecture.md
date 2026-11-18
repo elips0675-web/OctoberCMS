@@ -14,10 +14,10 @@ nginx/apache → index.php (корень проекта) → October bootstrap �
 Никакого SPA, клиентского роутинга и сборки фронтенда. JS — `bootstrap.bundle` +
 `script.js` как в источнике.
 
-## 2. Плагин `elv/library`
+## 2. Плагин `elv/site`
 
 ```
-plugins/elv/library/
+plugins/elv/site/
   Plugin.php               # регистрация прав, навигации, расписания, тегов разметки, middleware
   blueprints/              # 6 контентных сущностей Tailor (YAML)
   models/                  # Eloquent: Request, Booking, Order, Slot, Service, Subscriber
@@ -205,7 +205,7 @@ API и карта сайта не могут разойтись: список р
 (`Cache-Control: public, max-age=60`).
 
 
-Формы (`plugins/elv/library/routes.php`) сидят в группе `web`: обязателен
+Формы (`plugins/elv/site/routes.php`) сидят в группе `web`: обязателен
 `_token` (в шаблоне — `{{ elv_csrf()|raw }}`), лимит `throttle:30,1`.
 Поля источника `PROPERTY[EMAIL][0]` разбирает `classes/FormFields.php` в плоские
 `EMAIL`, `DATE`, … Возврат — на страницу формы из `Referer` того же хоста,
@@ -218,12 +218,12 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 
 ### 6.3. Админка
 
-| Раздел (меню «Библиотека») | Контроллер (`plugins/elv/library/controllers`) | Право |
+| Раздел (меню «Библиотека») | Контроллер (`plugins/elv/site/controllers`) | Право |
 |---|---|---|
-| Обращения | `Requests.php` — `elv/library/requests` | `elv.library.requests` |
-| Брони | `Bookings.php` — `elv/library/bookings` | `elv.library.bookings` |
-| Заказы | `Orders.php` — `elv/library/orders` | `elv.library.orders` |
-| Подписчики | `Subscribers.php` — `elv/library/subscribers` | `elv.library.subscribers` |
+| Обращения | `Requests.php` — `elv/site/requests` | `elv.site.requests` |
+| Брони | `Bookings.php` — `elv/site/bookings` | `elv.site.bookings` |
+| Заказы | `Orders.php` — `elv/site/orders` | `elv.site.orders` |
+| Подписчики | `Subscribers.php` — `elv/site/subscribers` | `elv.site.subscribers` |
 
 Права и меню объявлены в `Plugin.php` (`registerPermissions()`,
 `registerNavigation()`): у каждого пункта свой `permissions`, поэтому оператор
@@ -255,7 +255,7 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Elv\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
 | `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
 | 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
-| Редиректы из админки | `classes/Http/ManagedRedirect.php:18` | `models/Redirect.php` поверх таблицы `elv_redirects` (версия плагина 2.1.0): включённое правило отдаёт 301/302/307/308 и переносит параметры запроса, счётчик переходов пишется «как получится», кэш на 600 с снимается на `saved`/`deleted`; идёт после `LegacyRedirect`, а недоступная БД пропускает запрос, а не отдаёт 500; страница — `controllers/Redirects.php` под правом `elv.library.redirects` |
+| Редиректы из админки | `classes/Http/ManagedRedirect.php:18` | `models/Redirect.php` поверх таблицы `elv_redirects` (версия плагина 2.1.0): включённое правило отдаёт 301/302/307/308 и переносит параметры запроса, счётчик переходов пишется «как получится», кэш на 600 с снимается на `saved`/`deleted`; идёт после `LegacyRedirect`, а недоступная БД пропускает запрос, а не отдаёт 500; страница — `controllers/Redirects.php` под правом `elv.site.redirects` |
 | PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/elv/`; версия кеша — `mtime` файлов, восемь hex |
 | Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
 | Панель SEO в записи | `formwidgets/SeoPanel.php:14` | поле `seo_focus_keyphrase` типа `seo_panel` (поле Tailor — `classes/ContentFields/SeoPanelField.php:17`, регистрация — `Plugin.php:128` и `:135`): превью сниппета, счётчики длин, пересчёт без сохранения через `onAnalyze` (`:61`); шаблоны и ассеты — `formwidgets/seopanel/` |
@@ -302,7 +302,7 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 | `ExpireUnconfirmedBookings` | план | снятие просроченных броней |
 
 Отдельных job-классов нет: письмо ставит в очередь контроллер формы
-(`Mail::queue(new …)`), письма — `plugins/elv/library/classes/Mail/`. Очередь
+(`Mail::queue(new …)`), письма — `plugins/elv/site/classes/Mail/`. Очередь
 `QUEUE_CONNECTION=database`, поэтому без воркера (`php artisan queue:work`)
 письма лежат в таблице `jobs` и не уходят — это требование хостинга, а не код.
 

@@ -1,6 +1,6 @@
 # Что доделать — бэклог переезда на October CMS
 
-> Актуально: **15.11.2026**. Чистый бэклог: только открытые пункты. История —
+> Актуально: **15.11.2026**; дополнено **18.11.2026** (P2-38…P2-40). Чистый бэклог: только открытые пункты. История —
 > в `Что сделано.txt`. Правила — `AGENTS.md`, карта — `docs/README.md`.
 >
 > **Как читать.** P0 — без этого сайт нельзя ставить на прод. P1 — качество и
@@ -11,12 +11,13 @@
 > **Состояние проверки.** October **установлен 10.11.2026**: v4.4.13,
 > Laravel 12.71.0, PHP 8.3.30, БД `elv_october` (79 таблиц), PHPUnit 1 171 тест
 > ядра зелёный, `/` и `/admin` отвечают 200.
-> Плагин `elv/library` версии **2.1.0** (переименован из `nlb` в Stage 28,
-> старые имена таблиц остались только в миграции `rename_legacy_tables_to_elv.php`):
+> Плагин `elv/site` версии **2.2.0** (`nlb` → `elv` — Stage 28, `Elv\Library` →
+> `Elv\Site` — Stage 42; старые имена таблиц остались только в миграции
+> `rename_legacy_tables_to_elv.php`):
 > 9 blueprints, команда
 > `elv:import` перенесла 91 элемент и 12 разделов, Eloquent-таблицы заявок, броней,
 > заказов, слотов, подписчиков и редиректов созданы, слоты — `elv:slots-generate`;
-> тесты плагина — **303 зелёных** (`phpunit.elv.xml`, 1078 утверждений). Формы `/feedback/`, `/booking/`,
+> тесты плагина — **305 зелёных** (`phpunit.elv.xml`, 1086 утверждений). Формы `/feedback/`, `/booking/`,
 > `/order/`, `/subscribe/` пишут в БД и ставят письма в очередь (Stage 5),
 > периметр SEO и микроразметка записи — Stage 7–9, CSP и заголовки — Stage 10,
 > лента `/rss.xml` — Stage 11, PWA-оболочка — Stage 12, health-check — Stage 13,
@@ -247,7 +248,7 @@ fallback, галерея услуги показывает одну фотогр
 
 Этап 3 (10.11.2026): слой готов — `elv_slots` с `UNIQUE`, `BookingService::book()`
 в транзакции, `SlotUnavailableException`; тест схемы красный без `UNIQUE`
-(`plugins/elv/library/tests/BookingTest.php`, `testUniqueIndexBlocksDuplicateSlotRows`).
+(`plugins/elv/site/tests/BookingTest.php`, `testUniqueIndexBlocksDuplicateSlotRows`).
 Осталось: HTTP `409` на публичном маршруте (этап 7) и живой параллельный прогон на
 MySQL — SQLite `lockForUpdate` не держит.
 
@@ -271,7 +272,7 @@ MySQL — SQLite `lockForUpdate` не держит.
 
 Виджеты и пункты главного экрана `/admin` приходят из ядра
 (`modules/backend/lang/ru`) и переведены, но **собственные** блоки плагина
-(«ELV Library», будущие счётчики заявок) пока не имеют `lang/ru/lang.php` и
+(«ELV Site», будущие счётчики заявок) пока не имеют `lang/ru/lang.php` и
 показываются английским названием плагина. Библиотекарю, который «просто
 нажимает кнопки», англоязычная плашка непонятна.
 
@@ -354,7 +355,7 @@ HSTS и исключение админки. Этап 11 (11.11.2026): **171 т�
 
 ### M21. Отзывов нет: нужна своя `elv_reviews`
 
-В `plugins/elv/library/blueprints/` девять YAML, отзывов среди них нет.
+В `plugins/elv/site/blueprints/` девять YAML, отзывов среди них нет.
 `type: submission` (`modules/tailor/classes/Blueprint.php:533`) пишет в `tailor_*`
 и навязывает свою разметку, а у нас правило «1:1 с `preview/`» — решение
 зафиксировано в `docs/plugins.md`, раздел 5.
@@ -365,7 +366,7 @@ HSTS и исключение админки. Этап 11 (11.11.2026): **171 т�
 `created_at`. Модерация — список в админке. Агрегат рейтинга и JSON-LD
 `AggregateRating` — на странице услуги.
 
-Приёмка: миграция в `plugins/elv/library/updates/` и описание в `docs/db.md`;
+Приёмка: миграция в `plugins/elv/site/updates/` и описание в `docs/db.md`;
 CHECK по `rating`; отзыв без подтверждённой брони отбит `422`; модерация в админке;
 агрегат и JSON-LD на странице услуги; тесты (не меньше 8) и `elv_reviews` нет
 в Tailor-таблицах.
@@ -498,9 +499,9 @@ WordPress», Telegram и Discord October, партнёры-студии и аг�
 
 ### P1-28. Аналитика и цели: чем мерить рекламу
 
-Мерить нечем: поиск по `themes/elv` и `plugins/elv/library` не находит
+Мерить нечем: поиск по `themes/elv` и `plugins/elv/site` не находит
 `analytics`, `gtag`, `metrika` — единственное упоминание `utm_source=pwa` живёт
-в тесте (`plugins/elv/library/tests/PwaTest.php:56`). На витрине счётчики есть,
+в тесте (`plugins/elv/site/tests/PwaTest.php:56`). На витрине счётчики есть,
 но описывают только подключение (`themes/elv-studio/partials/analytics.htm:1-2`:
 `analytics_google`, `analytics_yandex`, `metrika_webvisor`), списка целей нет.
 
@@ -518,9 +519,9 @@ WordPress», Telegram и Discord October, партнёры-студии и аг�
 
 ### P1-29. Партнёрская программа: условия, учёт рефералов, выплаты
 
-Партнёрки нет ни в коде, ни в оформлении: поиск по `plugins/elv/library`
+Партнёрки нет ни в коде, ни в оформлении: поиск по `plugins/elv/site`
 (PHP и YAML) не находит `partner`, `referr`, `ref_code`, `promo`; модели
-`plugins/elv/library/models/` — booking, order, redirect, request, subscriber,
+`plugins/elv/site/models/` — booking, order, redirect, request, subscriber,
 поля «кто привёл клиента» ни в одной нет. На витрине страницы `/partners/` нет
 (в `themes/elv-studio/pages/` 19 страниц), партнёрская программа числится
 несделанной (`D:\Elv Landing\Что доделать.txt:89`). Итог: привести партнёра
@@ -768,13 +769,13 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 `docs/roadmap.md` §10.
 
 Факты (срез до Stage 37; закрыто — см. статус ниже): локальный путь в поставляемом
-коде был ровно один — `plugins/elv/library/console/Import.php:65`
+коде был ровно один — `plugins/elv/site/console/Import.php:65`
 (`'D:/nlbbootstrap-main/db/config/data'` по умолчанию). У темы не было
 `composer.json`, а ядро ищет код продукта именно там
 (`modules/cms/classes/ThemeManager.php:354-366`); в `theme.yaml` не было
 `authorCode` (`:229-231`); `screenshot.png` отсутствовал (ядром не используется,
 но нужен карточке Marketplace). У плагина
-`plugins/elv/library/composer.json`: имя `elv/library-plugin` (проверка Stage 37
+`plugins/elv/site/composer.json`: имя `elv/site-plugin` (проверка Stage 37
 показала, что это валидная форма `vendor/name`, см. статус),
 `"license": "proprietary"` без файла `LICENSE`.
 
@@ -786,9 +787,7 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 телефона/адреса.
 
 Границы: `themes/elv/assets/js/script.js` побайтово равен источнику — правка
-бренда в нём ломает паритет, решение отдельное. Переименование вендора
-`Elv\Library` (75 файлов, 60 `namespace`) — не этот пункт, отдельное решение
-владельца.
+бренда в нём ломает паритет, решение отдельное.
 
 Приёмка: `grep` не находит абсолютных путей в `plugins/`, `themes/`, `config/`;
 `php artisan theme:list`/Marketplace-код видит тему; `composer validate` в
@@ -803,10 +802,10 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 абсолютный дефолт из `Import.php` убран (`--source` или `ELV_IMPORT_SOURCE`,
 `Import.php:63-78`, `:137-145`), `composer validate` зелёный у обоих пакетов.
 Гейт ловит пропажу лицензии — проверено откатом (файл убран → FAIL, возвращён → OK).
-Прежняя формулировка «имя `elv/library-plugin` не в форме `vendor/name`» не
-подтвердилась: имя даёт код `elv.library` (`modules/system/helpers/System.php:150-164`),
-то есть ровно код плагина `Elv\Library`. Осталось вне этого пункта: команда
-сборки ZIP (`elv:library:package`), страница установки и демо-данные в админке.
+Прежняя формулировка «имя `elv/site-plugin` не в форме `vendor/name`» не
+подтвердилась: имя даёт код `elv.site` (`modules/system/helpers/System.php:150-164`),
+то есть ровно код плагина `Elv\Site`. Осталось вне этого пункта: команда
+сборки ZIP (`elv:site:package`), страница установки и демо-данные в админке.
 
 ### P2-27. Демо-контент остаётся, бренд библиотеки — убирается
 
@@ -826,13 +825,13 @@ slow query log MySQL, разбор раз в сутки; план 10 часты�
 используется (папки `themes/elv/seeds` нет); реальные контакты в код не
 возвращаются.
 
-Приёмка: `grep -ri "библиотек"` по `themes/elv` и `plugins/elv/library` не
+Приёмка: `grep -ri "библиотек"` по `themes/elv` и `plugins/elv/site` не
 находит вхождений (кроме `preview/` и журналов); бренд меняется в одном месте —
 настройках темы; демо-блоки на месте; бронь, заказ, подписка и форма отвечают
 200; гейты зелёные.
 
 Статус (Stage 27, 13.11.2026): инфраструктура бренда готова —
-`plugins/elv/library/classes/Brand.php`, поля `brand_*` в `themes/elv/theme.yaml`,
+`plugins/elv/site/classes/Brand.php`, поля `brand_*` в `themes/elv/theme.yaml`,
 Twig-функции `elv_brand`/`elv_brand_text`, настройки читают шапка, подвал,
 fab-кнопки, реквизиты, копирайт, макет (`<title>`, RSS, `og:site_name`, apple
 title), `Seo.php` (JSON-LD, robots), `Rss.php`, `Pwa.php` (манифест и `sw.js`),
@@ -852,7 +851,7 @@ title), `Seo.php` (JSON-LD, robots), `Rss.php`, `Pwa.php` (манифест и `
 `tools/check-dom-parity.mjs` не менялись; один тумблер = один блок разметки;
 `<title>`, canonical, JSON-LD, инлайн-CSS, PWA-манифест и карта сайта не
 переключаются; на каждый тумблер — тест «выключен → элемента нет, по
-умолчанию → есть» (образец — `plugins/elv/library/tests/PageBuilderTest.php`).
+умолчанию → есть» (образец — `plugins/elv/site/tests/PageBuilderTest.php`).
 
 Приёмка: список переключателей описан в `docs/monetization.md` §5; тесты
 зелёные; `check-dom-parity` 110/110 при дефолтах; выключение любого тумблера не
@@ -865,7 +864,7 @@ title), `Seo.php` (JSON-LD, robots), `Rss.php`, `Pwa.php` (манифест и `
 `favicon.svg` в `app/assets/images`, акцент сайта `#2563eb` в
 `app/assets/css/brand_styles.css`; проверка — `tools/check-admin-brand.mjs`
 (включая ловушку «настройки бренда не пересозданы»). Осталось: привести четыре
-экрана (`plugins/elv/library/controllers/{requests,bookings,orders,subscribers}`)
+экрана (`plugins/elv/site/controllers/{requests,bookings,orders,subscribers}`)
 к одному виду — сводка сверху, быстрые фильтры по статусу, бейджи, массовые
 действия.
 
@@ -888,14 +887,14 @@ E2E на бэкенд в проекте нет — проверка ручная
 карточек).
 
 Факты. Входящий поток уже есть: `elv_requests`
-(`plugins/elv/library/updates/create_elv_requests_table.php:10-25` — `email`,
+(`plugins/elv/site/updates/create_elv_requests_table.php:10-25` — `email`,
 `phone`, `subject`, `message`, `page`, `source`, `created_by`,
 `date_processed`, `status` enum `new/in_progress/done`), модель со статусами и
-`markProcessed()` (`plugins/elv/library/models/Request.php:39-59`), форма
+`markProcessed()` (`plugins/elv/site/models/Request.php:39-59`), форма
 `/feedback/` создаёт запись и ставит письмо админу в очередь
-(`plugins/elv/library/classes/Http/FeedbackController.php:40-59`). Диалога нет:
+(`plugins/elv/site/classes/Http/FeedbackController.php:40-59`). Диалога нет:
 админский раздел — только список и просмотр, 31 строка без обработчиков
-(`plugins/elv/library/controllers/Requests.php:13-29`). `created_by` хранит имя,
+(`plugins/elv/site/controllers/Requests.php:13-29`). `created_by` хранит имя,
 а не идентификатор (`FeedbackController.php:52`) — для авторства ответов нужен
 отдельный `author_id`.
 
@@ -958,8 +957,8 @@ E2E на бэкенд в проекте нет — проверка ручная
 («усильте бизнес-логику: платежи + автовыдача после оплаты») и «Монетизация
 сборки на October CMS deepseek.html» (модель 1 «под ключ»). Факт по
 репозиторию: платёжных маршрутов и таблиц нет —
-`plugins/elv/library/routes.php:16-30` содержит только `health`, `/api/v1/*` и
-четыре формы; в `plugins/elv/library/models/` только Request, Booking, Order,
+`plugins/elv/site/routes.php:16-30` содержит только `health`, `/api/v1/*` и
+четыре формы; в `plugins/elv/site/models/` только Request, Booking, Order,
 Slot, Subscriber. Сейчас «оплата» — это заявка и письмо, статус оплаты нигде не
 хранится.
 
@@ -1002,7 +1001,8 @@ PHPUnit зелёный; `check-urls` и `check-seo` не меняются.
 Главный факт, который черновик не учитывает: счётчик на миграциях считает
 **установки на одном сайте**, а не в мире. Таблица лежит в БД клиента, поэтому
 `count()` всегда 1. Доказательство в нашей же базе: `system_plugin_versions` —
-**1 строка** (`Elv.Library 2.0.0`), `system_plugin_history` — 11 строк с типами
+**1 строка на чистой установке** (после Stage 42 в дев-базе их 2: `Elv.Site 2.2.0`
+и унаследованная `Elv.Library 2.1.0`), `system_plugin_history` — 11 строк с типами
 `comment` и `script`, события `install` там нет. Глобальное число возможно
 только при обращении к центральному серверу (ping), а его в черновике нет.
 
@@ -1091,7 +1091,7 @@ PHP-CS-Fixer и CI (`.github` в репозитории нет — P0-9) отс�
 типы в плагине проверяются только тестами и глазами.
 
 Нужно: `phpstan/phpstan` с `phpstan.neon` (уровень 5, baseline на текущие
-находки, `paths: plugins/elv/library`), `.php-cs-fixer.dist.php` по стилю
+находки, `paths: plugins/elv/site`), `.php-cs-fixer.dist.php` по стилю
 October (4 пробела, PSR-12), скрипты `analyse` и `fix`; при появлении CI
 (P0-9) — отдельной джобой.
 
@@ -1115,3 +1115,58 @@ October (4 пробела, PSR-12), скрипты `analyse` и `fix`; при п
 Приёмка: набор лежит в `docs/promo/` с датой съёмки и версией продукта;
 `/partners/` отдаёт 200 и пишет заявку в БД (та же таблица, что `feedback`);
 тексты прошли `check-seo` без ошибок.
+
+### P2-38. Чужой сайт: установка без данных владельца
+
+Демо в поставку не входит, а собрать его покупателю нечем: `elv:import`
+(`console/Import.php:63-78`) требует внешний каталог `data/*.php` плюс
+`iblocks.php`, пути по умолчанию нет (убран в Stage 37), каталога
+`themes/elv/seeds` не существует (проверено 18.11.2026), а в `updates/` —
+7 миграций и ни одного сидера с данными. На чистом October после установки плагина и темы
+`/books/`, `/news/`, `/events/`, `/services/` пусты: `Content::records('Elv\Post')`
+возвращает `[]`.
+
+Нужно: демо-набор внутри пакета (`updates/seeds/*.json` или `console/Demo.php` по
+образцу `plugins/elv/kit/classes/Demo.php`) и команда `elv:demo` с профилем
+`library` плюс режим `--empty`; `elv:import` остаётся для переноса с боевого
+сайта. Границы: демо — пример наполнения (P2-27), реальные контакты не
+возвращаются.
+
+Приёмка: чистый 4.4 → `plugin:install elv/site` → `theme:install elv/elv` →
+`elv:demo` → 109 адресов отвечают `200`, `/non-existent/` — `404`; `--empty` →
+страницы `200` с пустыми состояниями, без `500` и Twig-ошибок.
+
+### P2-39. Совместимость с чужими темами, блогом и картой сайта
+
+`Sitemap.php:38` — `PAGES` из 16 записей с путями `themes/elv/pages/*.htm`
+(`/books/`, `/printing/`, `/news/` и т. д.), `Sitemap.php:28` — `'blog' =>
+'Elv\Post'`; `Rss.php:97` и `Seo::applyRecord()` тоже читают Tailor-записи.
+На чужой теме карта сайта перечислит несуществующие страницы, а блог на
+`RainLab.Blog` в неё не попадёт.
+
+Нужно: реестр провайдеров (как у SiteSearch, который просит присылать
+провайдеров контента) — тема и сторонний плагин регистрируют свои URL и
+`lastmod`; `PAGES` уходит в настройки темы с пустым дефолтом; поддержка
+`RainLab.Blog` и Shopaholic — отдельным провайдером, не в ядре.
+
+Приёмка: на `themes/elv` карта совпадает с текущей (109 URL); при выключенном
+провайдере темы в карте только записи Tailor; посты `RainLab.Blog` попадают в
+карту и RSS без правок ядра.
+
+### P2-40. Бренд библиотеки и i18n в поставляемых файлах
+
+Продолжение P2-27. Stage 42 закрыл тексты плагина: вкладки прав — «Сайт»
+(`plugins/elv/site/Plugin.php:39-55`), `views/action.htm:7` берёт название из
+`elv_brand('name')`, письма брони и подписки (`views/mail/booking-client.htm:12`,
+`views/mail/subscribe-confirm.htm:3`) говорят «организация»/«сайт»,
+`themes/elv/assets/pwa/offline.html:8,137` и `avatar-tatyana.svg:1` —
+нейтральные, без выдуманных адреса и телефона.
+
+Осталось: в теме — бренд «Библиотека 2026» и реальные контакты (перечень —
+P2-27); каталога `lang/` нет ни в плагине, ни в теме: подписи бэкенда — русские
+строки прямо в YAML. Нужно: `lang/en` для бэкенда либо явная пометка «только
+RU» в карточке товара; бренд и контакты — из настроек темы.
+
+Приёмка: `grep -ri "библиотек"` по `themes/elv` и `plugins/elv/site` не находит
+вхождений (кроме `preview/`, `tests/`, демо-контента и журналов); смена бренда в
+одном месте меняет шапку, подвал, письма, PWA и JSON-LD; тесты плагина зелёные.
