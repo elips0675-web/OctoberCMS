@@ -7,6 +7,39 @@
 
 ---
 
+(Stage 43 — 18.11.2026) — **Срез кода для AI-чата: `test/ai-chat/`.**
+
+- Новый набор по образцу витрины (`D:\Elv Landing\test\ai-chat`): 8 тематических
+  срезов, `ALL-IN-ONE.txt` (380 КБ), `README.md` и `build.mjs`.
+  - `01-context.txt` — что за продукт, маршруты из `routes.php`, факты поведения
+    (брони, формы, подписка, SEO, PWA, редиректы), чем проверено, ограничения,
+    10 вопросов аудитору.
+  - `02-structure.txt` — отслеживаемые файлы с размерами (без `vendor/`,
+    `modules/`, `docs/html/`; картинки сгруппированы).
+  - `03-config.txt` — `composer.json`, `package.json`, `theme.yaml`,
+    `version.yaml` темы и плагина, `.env.example`, `phpunit.elv.xml`,
+    `nginx.conf`.
+  - `04-plugin-core.txt` — `Plugin.php`, `routes.php`, CSP и сжатие,
+    `Health`/`HealthController`.
+  - `05-content.txt` — `Content`, `PageBuilder`, `Labels`, `FormFields`,
+    `Media`, `Rss`, blueprints блога и `page`, страницы блога и конструктора.
+  - `06-forms.txt` — `BookingService`, общий `FormController`, четыре формы,
+    шесть моделей, классы писем и шаблоны писем.
+  - `07-seo-pwa.txt` — `Seo`, `SeoAnalyzer`, `Sitemap`, `Pwa`, контроллеры
+    SEO/PWA, редиректы, `layouts/default.htm`, `sw.js`, манифест, офлайн.
+  - `08-checks-docs.txt` — восемь гейтов `tools/check-*.mjs` и
+    `docs/architecture.md`.
+- Сборка: `node test/ai-chat/build.mjs` — дата и короткий хеш берутся у HEAD,
+  состав срезов задан массивами путей в скрипте, `skip` скрывает `vendor/`,
+  `modules/`, `docs/html/` и сам `test/ai-chat/`.
+- Секреты не попали: `.env` в срез не входит, в `03-config.txt` только
+  `.env.example` (ключи пустые), `composer.lock` и дампы исключены.
+- Обновлены `test/README.md` (строка про `ai-chat/` и пересборку) и
+  `test/Для анализа.txt` (дата и стадия 42, ссылка на `ai-chat/`, бэклог — 52).
+- Не проверено: сами модели, для которых срез собран, не запускались; объём
+  `ALL-IN-ONE.txt` 380 КБ (≈95 тыс. токенов) — для контекста 32k нужны
+  отдельные срезы.
+
 (Stage 42 — 18.11.2026) — **Плагин переименован: `Elv\Library` → `Elv\Site`.**
 
 - `git mv plugins/elv/library plugins/elv/site` — история файлов сохранена

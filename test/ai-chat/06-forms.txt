@@ -1,0 +1,1580 @@
+# Формы, брони, заказы, подписка, модели и письма
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Пути — от корня репозитория; содержимое файлов не переписано.
+
+===== FILE: plugins/elv/site/classes/BookingService.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use DateTimeInterface;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+use Elv\Site\Models\Booking;
+use Elv\Site\Models\Slot;
+
+/**
+ * BookingService — создание, подтверждение и отмена брони.
+ *
+ * Гонка слота закрывается двумя механизмами сразу:
+ *  - UNIQUE (service_code, date, time) в миграции elv_slots;
+ *  - DB::transaction + lockForUpdate + условный UPDATE taken < capacity.
+ * Проверка «прочитал и записал» без них — дефект, а не реализация (P1-20).
+ */
+class BookingService
+{
+    /**
+     * book создаёт бронь и занимает слот в одной транзакции.
+     *
+     * @throws SlotUnavailableException
+     */
+    public function book(array $attributes): Booking
+    {
+        $attributes = $this->normalize($attributes);
+
+        return DB::transaction(function () use ($attributes) {
+            $slot = $this->lockSlot(
+                (string) $attributes['service_code'],
+                (string) $attributes['date'],
+                (string) $attributes['time']
+            );
+
+            if (!$slot->isAvailable()) {
+                throw new SlotUnavailableException();
+            }
+
+            $booking = new Booking();
+            $booking->fill($attributes);
+            $booking->status = Booking::STATUS_NEW;
+            $booking->save();
+
+            $claimed = Slot::query()
+                ->whereKey($slot->getKey())
+                ->whereColumn('taken', '<', 'capacity')
+                ->update([
+                    'taken' => DB::raw('taken + 1'),
+                    'booking_id' => $booking->getKey(),
+                    'updated_at' => now(),
+                ]);
+
+            if ($claimed !== 1) {
+                throw new SlotUnavailableException();
+            }
+
+            return $booking;
+        });
+    }
+
+    /**
+     * confirm переводит бронь в статус «подтверждена».
+     */
+    public function confirm(Booking $booking): Booking
+    {
+        return DB::transaction(function () use ($booking) {
+            $fresh = Booking::query()->whereKey($booking->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($fresh->isCancelled()) {
+                throw new SlotUnavailableException('Отменённую бронь нельзя подтвердить.');
+            }
+
+            $fresh->status = Booking::STATUS_CONFIRMED;
+            $fresh->save();
+
+            return $fresh;
+        });
+    }
+
+    /**
+     * cancel отменяет бронь и освобождает слот. Повторный вызов безопасен.
+     */
+    public function cancel(Booking $booking): Booking
+    {
+        return DB::transaction(function () use ($booking) {
+            $fresh = Booking::query()->whereKey($booking->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($fresh->isCancelled()) {
+                return $fresh;
+            }
+
+            $this->releaseSlot($fresh);
+
+            $fresh->status = Booking::STATUS_CANCELLED;
+            $fresh->date_processed = now();
+            $fresh->saveQuietly();
+
+            return $fresh;
+        });
+    }
+
+    /**
+     * releaseSlot освобождает слот брони.
+     *
+     * Вызывается и из BookingService::cancel, и из хука модели Booking, поэтому
+     * done молча: слот ищется по услуге, дате и времени, taken не уходит ниже нуля.
+     */
+    public function releaseSlot(Booking $booking): void
+    {
+        $slot = Slot::query()
+            ->where('service_code', (string) $booking->service_code)
+            ->whereDate('date', $this->dateToString($booking->date))
+            ->where('time', (string) $booking->time)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$slot) {
+            return;
+        }
+
+        $slot->taken = max(0, (int) $slot->taken - 1);
+        if ((int) $slot->booking_id === (int) $booking->getKey()) {
+            $slot->booking_id = null;
+        }
+        $slot->save();
+    }
+
+    /**
+     * availableTimes возвращает свободные часы услуги на дату.
+     *
+     * @return string[]
+     */
+    public function availableTimes(string $serviceCode, string $date): array
+    {
+        return Slot::query()
+            ->where('service_code', $serviceCode)
+            ->whereDate('date', $date)
+            ->whereColumn('taken', '<', 'capacity')
+            ->orderBy('time')
+            ->pluck('time')
+            ->all();
+    }
+
+    /**
+     * lockSlot находит слот под блокировкой или создаёт его.
+     *
+     * @throws SlotUnavailableException
+     */
+    protected function lockSlot(string $serviceCode, string $date, string $time): Slot
+    {
+        $slot = $this->findForUpdate($serviceCode, $date, $time);
+        if ($slot) {
+            return $slot;
+        }
+
+        try {
+            return Slot::create([
+                'service_code' => $serviceCode,
+                'date' => $date,
+                'time' => $time,
+                'capacity' => 1,
+                'taken' => 0,
+            ]);
+        }
+        catch (QueryException $e) {
+            if (!$this->isDuplicate($e)) {
+                throw $e;
+            }
+
+            $slot = $this->findForUpdate($serviceCode, $date, $time);
+            if (!$slot) {
+                throw new SlotUnavailableException();
+            }
+
+            return $slot;
+        }
+    }
+
+    protected function findForUpdate(string $serviceCode, string $date, string $time): ?Slot
+    {
+        return Slot::query()
+            ->where('service_code', $serviceCode)
+            ->whereDate('date', $date)
+            ->where('time', $time)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    /**
+     * isDuplicate отличает нарушение UNIQUE от прочих ошибок SQL.
+     */
+    protected function isDuplicate(QueryException $e): bool
+    {
+        if ((string) $e->getCode() !== '23000') {
+            return false;
+        }
+
+        $message = $e->getMessage();
+
+        return str_contains($message, '1062')
+            || str_contains($message, 'UNIQUE constraint failed')
+            || str_contains($message, 'Duplicate entry');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function normalize(array $attributes): array
+    {
+        $attributes['service_code'] = trim((string) ($attributes['service_code'] ?? ''));
+        $attributes['date'] = $this->dateToString($attributes['date'] ?? null);
+        $attributes['time'] = $this->timeToString($attributes['time'] ?? null);
+
+        foreach (['service', 'tariff', 'price', 'person', 'phone', 'email', 'comment', 'source', 'created_by'] as $field) {
+            if (array_key_exists($field, $attributes) && $attributes[$field] !== null) {
+                $attributes[$field] = trim((string) $attributes[$field]);
+            }
+        }
+
+        return $attributes;
+    }
+
+    protected function dateToString($value): string
+    {
+        if ($value instanceof DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        return trim((string) $value);
+    }
+
+    protected function timeToString($value): string
+    {
+        $value = trim((string) $value);
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches)) {
+            return sprintf('%02d:%02d', (int) $matches[1], (int) $matches[2]);
+        }
+
+        return $value;
+    }
+}
+
+===== FILE: plugins/elv/site/classes/SlotUnavailableException.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use RuntimeException;
+
+/**
+ * SlotUnavailableException — слот уже занят или не существует.
+ *
+ * Вызывающий код обязан превратить её в HTTP 409, а не в 500.
+ */
+class SlotUnavailableException extends RuntimeException
+{
+    public function __construct(string $message = 'Выбранное время уже занято.')
+    {
+        parent::__construct($message);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/FormController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Elv\Site\Classes\FormFields;
+
+/**
+ * FormController — общая часть публичных форм.
+ *
+ * Один вход, три выхода: успех (`?sent=1#якорь`), ошибка валидации (`422` для
+ * JSON, редирект с ошибками для браузера), конфликт слота (`409` для JSON).
+ * Проверка согласия и разбор полей Bitrix — здесь, чтобы не расходились
+ * четыре копии.
+ */
+abstract class FormController
+{
+    /**
+     * store принимает отправку формы.
+     *
+     * @return JsonResponse|RedirectResponse
+     */
+    public function store(Request $request)
+    {
+        $input = (array) $request->all();
+
+        if ($this->requiresConsent() && !FormFields::consentGiven($input)) {
+            return $this->invalid($request, [
+                'CONSENT' => ['Нужно согласие на обработку персональных данных.'],
+            ]);
+        }
+
+        $data = FormFields::normalize($input);
+        $validator = Validator::make($data, $this->rules(), $this->messages());
+
+        if ($validator->fails()) {
+            return $this->invalid($request, $validator->errors()->toArray());
+        }
+
+        return $this->handle($data, $request) ?: $this->done($request);
+    }
+
+    /**
+     * rules — правила валидации плоских полей.
+     *
+     * @return array<string, mixed>
+     */
+    abstract protected function rules(): array;
+
+    /**
+     * messages — человеческие тексты ошибок.
+     *
+     * @return array<string, string>
+     */
+    abstract protected function messages(): array;
+
+    /**
+     * handle сохраняет данные и ставит письма в очередь. Возвращает ответ,
+     * если запись не состоялась (конфликт слота), иначе null.
+     *
+     * @param  array<string, string>  $data
+     * @return JsonResponse|RedirectResponse|null
+     */
+    abstract protected function handle(array $data, Request $request);
+
+    /**
+     * fallbackPath — куда вернуть, если браузер не прислал Referer.
+     */
+    abstract protected function fallbackPath(): string;
+
+    /**
+     * anchor — якорь блока формы для возврата.
+     */
+    abstract protected function anchor(): string;
+
+    /**
+     * requiresConsent — нужен ли чекбокс согласия. У подписки его нет в макете:
+     * добровольная отправка адреса и есть согласие, подтверждение — ссылкой.
+     */
+    protected function requiresConsent(): bool
+    {
+        return true;
+    }
+
+    /**
+     * invalid отдаёт ошибки валидации.
+     *
+     * @param  array<string, mixed>  $errors
+     * @return JsonResponse|RedirectResponse
+     */
+    protected function invalid(Request $request, array $errors)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => false,
+                'errors' => $errors,
+            ], 422);
+        }
+
+        return $this->back($request, ['error' => '1'])->withInput()->withErrors($errors);
+    }
+
+    /**
+     * conflict отвечает на занятый слот.
+     *
+     * @return JsonResponse|RedirectResponse
+     */
+    protected function conflict(Request $request, string $message)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'SLOT_UNAVAILABLE',
+                'message' => $message,
+            ], 409);
+        }
+
+        return $this->back($request, ['error' => 'slot'])
+            ->withInput()
+            ->withErrors(['TIME' => $message]);
+    }
+
+    /**
+     * done отвечает на успешную отправку.
+     *
+     * @return JsonResponse|RedirectResponse
+     */
+    protected function done(Request $request)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true], 201);
+        }
+
+        return $this->back($request, ['sent' => '1']);
+    }
+
+    /**
+     * back возвращает на страницу формы: Referer того же хоста, иначе fallback.
+     *
+     * @param  array<string, string>  $query
+     */
+    protected function back(Request $request, array $query): RedirectResponse
+    {
+        return redirect($this->returnUrl($request, $query) . '#' . $this->anchor());
+    }
+
+    /**
+     * returnUrl собирает адрес возврата с параметрами, не теряя чужие.
+     *
+     * @param  array<string, string>  $query
+     */
+    protected function returnUrl(Request $request, array $query): string
+    {
+        $referer = trim((string) $request->headers->get('referer', ''));
+        $host = $referer !== '' ? (string) parse_url($referer, PHP_URL_HOST) : '';
+
+        $url = ($referer !== '' && $host !== '' && $host === $request->getHost())
+            ? $referer
+            : rtrim(url('/'), '/') . $this->fallbackPath();
+
+        $parts = parse_url($url);
+        $params = [];
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $params);
+        }
+
+        $params = array_merge($params, $query);
+
+        $base = ($parts['scheme'] ?? 'http') . '://' . ($parts['host'] ?? 'localhost');
+        if (!empty($parts['port'])) {
+            $base .= ':' . $parts['port'];
+        }
+        $base .= $parts['path'] ?? '/';
+
+        return $base . '?' . http_build_query($params);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/RequestPath.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Request;
+
+/**
+ * RequestPath — путь запроса из сырого `REQUEST_URI`.
+ *
+ * Symfony срезает `SCRIPT_NAME` (`/index.php`) как базовый путь, поэтому
+ * `path()` отдаёт `/` и старый адрес главной не отличить от самой главной.
+ * Здесь путь берётся из сырого URI, декодируется и приводится к виду
+ * `/сегмент/сегмент` — один источник правды для `LegacyRedirect`
+ * и `ManagedRedirect`.
+ */
+class RequestPath
+{
+    public static function from(Request $request): string
+    {
+        $uri = (string) $request->server('REQUEST_URI', '/');
+        $path = parse_url($uri, PHP_URL_PATH);
+
+        if (!is_string($path) || $path === '') {
+            return '/';
+        }
+
+        return '/' . ltrim(urldecode($path), '/');
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/FeedbackController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Elv\Site\Classes\FormFields;
+use Elv\Site\Classes\Mail\FeedbackNotification;
+use Elv\Site\Classes\Mail\MailSettings;
+use Elv\Site\Models\Request as RequestModel;
+
+/**
+ * FeedbackController — форма обратной связи (P0-4).
+ *
+ * Источник не проверял доставку письма: здесь строка в `elv_requests` и письмо
+ * в очередь, а `MAIL_MAILER=log` показывает его в логе без SMTP.
+ */
+class FeedbackController extends FormController
+{
+    protected function rules(): array
+    {
+        return [
+            'EMAIL' => 'required_without:PHONE|nullable|email|max:191',
+            'PHONE' => 'required_without:EMAIL|nullable|string|max:32',
+            'NAME' => 'nullable|string|max:191',
+            'SUBJECT' => 'nullable|string|max:255',
+            'MESSAGE' => 'required|string|max:5000',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'EMAIL.required_without' => 'Укажите e-mail или телефон.',
+            'EMAIL.email' => 'Проверьте адрес электронной почты.',
+            'PHONE.required_without' => 'Укажите телефон или e-mail.',
+            'MESSAGE.required' => 'Напишите сообщение.',
+            'MESSAGE.max' => 'Сообщение длиннее 5000 знаков — сократите текст.',
+        ];
+    }
+
+    protected function handle(array $data, Request $request): void
+    {
+        $message = (string) $data['MESSAGE'];
+
+        $model = new RequestModel();
+        $model->fill([
+            'email' => $data['EMAIL'] ?? null,
+            'phone' => $data['PHONE'] ?? null,
+            'subject' => $data['SUBJECT'] ?? mb_substr($message, 0, 60),
+            'message' => $message,
+            'page' => FormFields::page($request),
+            'source' => 'feedback',
+            'created_by' => $data['NAME'] ?? null,
+            'status' => RequestModel::STATUS_NEW,
+        ]);
+        $model->save();
+
+        Mail::queue(
+            (new FeedbackNotification($data))->to(MailSettings::adminAddress())
+        );
+    }
+
+    protected function fallbackPath(): string
+    {
+        return '/feedback/';
+    }
+
+    protected function anchor(): string
+    {
+        return 'form';
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/BookingController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Elv\Site\Classes\BookingService;
+use Elv\Site\Classes\Mail\BookingConfirmation;
+use Elv\Site\Classes\Mail\BookingNotification;
+use Elv\Site\Classes\Mail\MailSettings;
+use Elv\Site\Classes\SlotUnavailableException;
+use Elv\Site\Models\Slot;
+
+/**
+ * BookingController — бронь услуги (P1-9, P1-20).
+ *
+ * Проверка «слот есть в окне генерации» — до записи: без неё `BookingService`
+ * создаёт слот на любую дату, и бронь уходит в пустоту. Гонку закрывает
+ * `UNIQUE (service_code, date, time)` в самой службе, здесь — только `409`.
+ */
+class BookingController extends FormController
+{
+    public function __construct(protected BookingService $bookings)
+    {
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'SERVICE' => 'required|string|max:191',
+            'SERVICE_CODE' => 'required|string|max:64',
+            'DATE' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'TIME' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
+            'PERSON' => 'required|string|max:191',
+            'PHONE' => 'required|string|max:32',
+            'EMAIL' => 'nullable|email|max:191',
+            'COMMENT' => 'nullable|string|max:2000',
+            'TARIFF' => 'nullable|string|max:191',
+            'PRICE' => 'nullable|string|max:64',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'SERVICE.required' => 'Выберите услугу.',
+            'SERVICE_CODE.required' => 'Выберите услугу.',
+            'DATE.required' => 'Выберите дату.',
+            'DATE.date_format' => 'Дата должна быть в формате ГГГГ-ММ-ДД.',
+            'DATE.after_or_equal' => 'Дата уже прошла — выберите другую.',
+            'TIME.required' => 'Выберите время.',
+            'TIME.regex' => 'Время должно быть в формате ЧЧ:ММ.',
+            'PERSON.required' => 'Укажите имя.',
+            'PHONE.required' => 'Укажите телефон.',
+            'EMAIL.email' => 'Проверьте адрес электронной почты.',
+        ];
+    }
+
+    protected function handle(array $data, Request $request)
+    {
+        $slot = Slot::query()
+            ->where('service_code', (string) $data['SERVICE_CODE'])
+            ->whereDate('date', (string) $data['DATE'])
+            ->where('time', (string) $data['TIME'])
+            ->first();
+
+        if (!$slot) {
+            return $this->invalid($request, [
+                'TIME' => ['Выберите время из доступных на эту дату.'],
+            ]);
+        }
+
+        try {
+            $this->bookings->book([
+                'service' => $data['SERVICE'],
+                'service_code' => $data['SERVICE_CODE'],
+                'tariff' => $data['TARIFF'] ?? null,
+                'price' => $data['PRICE'] ?? null,
+                'date' => $data['DATE'],
+                'time' => $data['TIME'],
+                'person' => $data['PERSON'],
+                'phone' => $data['PHONE'],
+                'email' => $data['EMAIL'] ?? null,
+                'comment' => $data['COMMENT'] ?? null,
+                'source' => 'booking',
+                'created_by' => $data['NAME'] ?? $data['PERSON'],
+            ]);
+        }
+        catch (SlotUnavailableException $e) {
+            return $this->conflict($request, 'Это время уже занято — выберите другое.');
+        }
+
+        Mail::queue(
+            (new BookingNotification($data))->to(MailSettings::adminAddress())
+        );
+
+        if (!empty($data['EMAIL'])) {
+            Mail::queue(
+                (new BookingConfirmation($data))->to($data['EMAIL'])
+            );
+        }
+
+        return null;
+    }
+
+    protected function fallbackPath(): string
+    {
+        return '/services/';
+    }
+
+    protected function anchor(): string
+    {
+        return 'booking';
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/OrderController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Elv\Site\Classes\Mail\MailSettings;
+use Elv\Site\Classes\Mail\OrderNotification;
+use Elv\Site\Models\Order;
+
+/**
+ * OrderController — заказ сувенира (P1-12).
+ *
+ * Название, артикул и цена приходят из записи каталога скрытыми полями; здесь
+ * они проверяются заново — скрытое поле подделывается в один шаг.
+ */
+class OrderController extends FormController
+{
+    protected function rules(): array
+    {
+        return [
+            'ITEM' => 'required|string|max:191',
+            'ARTICLE' => 'nullable|string|max:64',
+            'PRICE' => 'required|integer|min:0',
+            'QTY' => 'required|integer|min:1|max:999',
+            'PERSON' => 'required|string|max:191',
+            'PHONE' => 'required|string|max:32',
+            'EMAIL' => 'nullable|email|max:191',
+            'COMMENT' => 'nullable|string|max:2000',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'ITEM.required' => 'Не выбран товар.',
+            'PRICE.required' => 'Не указана цена.',
+            'PRICE.integer' => 'Цена должна быть целым числом.',
+            'PRICE.min' => 'Цена не может быть отрицательной.',
+            'QTY.required' => 'Укажите количество.',
+            'QTY.integer' => 'Количество должно быть целым числом.',
+            'QTY.min' => 'Количество должно быть не меньше 1.',
+            'QTY.max' => 'Количество не больше 999.',
+            'PERSON.required' => 'Укажите имя.',
+            'PHONE.required' => 'Укажите телефон.',
+            'EMAIL.email' => 'Проверьте адрес электронной почты.',
+        ];
+    }
+
+    protected function handle(array $data, Request $request)
+    {
+        $model = new Order();
+        $model->fill([
+            'item' => $data['ITEM'],
+            'article' => $data['ARTICLE'] ?? null,
+            'price' => (int) $data['PRICE'],
+            'qty' => (int) $data['QTY'],
+            'person' => $data['PERSON'],
+            'phone' => $data['PHONE'],
+            'email' => $data['EMAIL'] ?? null,
+            'comment' => $data['COMMENT'] ?? null,
+            'source' => 'order',
+            'created_by' => $data['NAME'] ?? $data['PERSON'],
+            'status' => Order::STATUS_NEW,
+        ]);
+        $model->save();
+
+        Mail::queue(
+            (new OrderNotification($data))->to(MailSettings::adminAddress())
+        );
+
+        return null;
+    }
+
+    protected function fallbackPath(): string
+    {
+        return '/books/';
+    }
+
+    protected function anchor(): string
+    {
+        return 'order';
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/SubscriberController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Elv\Site\Classes\Mail\SubscriptionConfirmation;
+use Elv\Site\Models\Subscriber;
+
+/**
+ * SubscriberController — подписка с двойным подтверждением (P0-5).
+ *
+ * Рассылки нет: есть подтверждение по токену и отписка. Повторная подписка не
+ * создаёт дубль (`UNIQUE(email)`), неподтверждённый адрес остаётся в базе с
+ * `confirmed_at = null` — рассылать по нему нельзя.
+ */
+class SubscriberController extends FormController
+{
+    protected function rules(): array
+    {
+        return [
+            'EMAIL' => 'required|email|max:191',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'EMAIL.required' => 'Укажите e-mail.',
+            'EMAIL.email' => 'Проверьте адрес электронной почты.',
+        ];
+    }
+
+    protected function handle(array $data, Request $request)
+    {
+        $subscriber = Subscriber::subscribe((string) $data['EMAIL']);
+
+        if (!$subscriber->isConfirmed() && !$subscriber->isUnsubscribed()) {
+            $root = rtrim((string) config('app.url'), '/');
+
+            Mail::queue(
+                (new SubscriptionConfirmation(
+                    $subscriber->email,
+                    $root . '/subscribe/confirm/' . $subscriber->token,
+                    $root . '/unsubscribe/' . $subscriber->token
+                ))->to($subscriber->email)
+            );
+        }
+
+        return null;
+    }
+
+    /**
+     * confirm подтверждает подписку по ссылке из письма.
+     */
+    public function confirm(string $token)
+    {
+        $subscriber = Subscriber::confirmByToken($token);
+
+        return $this->page(
+            $subscriber ? 200 : 410,
+            $subscriber ? 'Подписка подтверждена' : 'Ссылка не сработала',
+            $subscriber
+                ? 'Теперь вы будете получать анонсы событий и новости.'
+                : 'Ссылка уже использована или подписка отменена. Оформите подписку заново на странице «Подписка».'
+        );
+    }
+
+    /**
+     * unsubscribe отписывает по ссылке из письма. Повторный переход безопасен.
+     */
+    public function unsubscribe(string $token)
+    {
+        $subscriber = Subscriber::unsubscribeByToken($token);
+
+        return $this->page(
+            $subscriber ? 200 : 410,
+            $subscriber ? 'Вы отписались' : 'Ссылка не сработала',
+            $subscriber
+                ? 'Письма больше не будут приходить. Подписаться снова можно в любой момент.'
+                : 'Такой подписки нет. Возможно, ссылка устарела.'
+        );
+    }
+
+    /**
+     * page отдаёт страницу результата: ссылка из письма открывается в браузере.
+     */
+    protected function page(int $status, string $title, string $message)
+    {
+        return response(
+            view('elv.site::action', [
+                'title' => $title,
+                'message' => $message,
+            ])->render(),
+            $status
+        );
+    }
+
+    protected function requiresConsent(): bool
+    {
+        return false;
+    }
+
+    protected function fallbackPath(): string
+    {
+        return '/subscribe/';
+    }
+
+    protected function anchor(): string
+    {
+        return 'form';
+    }
+}
+
+===== FILE: plugins/elv/site/models/Request.php =====
+
+<?php namespace Elv\Site\Models;
+
+use October\Rain\Database\Model;
+use October\Rain\Database\Traits\Validation;
+
+/**
+ * Request — обращение через форму обратной связи.
+ */
+class Request extends Model
+{
+    use Validation;
+
+    public $table = 'elv_requests';
+
+    protected $guarded = [];
+
+    public $attributes = [
+        'status' => 'new',
+    ];
+
+    public $rules = [
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string|max:5000',
+        'email' => 'required_without:phone|nullable|email|max:191',
+        'phone' => 'required_without:email|nullable|string|max:32',
+        'page' => 'nullable|string|max:255',
+        'source' => 'nullable|string|max:64',
+        'status' => 'in:new,in_progress,done',
+    ];
+
+    public $customMessages = [
+        'subject.required' => 'Укажите тему обращения.',
+        'message.required' => 'Напишите сообщение.',
+        'email.required_without' => 'Укажите e-mail или телефон.',
+        'phone.required_without' => 'Укажите телефон или e-mail.',
+        'email.email' => 'Проверьте адрес электронной почты.',
+    ];
+
+    public const STATUS_NEW = 'new';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_DONE = 'done';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function (self $request) {
+            if ($request->status === self::STATUS_DONE && !$request->date_processed) {
+                $request->date_processed = now();
+            }
+        });
+    }
+
+    public function markProcessed(): void
+    {
+        $this->status = self::STATUS_DONE;
+        $this->date_processed = now();
+        $this->save();
+    }
+}
+
+===== FILE: plugins/elv/site/models/Booking.php =====
+
+<?php namespace Elv\Site\Models;
+
+use October\Rain\Database\Model;
+use October\Rain\Database\Traits\Validation;
+use October\Rain\Exception\ApplicationException;
+use Elv\Site\Classes\BookingService;
+
+/**
+ * Booking — бронь услуги на дату и время.
+ */
+class Booking extends Model
+{
+    use Validation;
+
+    public $table = 'elv_bookings';
+
+    protected $guarded = [];
+
+    public $attributes = [
+        'status' => 'new',
+    ];
+
+    public $rules = [
+        'service' => 'required|string|max:191',
+        'service_code' => 'required|string|max:64',
+        'tariff' => 'nullable|string|max:191',
+        'price' => 'nullable|string|max:64',
+        'date' => 'required|date_format:Y-m-d',
+        'time' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
+        'person' => 'required|string|max:191',
+        'phone' => 'required|string|max:32',
+        'email' => 'nullable|email|max:191',
+        'comment' => 'nullable|string|max:2000',
+        'status' => 'in:new,confirmed,cancelled',
+    ];
+
+    public $customMessages = [
+        'service.required' => 'Выберите услугу.',
+        'date.required' => 'Укажите дату.',
+        'date.date_format' => 'Дата должна быть в формате ГГГГ-ММ-ДД.',
+        'time.required' => 'Выберите время.',
+        'time.regex' => 'Время должно быть в формате ЧЧ:ММ.',
+        'person.required' => 'Укажите имя.',
+        'phone.required' => 'Укажите телефон.',
+        'email.email' => 'Проверьте адрес электронной почты.',
+    ];
+
+    public const STATUS_NEW = 'new';
+    public const STATUS_CONFIRMED = 'confirmed';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function (self $booking) {
+            if (!$booking->isDirty('status')) {
+                return;
+            }
+
+            if ($booking->status === self::STATUS_CANCELLED) {
+                app(BookingService::class)->releaseSlot($booking);
+                $booking->date_processed = $booking->date_processed ?: now();
+
+                return;
+            }
+
+            if ($booking->getOriginal('status') === self::STATUS_CANCELLED) {
+                throw new ApplicationException('Отменённую бронь нельзя вернуть в работу — создайте новую.');
+            }
+        });
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', self::STATUS_CANCELLED);
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function isActive(): bool
+    {
+        return !$this->isCancelled();
+    }
+}
+
+===== FILE: plugins/elv/site/models/Order.php =====
+
+<?php namespace Elv\Site\Models;
+
+use October\Rain\Database\Model;
+use October\Rain\Database\Traits\Validation;
+
+/**
+ * Order — заказ сувенира из каталога.
+ */
+class Order extends Model
+{
+    use Validation;
+
+    public $table = 'elv_orders';
+
+    protected $guarded = [];
+
+    public $attributes = [
+        'status' => 'new',
+    ];
+
+    public $rules = [
+        'item' => 'required|string|max:191',
+        'article' => 'nullable|string|max:64',
+        'price' => 'required|integer|min:0',
+        'qty' => 'required|integer|min:1|max:999',
+        'person' => 'required|string|max:191',
+        'phone' => 'required|string|max:32',
+        'email' => 'nullable|email|max:191',
+        'comment' => 'nullable|string|max:2000',
+        'status' => 'in:new,processing,done,cancelled',
+    ];
+
+    public $customMessages = [
+        'item.required' => 'Не выбран товар.',
+        'price.required' => 'Не указана цена.',
+        'price.min' => 'Цена не может быть отрицательной.',
+        'qty.required' => 'Укажите количество.',
+        'qty.min' => 'Количество должно быть не меньше 1.',
+        'person.required' => 'Укажите имя.',
+        'phone.required' => 'Укажите телефон.',
+        'email.email' => 'Проверьте адрес электронной почты.',
+    ];
+
+    public const STATUS_NEW = 'new';
+    public const STATUS_PROCESSING = 'processing';
+    public const STATUS_DONE = 'done';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function (self $order) {
+            if (in_array($order->status, [self::STATUS_DONE, self::STATUS_CANCELLED], true) && !$order->date_processed) {
+                $order->date_processed = now();
+            }
+        });
+    }
+
+    public function total(): int
+    {
+        return (int) $this->price * (int) $this->qty;
+    }
+}
+
+===== FILE: plugins/elv/site/models/Slot.php =====
+
+<?php namespace Elv\Site\Models;
+
+use October\Rain\Database\Model;
+use October\Rain\Database\Traits\Validation;
+
+/**
+ * Slot — доступное время услуги.
+ *
+ * Уникальный индекс (service_code, date, time) объявлен в миграции:
+ * именно он, а не проверка «прочитал-записал», закрывает гонку брони.
+ */
+class Slot extends Model
+{
+    use Validation;
+
+    public $table = 'elv_slots';
+
+    protected $guarded = [];
+
+    public $rules = [
+        'service_code' => 'required|string|max:64',
+        'date' => 'required|date_format:Y-m-d',
+        'time' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
+        'capacity' => 'required|integer|min:1',
+        'taken' => 'required|integer|min:0',
+    ];
+
+    public $casts = [
+        'capacity' => 'integer',
+        'taken' => 'integer',
+    ];
+
+    public function isAvailable(): bool
+    {
+        return (int) $this->taken < (int) $this->capacity;
+    }
+
+    public function freeSeats(): int
+    {
+        return max(0, (int) $this->capacity - (int) $this->taken);
+    }
+
+    public function scopeForService($query, string $serviceCode)
+    {
+        return $query->where('service_code', $serviceCode);
+    }
+
+    public function scopeOnDate($query, string $date)
+    {
+        return $query->whereDate('date', $date);
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->whereColumn('taken', '<', 'capacity');
+    }
+
+    /**
+     * occupiedMap возвращает занятые часы по датам для формы брони.
+     *
+     * Формат совпадает с данными формы: {"2026-11-11": ["10:00", "11:00"]}.
+     * В карту попадают только часы без свободных мест, чтобы скрипт формы
+     * блокировал их, а остальные оставлял доступными.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function occupiedMap(string $serviceCode, ?string $from = null, int $days = 60): array
+    {
+        $start = $from ?: date('Y-m-d');
+        $until = date('Y-m-d', strtotime($start . ' +' . max(1, $days) . ' days'));
+
+        $rows = static::query()
+            ->forService($serviceCode)
+            ->whereDate('date', '>=', $start)
+            ->whereDate('date', '<=', $until)
+            ->orderBy('date')
+            ->orderBy('time')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            if ($row->isAvailable()) {
+                continue;
+            }
+
+            $day = substr((string) $row->date, 0, 10);
+            $time = substr((string) $row->time, 0, 5);
+            if ($day === '' || $time === '') {
+                continue;
+            }
+
+            $map[$day][] = $time;
+        }
+
+        return $map;
+    }
+
+    /**
+     * jsonOccupiedMap отдаёт карту занятых часов строкой для атрибута формы.
+     */
+    public static function jsonOccupiedMap(string $serviceCode, int $days = 60): string
+    {
+        $map = static::occupiedMap($serviceCode, null, $days);
+        if ($map === []) {
+            return '{}';
+        }
+
+        return (string) json_encode($map, JSON_UNESCAPED_UNICODE);
+    }
+}
+
+===== FILE: plugins/elv/site/models/Subscriber.php =====
+
+<?php namespace Elv\Site\Models;
+
+use October\Rain\Database\Model;
+use October\Rain\Database\Traits\Validation;
+use Str;
+
+/**
+ * Subscriber — подписка на рассылку с подтверждением (double opt-in).
+ */
+class Subscriber extends Model
+{
+    use Validation;
+
+    public $table = 'elv_subscribers';
+
+    protected $guarded = [];
+
+    public $rules = [
+        'email' => 'required|email|max:191',
+        'token' => 'required|string|max:64',
+    ];
+
+    public $customMessages = [
+        'email.required' => 'Укажите e-mail.',
+        'email.email' => 'Проверьте адрес электронной почты.',
+    ];
+
+    public $casts = [
+        'confirmed_at' => 'datetime',
+        'unsubscribed_at' => 'datetime',
+    ];
+
+    public static function subscribe(string $email): self
+    {
+        $email = mb_strtolower(trim($email));
+        $subscriber = static::where('email', $email)->first();
+
+        if ($subscriber) {
+            if ($subscriber->unsubscribed_at !== null) {
+                $subscriber->token = static::makeToken();
+                $subscriber->confirmed_at = null;
+                $subscriber->unsubscribed_at = null;
+                $subscriber->save();
+            }
+
+            return $subscriber;
+        }
+
+        return static::create([
+            'email' => $email,
+            'token' => static::makeToken(),
+        ]);
+    }
+
+    public static function makeToken(): string
+    {
+        do {
+            $token = Str::random(48);
+        } while (static::where('token', $token)->exists());
+
+        return $token;
+    }
+
+    public function isConfirmed(): bool
+    {
+        return $this->confirmed_at !== null;
+    }
+
+    public function isUnsubscribed(): bool
+    {
+        return $this->unsubscribed_at !== null;
+    }
+
+    public function confirm(): bool
+    {
+        if ($this->isUnsubscribed() || $this->isConfirmed()) {
+            return false;
+        }
+
+        $this->confirmed_at = now();
+        $this->save();
+
+        return true;
+    }
+
+    public function unsubscribe(): void
+    {
+        if ($this->isUnsubscribed()) {
+            return;
+        }
+
+        $this->unsubscribed_at = now();
+        $this->save();
+    }
+
+    public static function confirmByToken(string $token): ?self
+    {
+        $subscriber = static::where('token', $token)->first();
+        if (!$subscriber || !$subscriber->confirm()) {
+            return null;
+        }
+
+        return $subscriber;
+    }
+
+    public static function unsubscribeByToken(string $token): ?self
+    {
+        $subscriber = static::where('token', $token)->first();
+        if (!$subscriber) {
+            return null;
+        }
+
+        $subscriber->unsubscribe();
+
+        return $subscriber;
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Mail/MailSettings.php =====
+
+<?php namespace Elv\Site\Classes\Mail;
+
+/**
+ * MailSettings — адреса получателей писем.
+ *
+ * Владелец задаёт ящик в `.env` (`ELV_ADMIN_EMAIL`); пока его нет, письма
+ * уходят на `MAIL_FROM_ADDRESS`, чтобы форма не падала из-за незаполненного
+ * окружения (P0-4).
+ */
+class MailSettings
+{
+    public static function adminAddress(): string
+    {
+        $admin = trim((string) env('ELV_ADMIN_EMAIL', ''));
+
+        if ($admin !== '') {
+            return $admin;
+        }
+
+        return (string) config('mail.from.address');
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Mail/FeedbackNotification.php =====
+
+<?php namespace Elv\Site\Classes\Mail;
+
+use October\Rain\Mail\Mailable;
+
+/**
+ * FeedbackNotification — письмо сотрудникам об обращении с сайта.
+ */
+class FeedbackNotification extends Mailable
+{
+    /**
+     * @param  array<string, string>  $feedback
+     */
+    public function __construct(public array $feedback)
+    {
+    }
+
+    public function build()
+    {
+        return $this->subject('Обращение с сайта: ' . ($this->feedback['SUBJECT'] ?? 'без темы'))
+            ->view('elv.site::mail.feedback')
+            ->with(['feedback' => $this->feedback]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Mail/BookingConfirmation.php =====
+
+<?php namespace Elv\Site\Classes\Mail;
+
+use October\Rain\Mail\Mailable;
+
+/**
+ * BookingConfirmation — письмо клиенту о созданной брони.
+ */
+class BookingConfirmation extends Mailable
+{
+    /**
+     * @param  array<string, string>  $booking
+     */
+    public function __construct(public array $booking)
+    {
+    }
+
+    public function build()
+    {
+        return $this->subject('Бронь принята: ' . ($this->booking['SERVICE'] ?? 'услуга'))
+            ->view('elv.site::mail.booking-client')
+            ->with(['booking' => $this->booking]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Mail/BookingNotification.php =====
+
+<?php namespace Elv\Site\Classes\Mail;
+
+use October\Rain\Mail\Mailable;
+
+/**
+ * BookingNotification — письмо сотрудникам о новой брони.
+ */
+class BookingNotification extends Mailable
+{
+    /**
+     * @param  array<string, string>  $booking
+     */
+    public function __construct(public array $booking)
+    {
+    }
+
+    public function build()
+    {
+        return $this->subject('Новая бронь: ' . ($this->booking['SERVICE'] ?? 'услуга'))
+            ->view('elv.site::mail.booking-staff')
+            ->with(['booking' => $this->booking]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Mail/OrderNotification.php =====
+
+<?php namespace Elv\Site\Classes\Mail;
+
+use October\Rain\Mail\Mailable;
+
+/**
+ * OrderNotification — письмо сотрудникам о заказе сувенира.
+ */
+class OrderNotification extends Mailable
+{
+    /**
+     * @param  array<string, string>  $order
+     */
+    public function __construct(public array $order)
+    {
+    }
+
+    public function build()
+    {
+        return $this->subject('Заказ: ' . ($this->order['ITEM'] ?? 'сувенир'))
+            ->view('elv.site::mail.order-staff')
+            ->with(['order' => $this->order]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Mail/SubscriptionConfirmation.php =====
+
+<?php namespace Elv\Site\Classes\Mail;
+
+use October\Rain\Mail\Mailable;
+
+/**
+ * SubscriptionConfirmation — письмо double opt-in со ссылкой подтверждения.
+ */
+class SubscriptionConfirmation extends Mailable
+{
+    public function __construct(
+        public string $email,
+        public string $confirmUrl,
+        public string $unsubscribeUrl
+    ) {
+    }
+
+    public function build()
+    {
+        return $this->subject('Подтвердите подписку на новости')
+            ->view('elv.site::mail.subscribe-confirm')
+            ->with([
+                'email' => $this->email,
+                'confirmUrl' => $this->confirmUrl,
+                'unsubscribeUrl' => $this->unsubscribeUrl,
+            ]);
+    }
+}
+
+===== FILE: plugins/elv/site/views/action.htm =====
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>{{ title }}{% if elv_brand('name') %} — {{ elv_brand('name') }}{% endif %}</title>
+    <style>
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+               background: #0b1220; color: #e6edf7; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+        main { max-width: 34rem; padding: 2.5rem; margin: 1.5rem; background: #131c2e; border-radius: 16px; }
+        h1 { margin: 0 0 1rem; font-size: 1.6rem; }
+        p { margin: 0 0 1.5rem; color: #b6c2d4; }
+        a { color: #7fb2ff; }
+        .btn { display: inline-block; padding: .75rem 1.25rem; background: #2563eb; color: #fff;
+               border-radius: 10px; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <a class="btn" href="{{ url('/') }}">На главную</a>
+</main>
+</body>
+</html>
+
+===== FILE: plugins/elv/site/views/mail/feedback.htm =====
+
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Обращение с сайта</h1>
+<table cellpadding="0" cellspacing="0" style="font:14px/1.5 Arial, sans-serif">
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Имя</td><td>{{ feedback.NAME ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">E-mail</td><td>{{ feedback.EMAIL ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Телефон</td><td>{{ feedback.PHONE ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Тема</td><td>{{ feedback.SUBJECT ?: 'без темы' }}</td></tr>
+</table>
+<p style="font:14px/1.5 Arial, sans-serif; margin:16px 0 0; white-space:pre-line">{{ feedback.MESSAGE }}</p>
+
+===== FILE: plugins/elv/site/views/mail/booking-client.htm =====
+
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Бронь принята</h1>
+<p style="font:14px/1.5 Arial, sans-serif; margin:0 0 12px">
+    Здравствуйте, {{ booking.PERSON }}. Мы получили заявку и свяжемся с вами для подтверждения.
+</p>
+<table cellpadding="0" cellspacing="0" style="font:14px/1.5 Arial, sans-serif">
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Услуга</td><td>{{ booking.SERVICE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Дата</td><td>{{ booking.DATE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Время</td><td>{{ booking.TIME }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Телефон</td><td>{{ booking.PHONE }}</td></tr>
+</table>
+<p style="font:12px/1.5 Arial, sans-serif; margin:16px 0 0; color:#777">
+    Если бронь больше не нужна — ответьте на письмо или позвоните в организацию.
+</p>
+
+===== FILE: plugins/elv/site/views/mail/booking-staff.htm =====
+
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Новая бронь</h1>
+<table cellpadding="0" cellspacing="0" style="font:14px/1.5 Arial, sans-serif">
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Услуга</td><td>{{ booking.SERVICE }} ({{ booking.SERVICE_CODE }})</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Дата</td><td>{{ booking.DATE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Время</td><td>{{ booking.TIME }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Тариф</td><td>{{ booking.TARIFF ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Цена</td><td>{{ booking.PRICE ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Имя</td><td>{{ booking.PERSON }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Телефон</td><td>{{ booking.PHONE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">E-mail</td><td>{{ booking.EMAIL ?: '—' }}</td></tr>
+</table>
+<p style="font:14px/1.5 Arial, sans-serif; margin:16px 0 0; white-space:pre-line">{{ booking.COMMENT ?: 'Без комментария.' }}</p>
+
+===== FILE: plugins/elv/site/views/mail/order-staff.htm =====
+
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Заказ сувенира</h1>
+<table cellpadding="0" cellspacing="0" style="font:14px/1.5 Arial, sans-serif">
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Товар</td><td>{{ order.ITEM }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Артикул</td><td>{{ order.ARTICLE ?: '—' }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Цена</td><td>{{ order.PRICE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Количество</td><td>{{ order.QTY }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Имя</td><td>{{ order.PERSON }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">Телефон</td><td>{{ order.PHONE }}</td></tr>
+    <tr><td style="padding:2px 12px 2px 0; color:#555">E-mail</td><td>{{ order.EMAIL ?: '—' }}</td></tr>
+</table>
+<p style="font:14px/1.5 Arial, sans-serif; margin:16px 0 0; white-space:pre-line">{{ order.COMMENT ?: 'Без комментария.' }}</p>
+
+===== FILE: plugins/elv/site/views/mail/subscribe-confirm.htm =====
+
+<h1 style="font:600 18px/1.4 Arial, sans-serif; margin:0 0 12px">Подтвердите подписку</h1>
+<p style="font:14px/1.5 Arial, sans-serif; margin:0 0 16px">
+    Вы подписались на новости сайта ({{ email }}). Осталось подтвердить адрес — без этого письма
+    не приходят.
+</p>
+<p style="margin:0 0 16px">
+    <a href="{{ confirmUrl }}" style="display:inline-block; padding:12px 20px; background:#2563eb; color:#fff; text-decoration:none; border-radius:8px; font:600 14px/1 Arial, sans-serif">Подтвердить подписку</a>
+</p>
+<p style="font:12px/1.5 Arial, sans-serif; margin:0; color:#777">
+    Если подписка не нужна — <a href="{{ unsubscribeUrl }}" style="color:#777">отпишитесь</a> одним нажатием.
+</p>

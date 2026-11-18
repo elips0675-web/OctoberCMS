@@ -1,0 +1,172 @@
+# October CMS: шаблон `elv` и плагин `Elv\Site` — срез для AI-анализа
+
+Дата среза: 18.11.2026. Коммит: `b87cecd`.
+Репозиторий: https://github.com/elips0675-web/OctoberCMS
+
+## Что это за проект
+
+`D:\October CMS` — универсальный шаблон сайта на **October CMS 4.4.13**
+(Laravel 12.71.0, PHP 8.3.30, MySQL 8.4): тема `themes/elv` (`code: elv`,
+`version.yaml` 1.0.0) и плагин `plugins/elv/site` (namespace `Elv\Site`,
+версия 2.2.0). Продукт готовится к продаже как «тема + плагин»: покупатель
+ставит на свой October и получает контентные разделы, формы, брони, SEO, PWA и
+админку.
+
+Демо-наполнение — библиотека (книги, печать, коллекции, события), это
+**демо-разделы**, а не суть продукта: бренд и контакты вынесены в настройки темы
+(`themes/elv/theme.yaml`, поля `brand_*`), тексты берутся через Twig-функцию
+`elv_brand()` (`plugins/elv/site/classes/Brand.php`). Каталога `lang/` нет ни в
+теме, ни в плагине: подписи бэкенда — русские строки прямо в YAML.
+
+Второй продукт набора — витрина `D:\Elv Landing` (тема `elv-studio` + плагин
+`Elv.Kit`), отдельный репозиторий: общих файлов с этим кодом нет. Стенд
+`D:\Elv test` — для проверки установки и апгрейда.
+
+## Что анализировать в этом срезе
+
+1. **Брони и слоты** — `classes/BookingService.php`, `models/Slot.php`,
+   `models/Booking.php`, `classes/Http/BookingController.php`,
+   `updates/create_elv_slots_table.php`, `console/SlotsGenerate.php`.
+2. **Формы и валидация** — `classes/Http/FormController.php` (общая база),
+   `FeedbackController.php`, `OrderController.php`, `SubscriberController.php`,
+   `classes/FormFields.php`, `classes/Http/RequestPath.php`.
+3. **Почта** — `classes/Mail/*.php` и шаблоны `views/mail/*.htm`: ставится ли
+   письмо в очередь, что при недоступном SMTP, нет ли PII в логах.
+4. **SEO и микроразметка** — `classes/Seo.php`, `classes/SeoAnalyzer.php`,
+   `classes/Sitemap.php`, `classes/Rss.php`, `classes/Http/SeoController.php`.
+5. **Периметр** — `classes/Http/SecurityHeaders.php` (CSP с nonce на каждый
+   ответ), `classes/Http/CompressResponse.php`, редиректы
+   `LegacyRedirect.php` и `ManagedRedirect.php`, `nginx.conf`.
+6. **PWA** — `classes/Pwa.php`, `classes/Http/PwaController.php`,
+   `themes/elv/assets/pwa/sw.js`, `manifest.webmanifest`, `offline.html`.
+7. **Контент и конструктор страниц** — `classes/Content.php`,
+   `classes/PageBuilder.php`, `blueprints/*`, страницы темы `pages/builder.htm`,
+   `pages/blog.htm`, `pages/blog-detail.htm`.
+8. **Медиа и бюджет** — `classes/Media.php` (`<picture>` с avif/webp/jpg,
+   инлайн CSS), `tools/check-css-budget.mjs`.
+9. **Админка и права** — `Plugin.php` (пять прав `elv.site.*`, меню «Контент»),
+   `controllers/*.php`, `formwidgets/SeoPanel.php`.
+10. **Гейты** — `tools/check-*.mjs`: что каждый реально доказывает, а что
+    остаётся на словах.
+
+## Маршруты (что реально отдаётся)
+
+Из `plugins/elv/site/routes.php`:
+
+- `GET /health` — health-check (`HealthController`), без cookie и внутренних
+  деталей, `no-store`.
+- `GET /api/v1/{handle}` и `GET /api/v1/{handle}/{slug}` — публичный JSON
+  контента, `throttle:60,1`.
+- `POST /feedback`, `/booking`, `/order`, `/subscribe` — формы,
+  `throttle:30,1`; ответ JSON при `Accept: application/json` (201/422/409),
+  иначе редирект назад с `?sent=1#якорь` или ошибками.
+- `GET /subscribe/confirm/{token}`, `GET /unsubscribe/{token}` — двойное
+  подтверждение подписки.
+- `GET /sitemap.xml`, `/rss.xml`, `/blog/rss.xml`, `/robots.txt`.
+- `GET /manifest.webmanifest`, `/sw.js`, `/offline.html`.
+
+Middleware подключается в `Plugin::boot()` в порядке:
+`CompressResponse` → `LegacyRedirect` → `SecurityHeaders` → `ManagedRedirect`
+(`Plugin.php:105-126`).
+
+## Текущее поведение (факты)
+
+- **Страницы.** 28 `.htm` в `themes/elv/pages` + записи Tailor/Eloquent дают
+  **110 адресов**, все отвечают 200 (`tools/check-urls.mjs`); `/non-existent/` —
+  404 со страницей. Главная — 188 662 знака, инлайн `styles.css` — 57 795 байт.
+- **Контент.** 9 каталогов blueprints (`books`, `collections`, `events`, `news`,
+  `posts`, `printing`, `services`, `page`, `blocks`), 13 YAML. Записи читаются
+  Twig-функциями `elv_records*`, `elv_record`, `elv_sections`
+  (`classes/Content.php`). Заявки, брони, заказы, слоты, подписчики и редиректы —
+  Eloquent-модели `models/*.php`.
+- **Брони.** Гонка слота закрыта двумя механизмами сразу: `UNIQUE`
+  `(service_code, date, time)` (`updates/create_elv_slots_table.php:30`) и
+  транзакция с `lockForUpdate` + условный `UPDATE … WHERE taken < capacity`
+  (`classes/BookingService.php`). Нет слота — `409 SLOT_UNAVAILABLE`.
+- **Формы.** Общая база `FormController`: согласие на обработку ПД (`CONSENT`),
+  нормализация полей Bitrix (`FormFields::normalize`), правила и тексты ошибок в
+  каждом контроллере. Возврат — только на свой хост (Referer проверяется), иначе
+  `fallbackPath()`. Капчи и honeypot нет; ограничение — `throttle:30,1`.
+- **Подписка.** Двойное подтверждение ссылкой (`confirm/{token}`), письмо
+  ставится в очередь (`QUEUE_CONNECTION=database`, воркер запускается отдельно);
+  отписка — `unsubscribe/{token}`.
+- **SEO.** `classes/Seo.php`: canonical, meta, `og:*`, JSON-LD `@graph` (узел
+  организации, `WebSite` + `SearchAction`, узел записи `Article`/`Event`/
+  `Product`/`Service`); `Sitemap.php` — 107 адресов; `robots.txt` с
+  `Clean-param`; `/rss.xml` — 10 записей. Панель SEO в записи —
+  `classes/SeoAnalyzer.php` + `formwidgets/SeoPanel.php`.
+- **API.** 6 разделов, 91 запись (`tools/check-api.mjs`): контракт полей,
+  страницы записей 200, ошибки — 404/422.
+- **Периметр.** CSP с уникальным nonce на каждый ответ, `X-Frame-Options`
+  зависит от пути (фронт `DENY`, админка `SAMEORIGIN`); заголовки ставятся и
+  middleware, и `nginx.conf` (в `location` с `add_header` набор повторяется,
+  иначе nginx обнуляет верхнеуровневые).
+- **PWA.** `manifest.webmanifest` (4 иконки, 3 shortcut), `sw.js` версии
+  `7a9ac0cb`, офлайн-страница, регистрация на главной.
+- **Редиректы.** Сначала карта старых адресов 1С-Битрикс (`LegacyRedirect`),
+  затем правила редактора (`ManagedRedirect`): 301/302/307/308, перенос
+  параметров, кэш 600 с, инвалидация на `saved`/`deleted`, счётчик переходов.
+- **Конструктор страниц.** Blueprint `blocks` + `PageBuilder.php` собирают
+  страницу из блоков (`partials/blocks/*`: текст, текст+картинка, цитата, список,
+  оглавление, видео, записи); инструкция — `docs/theme-universality.md`.
+- **Медиа.** `Media::picture()` отдаёт `<picture>` с avif/webp/jpg и размерами,
+  `Media::inlineCss()` вкладывает CSS в HTML, поэтому внешнего CSS нет.
+
+## Чем это проверено (на 18.11.2026)
+
+- PHPUnit: **305 тестов, 1086 проверок** (`phpunit.elv.xml`, 21 файл в
+  `plugins/elv/site/tests`), реальная БД.
+- `php -l` по `app, config, database, plugins, themes, tests` — 109 файлов, 0 ошибок.
+- Живые гейты на `artisan serve:8080`: `check-urls` (110×200),
+  `check-seo`, `check-headers`, `check-pwa`, `check-health`,
+  `check-orphans` (106 адресов, у каждого входящая ссылка),
+  `check-api`, `check-package`, `check-clean-tree`.
+- Есть, но в срез не вложены: `check-css-budget.mjs`, `check-dom-parity.mjs`,
+  `check-admin-brand.mjs`, `purge-css.mjs`, `import-preview-pages.mjs`.
+- Что гейты **не** доказывают: Lighthouse-оценки и Core Web Vitals не снимались;
+  нагрузка (k6, много одновременных админов) не проверялась; ограничение частоты
+  опирается на файловый кэш (`CACHE_STORE=file`) и для нескольких серверов не
+  годится; почта проверялась без реального SMTP.
+
+## Ограничения и чего здесь нет
+
+- Онлайн-оплаты нет (ни Stripe, ни ЮKassa); заказы и брони — заявка + письмо.
+- Выдачи лицензионных ключей и счётчика установок нет; команда сборки ZIP
+  (`elv:site:package`) и страница установки — в бэклоге, не в коде.
+- Маркетплейс October и установка плагинов из админки не настроены (нет ключа).
+- Один язык — русский; `lang/` отсутствует, подписи в YAML.
+- Демо-контент (книги/печать/коллекции) остаётся в поставке — это решение
+  владельца, а не мусор.
+- `.env`, ключи, дампы БД, `vendor/` и ядро `modules/` в срез не входят.
+
+## Вопросы аудитору
+
+1. Брони: остаётся ли гонка при `capacity > 1` и при отмене брони
+   (`BookingService::cancel`) — сходится ли `taken` с числом активных броней
+   при повторных вызовах и при истёкшем слоте?
+2. Формы: достаточно ли `throttle:30,1` без капчи/honeypot; что мешает
+   залить `elv_requests` мусором с одного IP и не роняют ли это лимиты
+   остальные формы?
+3. Почта: `Mail::queue` без воркера — письмо теряется молча; есть ли
+   fallback и видно ли это в health?
+4. SEO: JSON-LD собирается из настроек — нет ли расхождения между
+   `@type` организации, `brand_kind` и типом записи; корректны ли даты
+   (`datePublished`/`dateModified`) для Tailor-записей?
+5. CSP: nonce на каждый ответ — что ломается при кэшировании HTML на периметре
+   (nginx/CDN) и нет ли `unsafe-inline` в реальных страницах?
+6. PWA: версия `sw.js` — хэш чего; что будет при обновлении темы и не отдаст ли
+   браузер старый офлайн-контент после смены бренда?
+7. Медиа: инлайн CSS в HTML — как это ведёт себя при 200 КБ CSS и на медленном
+   соединении; есть ли бюджет и он реально проверяется?
+8. Права: пять ключей `elv.site.*` — не открывает ли `requests` доступ к
+   персональным данным при выдаче роли «контент-менеджер»?
+9. Апгрейд: переименование `Elv\Library` → `Elv\Site` (2.2.0) — достаточно ли
+   замены каталога и `october:migrate`, что будет с правами групп и со старой
+   строкой в `system_plugin_versions` (`docs/installation.md` §11)?
+10. Гейты: какие из них зелёные по построению (проверяют константу, а не код) и
+    где нужен отрицательный прогон?
+
+## Формат файлов
+
+Каждый срез — обычный текст: перед содержимым файла строка
+`===== FILE: путь =====`, пути от корня репозитория. Код не переписан.

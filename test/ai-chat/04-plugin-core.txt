@@ -1,0 +1,770 @@
+# Плагин: точка входа, маршруты, периметр, health
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Пути — от корня репозитория; содержимое файлов не переписано.
+
+===== FILE: plugins/elv/site/Plugin.php =====
+
+<?php namespace Elv\Site;
+
+use Elv\Site\Classes\Brand;
+use Elv\Site\Classes\Content;
+use Elv\Site\Classes\Http\SecurityHeaders;
+use Elv\Site\Classes\Labels;
+use Elv\Site\Classes\Media;
+use Elv\Site\Classes\Seo;
+use System\Classes\PluginBase;
+
+class Plugin extends PluginBase
+{
+    public function pluginDetails()
+    {
+        return [
+            'name' => 'ELV Site',
+            'description' => 'Контент сайта, заявки, слоты услуг и поиск.',
+            'author' => 'ELV',
+            'icon' => 'icon-book'
+        ];
+    }
+
+    public function register()
+    {
+        $this->discoverConsoleCommands();
+    }
+
+    public function registerSchedule($schedule)
+    {
+        $schedule->command('elv:health-report')->hourly()->withoutOverlapping();
+        $schedule->command('elv:slots-generate')->dailyAt('03:10')->withoutOverlapping();
+    }
+
+    public function registerPermissions()
+    {
+        return [
+            'elv.site.requests' => [
+                'label' => 'Обращения с сайта',
+                'tab' => 'Сайт',
+            ],
+            'elv.site.bookings' => [
+                'label' => 'Брони услуг',
+                'tab' => 'Сайт',
+            ],
+            'elv.site.orders' => [
+                'label' => 'Заказы',
+                'tab' => 'Сайт',
+            ],
+            'elv.site.subscribers' => [
+                'label' => 'Подписчики рассылки',
+                'tab' => 'Сайт',
+            ],
+            'elv.site.redirects' => [
+                'label' => 'Редиректы',
+                'tab' => 'Сайт',
+            ],
+        ];
+    }
+
+    public function registerNavigation()
+    {
+        return [
+            'site' => [
+                'label' => 'Контент',
+                'url' => \Backend::url('elv/site/requests'),
+                'icon' => 'icon-book',
+                'order' => 400,
+                'permissions' => ['elv.site.requests'],
+                'sideMenu' => [
+                    'requests' => [
+                        'label' => 'Обращения',
+                        'icon' => 'icon-envelope',
+                        'url' => \Backend::url('elv/site/requests'),
+                        'permissions' => ['elv.site.requests'],
+                    ],
+                    'bookings' => [
+                        'label' => 'Брони',
+                        'icon' => 'icon-calendar',
+                        'url' => \Backend::url('elv/site/bookings'),
+                        'permissions' => ['elv.site.bookings'],
+                    ],
+                    'orders' => [
+                        'label' => 'Заказы',
+                        'icon' => 'icon-shopping-cart',
+                        'url' => \Backend::url('elv/site/orders'),
+                        'permissions' => ['elv.site.orders'],
+                    ],
+                    'subscribers' => [
+                        'label' => 'Подписчики',
+                        'icon' => 'icon-users',
+                        'url' => \Backend::url('elv/site/subscribers'),
+                        'permissions' => ['elv.site.subscribers'],
+                    ],
+                    'redirects' => [
+                        'label' => 'Редиректы',
+                        'icon' => 'icon-random',
+                        'url' => \Backend::url('elv/site/redirects'),
+                        'permissions' => ['elv.site.redirects'],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    public function boot()
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(\Elv\Site\Classes\Http\CompressResponse::class);
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(\Elv\Site\Classes\Http\LegacyRedirect::class);
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(SecurityHeaders::class);
+
+        $this->app
+            ->make(\Illuminate\Contracts\Http\Kernel::class)
+            ->pushMiddleware(\Elv\Site\Classes\Http\ManagedRedirect::class);
+    }
+
+    public function registerContentFields()
+    {
+        return [
+            \Elv\Site\Classes\ContentFields\SeoPanelField::class => 'seo_panel',
+        ];
+    }
+
+    public function registerFormWidgets()
+    {
+        return [
+            \Elv\Site\FormWidgets\SeoPanel::class => 'elvseopanel',
+        ];
+    }
+
+    public function registerMarkupTags()
+    {
+        return [
+            'functions' => [
+                'elv_picture' => function ($src, $alt = '', $options = []) {
+                    return Media::picture($src, (string) $alt, (array) $options);
+                },
+                'elv_css' => function ($relative) {
+                    return Media::inlineCss((string) $relative);
+                },
+                'elv_lines' => function ($value) {
+                    return Media::lines($value);
+                },
+                'elv_records' => function ($handle, $limit = null) {
+                    return Content::records((string) $handle, $limit);
+                },                'elv_records_in_section' => function ($handle, $sectionHandle, $code, $limit = null) {
+                    return Content::recordsInSection((string) $handle, (string) $sectionHandle, (string) $code, $limit);
+                },
+                'elv_record' => function ($handle, $slug) {
+                    return Content::record((string) $handle, $slug);
+                },
+                'elv_sections' => function ($handle) {
+                    return Content::sections((string) $handle);
+                },
+                'elv_section_code' => function ($handle, $id) {
+                    return Content::sectionCode((string) $handle, $id);
+                },
+                'elv_section_title' => function ($handle, $id) {
+                    return Content::sectionTitle((string) $handle, $id);
+                },
+                'elv_tag' => function ($code) {
+                    return Labels::tag($code);
+                },
+                'elv_event_category' => function ($code) {
+                    return Labels::eventCategory($code);
+                },
+                'elv_event_gradient' => function ($code) {
+                    return Labels::eventGradient($code);
+                },
+                'elv_event_categories' => function () {
+                    return Labels::eventCategories();
+                },
+                'elv_format' => function ($code) {
+                    return Labels::format($code);
+                },
+                'elv_availability' => function ($code) {
+                    return Labels::availability($code);
+                },
+                'elv_age' => function ($code) {
+                    return Labels::age($code);
+                },
+                'elv_cover_color' => function ($title) {
+                    return Media::coverColor($title);
+                },
+                'elv_collection_color' => function ($color) {
+                    return Media::collectionColor($color);
+                },
+                'elv_price_label' => function ($label, $from = 0) {
+                    return Media::priceLabel($label, $from);
+                },
+                'elv_schedule' => function ($value) {
+                    return Media::schedule($value);
+                },
+                'elv_phone_link' => function ($value) {
+                    return Media::phoneLink($value);
+                },
+                'elv_month_short' => function ($value) {
+                    return Media::dateRu($value, 'M');
+                },
+                'elv_day' => function ($value) {
+                    return Media::dateRu($value, 'd');
+                },
+                'elv_time' => function ($value) {
+                    return Media::dateRu($value, 'H:i');
+                },
+                'elv_slot_map' => function ($serviceCode, $days = 60) {
+                    return \Elv\Site\Models\Slot::jsonOccupiedMap((string) $serviceCode, (int) $days);
+                },
+                'elv_canonical' => function () {
+                    return Seo::canonical();
+                },
+                'elv_csp_nonce' => function () {
+                    return SecurityHeaders::nonce();
+                },
+                'elv_csrf' => function () {
+                    return csrf_field();
+                },
+                'elv_jsonld' => function ($page = null) {
+                    return Seo::jsonld($page);
+                },
+                'elv_seo_image' => function ($page = null) {
+                    $image = is_object($page) ? trim((string) ($page->seo_image ?? '')) : '';
+
+                    if ($image !== '') {
+                        return preg_match('#^https?://#i', $image) ? $image : url($image);
+                    }
+
+                    $default = Seo::defaultImage();
+
+                    return $default !== ''
+                        ? $default
+                        : url('themes/elv/assets/images/hero-1.jpg');
+                },
+                'elv_seo_verification' => function () {
+                    return Seo::verification();
+                },
+                'elv_brand' => function ($key = 'name') {
+                    return Brand::get((string) $key);
+                },
+                'elv_brand_text' => function ($text) {
+                    return Brand::replace((string) $text);
+                },
+            ],
+            'filters' => [
+                'elv_image' => function ($value) {
+                    return Media::imagePath($value);
+                },
+                'elv_price' => function ($value) {
+                    return Media::price($value);
+                },
+                'elv_money' => function ($value) {
+                    return Media::money($value);
+                },
+                'elv_num' => function ($value) {
+                    return Media::num($value);
+                },
+                'elv_date' => function ($value, $format = 'j F Y') {
+                    return Media::dateRu($value, (string) $format);
+                },
+                'elv_text' => function ($value) {
+                    return Media::value($value);
+                },
+            ],
+        ];
+    }
+}
+
+===== FILE: plugins/elv/site/routes.php =====
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Elv\Site\Classes\Http\ApiController;
+use Elv\Site\Classes\Http\BookingController;
+use Elv\Site\Classes\Http\FeedbackController;
+use Elv\Site\Classes\Http\OrderController;
+use Elv\Site\Classes\Http\PwaController;
+use Elv\Site\Classes\Http\HealthController;
+use Elv\Site\Classes\Http\SeoController;
+use Elv\Site\Classes\Http\SubscriberController;
+
+Route::get('health', [HealthController::class, 'index']);
+
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('api/v1/{handle}', [ApiController::class, 'index']);
+    Route::get('api/v1/{handle}/{slug}', [ApiController::class, 'show']);
+});
+
+Route::middleware(['web', 'throttle:30,1'])->group(function () {
+    Route::post('feedback', [FeedbackController::class, 'store']);
+    Route::post('booking', [BookingController::class, 'store']);
+    Route::post('order', [OrderController::class, 'store']);
+    Route::post('subscribe', [SubscriberController::class, 'store']);
+});
+
+Route::middleware('web')->group(function () {
+    Route::get('subscribe/confirm/{token}', [SubscriberController::class, 'confirm']);
+    Route::get('unsubscribe/{token}', [SubscriberController::class, 'unsubscribe']);
+    Route::get('sitemap.xml', [SeoController::class, 'sitemap']);
+    Route::get('rss.xml', [SeoController::class, 'rss']);
+    Route::get('blog/rss.xml', [SeoController::class, 'blogRss']);
+    Route::get('robots.txt', [SeoController::class, 'robots']);
+    Route::get('manifest.webmanifest', [PwaController::class, 'manifest']);
+    Route::get('sw.js', [PwaController::class, 'serviceWorker']);
+    Route::get('offline.html', [PwaController::class, 'offline']);
+});
+
+===== FILE: plugins/elv/site/classes/Http/SecurityHeaders.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * SecurityHeaders — CSP и защитные заголовки для публичных страниц.
+ *
+ * Источник (`elv_security.php`, 77 строк) отдавал CSP, X-Frame-Options,
+ * Referrer-Policy и Permissions-Policy. В October заголовки обязан ставить
+ * периметр (nginx), но shared-хостинг и `php artisan serve` остаются без него,
+ * поэтому логика дублируется middleware'ом: nginx скрывает эти же заголовки
+ * от PHP и добавляет свои (`nginx.conf`), а CSP живёт только здесь — в ней
+ * одноразовый nonce, который nginx знать не может.
+ *
+ * Админка исключена из CSP: October подключает инлайновые скрипты и eval
+ * в бэкенде, и строгая политика ломает редакторы и виджеты. Для неё остаются
+ * статические заголовки с X-Frame-Options SAMEORIGIN (всплывающие окна).
+ */
+class SecurityHeaders
+{
+    protected const NONCE_ATTRIBUTE = 'elv_csp_nonce';
+
+    protected static ?string $nonce = null;
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        self::$nonce = base64_encode(random_bytes(16));
+        $request->attributes->set(self::NONCE_ATTRIBUTE, self::$nonce);
+
+        $response = $next($request);
+
+        if (!$response instanceof Response) {
+            return $response;
+        }
+
+        return $this->apply($request, $response);
+    }
+
+    /**
+     * nonce — значение для инлайновых скриптов страницы.
+     */
+    public static function nonce(): string
+    {
+        return self::$nonce ?? '';
+    }
+
+    /**
+     * reset — сбрасывает nonce между запросами в тестах.
+     */
+    public static function reset(): void
+    {
+        self::$nonce = null;
+    }
+
+    protected function apply(Request $request, Response $response): Response
+    {
+        $headers = $response->headers;
+        $backend = $this->isBackend($request);
+
+        $headers->set('X-Content-Type-Options', 'nosniff');
+        $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        $headers->set('X-Frame-Options', $backend ? 'SAMEORIGIN' : 'DENY');
+
+        if ($request->isSecure()) {
+            $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+
+        if (!$backend) {
+            $headers->set('Content-Security-Policy', $this->policy($request));
+        }
+
+        return $response;
+    }
+
+    protected function isBackend(Request $request): bool
+    {
+        $uri = trim((string) config('backend.uri', 'admin'), '/');
+
+        if ($uri === '') {
+            return false;
+        }
+
+        return $request->is($uri) || $request->is($uri . '/*');
+    }
+
+    protected function policy(Request $request): string
+    {
+        $directives = [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "img-src 'self' data:",
+            "font-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'nonce-" . self::nonce() . "'",
+            "connect-src 'self'",
+            "media-src 'self'",
+            "manifest-src 'self'",
+            "worker-src 'self'",
+        ];
+
+        if ($request->isSecure()) {
+            $directives[] = 'upgrade-insecure-requests';
+        }
+
+        return implode('; ', $directives);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/CompressResponse.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * CompressResponse — gzip для текстовых ответов и кеш-заголовки для ассетов.
+ *
+ * Нужен там, где перед PHP нет nginx с gzip: `php artisan serve`, shared-хостинг
+ * без настроенного сжатия. С nginx middleware безвреден: уже сжатый ответ он
+ * не трогает (сравнивает Accept-Encoding и наличие Content-Encoding).
+ */
+class CompressResponse
+{
+    protected const COMPRESSIBLE = [
+        'text/html',
+        'text/css',
+        'text/plain',
+        'text/xml',
+        'text/javascript',
+        'application/javascript',
+        'application/json',
+        'application/xml',
+        'application/rss+xml',
+        'application/ld+json',
+        'image/svg+xml',
+    ];
+
+    protected const MIN_LENGTH = 1024;
+
+    protected const COMPRESSION_LEVEL = 6;
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        $response = $next($request);
+
+        if (!$this->isCompressible($request, $response)) {
+            return $this->withAssetsCache($request, $response);
+        }
+
+        $content = $response->getContent();
+        $compressed = gzencode($content, self::COMPRESSION_LEVEL);
+
+        if ($compressed === false || strlen($compressed) >= strlen($content)) {
+            return $this->withAssetsCache($request, $response);
+        }
+
+        $response->setContent($compressed);
+        $response->headers->set('Content-Encoding', 'gzip');
+        $response->headers->set('Content-Length', (string) strlen($compressed));
+        $response->headers->set('Vary', 'Accept-Encoding', false);
+
+        return $this->withAssetsCache($request, $response);
+    }
+
+    protected function isCompressible(Request $request, Response $response): bool
+    {
+        if (!$response instanceof Response || $response instanceof \Symfony\Component\HttpFoundation\BinaryFileResponse) {
+            return false;
+        }
+
+        if ($response->headers->has('Content-Encoding')) {
+            return false;
+        }
+
+        if (!$this->clientAcceptsGzip($request->headers->get('Accept-Encoding', ''))) {
+            return false;
+        }
+
+        $content = $response->getContent();
+        if (!is_string($content) || strlen($content) < self::MIN_LENGTH) {
+            return false;
+        }
+
+        $contentType = (string) $response->headers->get('Content-Type', '');
+
+        foreach (self::COMPRESSIBLE as $type) {
+            if (stripos($contentType, $type) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function clientAcceptsGzip(string $header): bool
+    {
+        if (stripos($header, 'gzip') === false) {
+            return false;
+        }
+
+        if (preg_match('/gzip\s*;\s*q=([0-9.]+)/i', $header, $matches)) {
+            return (float) $matches[1] > 0;
+        }
+
+        return true;
+    }
+
+    protected function withAssetsCache(Request $request, Response $response): Response
+    {
+        if ($response->headers->has('Cache-Control')) {
+            return $response;
+        }
+
+        $path = '/' . ltrim($request->path(), '/');
+        $maxAge = $this->assetMaxAge($path);
+
+        if ($maxAge === null) {
+            return $response;
+        }
+
+        $response->headers->set('Cache-Control', 'public, max-age=' . $maxAge . ', immutable');
+
+        return $response;
+    }
+
+    protected function assetMaxAge(string $path): ?int
+    {
+        if (preg_match('#^/(themes|plugins|modules)/[^/]+/(assets|resources)/#', $path)) {
+            return 31536000;
+        }
+
+        if (str_starts_with($path, '/storage/app/')) {
+            return 604800;
+        }
+
+        return null;
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Health.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
+
+/**
+ * Health — проверка живости БД, кэша и очереди.
+ *
+ * Отвечает только «да/нет» по компонентам и числа для отчёта. Текст исключения
+ * наружу не отдаётся: он попадает в лог, а в ответе — имя компонента, чтобы
+ * health-страница не стала источником утечки (DSN, SQL, пароль).
+ */
+class Health
+{
+    /**
+     * check — состояние трёх компонентов и общий вердикт.
+     *
+     * @return array{ok: bool, checks: array<string, bool>}
+     */
+    public function check(): array
+    {
+        $checks = [
+            'db' => $this->database(),
+            'cache' => $this->cache(),
+            'queue' => $this->queue(),
+        ];
+
+        return [
+            'ok' => !in_array(false, $checks, true),
+            'checks' => $checks,
+        ];
+    }
+
+    /**
+     * metrics — числа для часового отчёта.
+     *
+     * @return array<string, mixed>
+     */
+    public function metrics(): array
+    {
+        return [
+            'db_ms' => $this->databaseMilliseconds(),
+            'queue_size' => $this->queueSize(),
+            'disk_free_bytes' => $this->diskFreeBytes(),
+            'checks' => $this->check()['checks'],
+        ];
+    }
+
+    /**
+     * database — соединение отвечает на простой запрос.
+     */
+    protected function database(): bool
+    {
+        try {
+            DB::connection()->select('SELECT 1');
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->log('db', $e);
+
+            return false;
+        }
+    }
+
+    /**
+     * cache — значение записывается и читается обратно.
+     */
+    protected function cache(): bool
+    {
+        try {
+            $key = 'elv:health:' . bin2hex(random_bytes(6));
+            Cache::put($key, 'ok', 5);
+
+            return Cache::pull($key) === 'ok';
+        } catch (\Throwable $e) {
+            $this->log('cache', $e);
+
+            return false;
+        }
+    }
+
+    /**
+     * queue — соединение очереди доступно.
+     *
+     * `sync` проверять нечего: задания выполняются в том же процессе.
+     */
+    protected function queue(): bool
+    {
+        try {
+            if (config('queue.default') === 'sync') {
+                return true;
+            }
+
+            Queue::connection()->size();
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->log('queue', $e);
+
+            return false;
+        }
+    }
+
+    /**
+     * databaseMilliseconds — время ответа БД или null, если она не ответила.
+     */
+    protected function databaseMilliseconds(): ?float
+    {
+        $start = microtime(true);
+
+        try {
+            DB::connection()->select('SELECT 1');
+
+            return round((microtime(true) - $start) * 1000, 1);
+        } catch (\Throwable $e) {
+            $this->log('db', $e);
+
+            return null;
+        }
+    }
+
+    /**
+     * queueSize — размер очереди или null, если она недоступна.
+     */
+    protected function queueSize(): ?int
+    {
+        try {
+            if (config('queue.default') === 'sync') {
+                return 0;
+            }
+
+            return (int) Queue::connection()->size();
+        } catch (\Throwable $e) {
+            $this->log('queue', $e);
+
+            return null;
+        }
+    }
+
+    /**
+     * diskFreeBytes — свободное место на диске приложения.
+     */
+    protected function diskFreeBytes(): ?int
+    {
+        $free = @disk_free_space(base_path());
+
+        return $free === false ? null : (int) $free;
+    }
+
+    /**
+     * log — причина отказа уходит в лог, а не в ответ.
+     */
+    protected function log(string $component, \Throwable $e): void
+    {
+        \Log::warning('health: ' . $component . ' недоступен', [
+            'component' => $component,
+            'error' => $e->getMessage(),
+        ]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/HealthController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\JsonResponse;
+use Elv\Site\Classes\Health;
+
+/**
+ * HealthController — ответ `/health` для внешней пробы.
+ *
+ * Живой сайт — 200, отказ любого компонента — 503. В теле только имена
+ * компонентов и «да/нет»: без DSN, SQL и текста исключений.
+ */
+class HealthController
+{
+    /**
+     * index отдаёт состояние БД, кэша и очереди.
+     */
+    public function index(Health $health): JsonResponse
+    {
+        $result = $health->check();
+
+        return response()->json([
+            'status' => $result['ok'] ? 'ok' : 'fail',
+            'checks' => $result['checks'],
+            'time' => now()->toIso8601String(),
+        ], $result['ok'] ? 200 : 503, [
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+}

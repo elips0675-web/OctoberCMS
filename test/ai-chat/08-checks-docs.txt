@@ -1,0 +1,2203 @@
+# Гейты и архитектура: что проверяется и как устроено
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Пути — от корня репозитория; содержимое файлов не переписано.
+
+===== FILE: tools/check-urls.mjs =====
+
+#!/usr/bin/env node
+/**
+ * Проверка 110 адресов сайта на живом October (`docs/qa-checklist.md` §B).
+ *
+ * Инвентарь берётся из `docs/content.md`: разделы 1.2–1.7 дают слаги
+ * детальных страниц, раздел 1.1 — корневые адреса. Скрипт не подменяет
+ * DOM-сверку с `preview/`, он отвечает на другой вопрос: адрес отвечает,
+ * отдаёт непустую страницу и не тянет внешний CSS.
+ *
+ * 111 адресов инвентаря = 110 страниц (13 корневых + 6 списков + 91 детальная)
+ * плюс 404, который проверяется адресом `/non-existent/`. Корневой `/blog/`
+ * добавлен позже источника: блог собран на Tailor, в эталоне его нет.
+ *
+ *   node tools/check-urls.mjs [--base=http://127.0.0.1:8080]
+ *
+ * Требуется запущенный `php artisan serve` (порт по умолчанию 8080).
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+
+const expect = {
+    2: { prefix: 'books', count: 24 },
+    3: { prefix: 'printing', count: 37 },
+    4: { prefix: 'news', count: 10 },
+    5: { prefix: 'services', count: 8 },
+    6: { prefix: 'events', count: 6 },
+    7: { prefix: 'collections', count: 6 },
+};
+
+const rootPages = [
+    '/',
+    '/books/',
+    '/printing/',
+    '/news/',
+    '/services/',
+    '/events/',
+    '/collections/',
+    '/about/',
+    '/auth/',
+    '/contacts/',
+    '/feedback/',
+    '/personal/',
+    '/privacy/',
+    '/rules/',
+    '/search/',
+    '/sitemap/',
+    '/subscribe/',
+    '/terms/',
+    '/blog/',
+];
+
+function readInventory() {
+    const doc = fs.readFileSync(path.join(root, 'docs/content.md'), 'utf8');
+    const lines = doc.split(/\r?\n/);
+    const urls = [];
+    const problems = [];
+
+    let section = null;
+    for (const line of lines) {
+        const heading = /^### 1\.(\d)\./.exec(line);
+        if (heading) {
+            section = Number(heading[1]);
+            continue;
+        }
+        if (/^## /.test(line)) {
+            section = null;
+            continue;
+        }
+        if (!section || !expect[section]) {
+            continue;
+        }
+
+        const found = line.match(/`([a-z0-9-]+)`/g) || [];
+        for (const token of found) {
+            const slug = token.slice(1, -1);
+            urls.push('/' + expect[section].prefix + '/' + slug + '/');
+        }
+    }
+
+    for (const [number, group] of Object.entries(expect)) {
+        const actual = urls.filter((url) => url.startsWith('/' + group.prefix + '/')).length;
+        if (actual !== group.count) {
+            problems.push(
+                `раздел 1.${number}: в docs/content.md ${actual} слагов, ожидалось ${group.count}`
+            );
+        }
+    }
+
+    return { urls: [...rootPages, ...urls], problems };
+}
+
+const standalone = new Set(['/personal/']);
+
+function h1Count(html) {
+    return (html.match(/<h1[\s>]/g) || []).length;
+}
+
+function inlineCssBytes(html) {
+    const match = /<style data-elv-css="styles">([\s\S]*?)<\/style>/i.exec(html);
+
+    return match ? Buffer.byteLength(match[1], 'utf8') : 0;
+}
+
+async function main() {
+    const { urls, problems: inventoryProblems } = readInventory();
+    const failures = [...inventoryProblems];
+
+    if (urls.length !== 110) {
+        failures.push(`адресов ${urls.length}, ожидалось 110 (111-й — 404 по /non-existent/)`);
+    }
+
+    let checked = 0;
+    let mainDocument = null;
+
+    for (const url of urls) {
+        let response;
+        try {
+            response = await fetch(base + url, { redirect: 'manual' });
+        } catch (error) {
+            failures.push(`${url}: запрос не выполнен (${error.message})`);
+            continue;
+        }
+
+        const html = await response.text();
+        checked += 1;
+
+        if (response.status !== 200) {
+            failures.push(`${url}: HTTP ${response.status}`);
+            continue;
+        }
+        if (html.length < (standalone.has(url) ? 500 : 5000)) {
+            failures.push(`${url}: документ ${html.length} знаков — пустая страница`);
+            continue;
+        }
+        if (/Fatal error|Whoops|Exception found/i.test(html)) {
+            failures.push(`${url}: страница содержит текст ошибки`);
+        }
+        if (!standalone.has(url) && !/<main[\s>]/.test(html)) {
+            failures.push(`${url}: нет <main>`);
+        }
+        if (h1Count(html) !== 1) {
+            failures.push(`${url}: заголовков h1 — ${h1Count(html)}, ожидался 1`);
+        }
+        if (html.includes('fonts.googleapis') || html.includes('fonts.gstatic')) {
+            failures.push(`${url}: подключены внешние шрифты Google`);
+        }
+        if (/<link[^>]+rel=["']stylesheet["']/i.test(html)) {
+            failures.push(`${url}: внешняя таблица стилей`);
+        }
+        if (!/lang="ru"/.test(html)) {
+            failures.push(`${url}: нет lang="ru"`);
+        }
+
+        if (url === '/') {
+            mainDocument = html;
+        }
+    }
+
+    const notFound = await fetch(base + '/non-existent/');
+    const notFoundHtml = await notFound.text();
+    if (notFound.status !== 404) {
+        failures.push(`/non-existent/: HTTP ${notFound.status}, ожидался 404`);
+    }
+    if (!/Страница не найдена/.test(notFoundHtml)) {
+        failures.push('/non-existent/: нет страницы 404, отдана пустота');
+    }
+
+    const withQuery = await fetch(base + '/services/cafe/?utm_source=test');
+    if (withQuery.status !== 200) {
+        failures.push(`/services/cafe/?utm_source=test: HTTP ${withQuery.status}`);
+    }
+
+    if (mainDocument) {
+        const chars = mainDocument.length;
+        if (chars > 190412) {
+            failures.push(`главная: ${chars} знаков, бюджет 190 412`);
+        }
+        const css = inlineCssBytes(mainDocument);
+        if (css > 57795) {
+            failures.push(`главная: инлайн styles.css ${css} байт, бюджет 57 795`);
+        }
+    }
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: ${checked} страниц отвечают 200, /non-existent/ — 404 со страницей, внешнего CSS нет`);
+    console.log(`главная: ${mainDocument.length} знаков, инлайн styles.css ${inlineCssBytes(mainDocument)} байт`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-seo.mjs =====
+
+#!/usr/bin/env node
+/**
+ * SEO-периметр живого сайта: robots.txt, карта сайта, 301 и базовая микроразметка.
+ *
+ * Что проверяется (M20):
+ *   - `/robots.txt` — 200 `text/plain`, `Disallow: /admin/`, директива `Sitemap`
+ *     с адресом этого же сайта;
+ *   - `/sitemap.xml` — 200 `application/xml`, `<lastmod>` у каждого адреса,
+ *     каждый `<loc>` отвечает 200, закрытые в robots адреса в карту не попали,
+ *     и **все** адреса инвентаря `docs/content.md` (кроме закрытых) в карте есть;
+ *   - старые адреса 1С-Битрикс отдают 301 на новые (детальная — с сохранением
+ *     `utm_*`, без `CODE`);
+ *   - на главной есть JSON-LD организации (`Organization` или его подтип,
+ *     задаётся настройкой темы) + `WebSite` с `SearchAction`, и это
+ *     валидный JSON, а не «почти JSON»;
+ *   - на детальной странице узел своего вида (`Article`, `Event`, `Product`,
+ *     `Service`), у подборки — только общие узлы, у всех — `og:image`
+ *     и `twitter:image` (P2-4, Stage 9);
+ *   - `/rss.xml` — 200 `application/rss+xml`, RSS 2.0, ссылка канала на
+ *     `/news/`, у каждой записи `title`, абсолютный `link`, `guid` и
+ *     разбираемый `pubDate`, число записей совпадает с числом новостей
+ *     в карте, на главной есть `<link rel="alternate">` (P2-6, Stage 11).
+ *
+ *   node tools/check-seo.mjs [--base=http://127.0.0.1:8080]
+ *
+ * Требуется запущенный `php artisan serve` (порт по умолчанию 8080).
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+
+const closed = ['/auth/', '/personal/', '/search/'];
+
+const orgTypes = [
+    'Organization',
+    'Library',
+    'LocalBusiness',
+    'Store',
+    'Corporation',
+    'NGO',
+    'GovernmentOrganization',
+    'EducationalOrganization',
+    'MedicalOrganization',
+    'SportsOrganization',
+];
+
+const isOrgType = (type) => orgTypes.includes(type);
+
+const recordTypes = {
+    news: 'Article',
+    events: 'Event',
+    books: 'Product',
+    printing: 'Product',
+    services: 'Service',
+};
+
+const sections = {
+    2: { prefix: 'books', count: 24 },
+    3: { prefix: 'printing', count: 37 },
+    4: { prefix: 'news', count: 10 },
+    5: { prefix: 'services', count: 8 },
+    6: { prefix: 'events', count: 6 },
+    7: { prefix: 'collections', count: 6 },
+};
+
+const rootPages = [
+    '/',
+    '/books/',
+    '/printing/',
+    '/news/',
+    '/services/',
+    '/events/',
+    '/collections/',
+    '/about/',
+    '/auth/',
+    '/contacts/',
+    '/feedback/',
+    '/personal/',
+    '/privacy/',
+    '/rules/',
+    '/search/',
+    '/sitemap/',
+    '/subscribe/',
+    '/terms/',
+    '/blog/',
+];
+
+const redirects = [
+    { from: '/index.php', to: '/' },
+    { from: '/sitemap.php', to: '/sitemap.xml' },
+    { from: '/about/index.php', to: '/about/' },
+    { from: '/services/index.php', to: '/services/' },
+    { from: '/news/detail.php', to: '/news/' },
+    { from: '/books/detail.php?CODE=bad%20code', to: '/books/' },
+];
+
+function readInventory() {
+    const doc = fs.readFileSync(path.join(root, 'docs/content.md'), 'utf8');
+    const urls = [];
+
+    let section = null;
+    for (const line of doc.split(/\r?\n/)) {
+        const heading = /^### 1\.(\d)\./.exec(line);
+        if (heading) {
+            section = Number(heading[1]);
+            continue;
+        }
+        if (/^## /.test(line)) {
+            section = null;
+            continue;
+        }
+        if (!section || !sections[section]) {
+            continue;
+        }
+
+        for (const token of line.match(/`([a-z0-9-]+)`/g) || []) {
+            urls.push('/' + sections[section].prefix + '/' + token.slice(1, -1) + '/');
+        }
+    }
+
+    return urls;
+}
+
+function detailSlug(url) {
+    const match = /^\/([a-z]+)\/([a-z0-9-]+)\/$/.exec(url);
+
+    return match ? { prefix: match[1], slug: match[2] } : null;
+}
+
+/**
+ * checkBreadcrumbs проверяет `BreadcrumbList` страницы раздела.
+ *
+ * Крошки собираются из адреса (P2-22): «Главная → раздел → страница».
+ * Гейт ловит не только отсутствие узла, но и `position` вне порядка,
+ * пустые имена, относительные `item` и последнюю крошку не на своём адресе.
+ */
+function checkBreadcrumbs(url, graph) {
+    const failures = [];
+    const node = graph.find((item) => item['@type'] === 'BreadcrumbList');
+
+    if (!node) {
+        return [`${url}: нет узла BreadcrumbList`];
+    }
+
+    const items = Array.isArray(node.itemListElement) ? node.itemListElement : [];
+
+    if (items.length < 2) {
+        return [`${url}: в BreadcrumbList ${items.length} элементов`];
+    }
+
+    items.forEach((item, index) => {
+        if (item.position !== index + 1) {
+            failures.push(`${url}: position ${item.position} на месте ${index + 1}`);
+        }
+
+        if (!item.name) {
+            failures.push(`${url}: крошка ${index + 1} без имени`);
+        }
+
+        if (!/^https?:\/\//.test(item.item || '')) {
+            failures.push(`${url}: крошка ${index + 1} без абсолютного адреса`);
+        }
+    });
+
+    const last = items[items.length - 1];
+
+    if (last.item !== base + url) {
+        failures.push(`${url}: последняя крошка ведёт на «${last.item}»`);
+    }
+
+    return failures;
+}
+
+/**
+ * metaContent возвращает content мета-тега или пустую строку.
+ */
+function metaContent(html, attribute, name) {
+    const pattern = new RegExp(`<meta ${attribute}="${name}" content="([^"]*)">`);
+    const match = pattern.exec(html);
+
+    return match ? match[1] : '';
+}
+
+/**
+ * isAbsoluteAssetUrl проверяет, что это абсолютный адрес с путём.
+ *
+ * Прежняя проверка `https?:\\/\\/[^"]+` пропускала склеенный хост без слэша
+ * (`http://hostthemes/elv/...`): для соцсетей такая ссылка — не картинка,
+ * а проверка была зелёной.
+ */
+function isAbsoluteAssetUrl(value) {
+    try {
+        const parsed = new URL(value);
+
+        return /^https?:$/.test(parsed.protocol) && parsed.pathname !== '/';
+    }
+    catch {
+        return false;
+    }
+}
+
+/**
+ * checkDetailPage проверяет микроразметку и карточку шеринга детальной страницы.
+ */
+function checkDetailPage(url, html) {
+    const failures = [];
+    const prefix = url.split('/')[1];
+    const expected = recordTypes[prefix];
+
+    const match = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
+    if (!match) {
+        return [`${url}: нет <script type="application/ld+json">`];
+    }
+
+    let graph = [];
+    try {
+        const data = JSON.parse(match[1]);
+        graph = Array.isArray(data['@graph']) ? data['@graph'] : [];
+    }
+    catch (error) {
+        return [`${url}: JSON-LD не разбирается (${error.message})`];
+    }
+
+    const types = graph.map((node) => node['@type']);
+
+    if (expected) {
+        const node = graph.find((item) => item['@type'] === expected);
+
+        if (!node) {
+            failures.push(`${url}: нет узла ${expected} (есть ${types.join(', ') || 'ничего'})`);
+        }
+        else if (expected === 'Article' && (!node.headline || !node.datePublished)) {
+            failures.push(`${url}: у Article нет headline или datePublished`);
+        }
+        else if (expected === 'Event' && (!node.startDate || !node.location)) {
+            failures.push(`${url}: у Event нет startDate или location`);
+        }
+        else if (expected === 'Product' && !node.sku) {
+            failures.push(`${url}: у Product нет sku`);
+        }
+        else if (expected === 'Service' && !node.serviceType) {
+            failures.push(`${url}: у Service нет serviceType`);
+        }
+    }
+    else {
+        if (types.some((type) => !isOrgType(type) && type !== 'WebSite' && type !== 'BreadcrumbList')) {
+            failures.push(`${url}: у подборки лишние узлы (${types.join(', ')})`);
+        }
+    }
+
+    failures.push(...checkBreadcrumbs(url, graph));
+
+    const ogImage = metaContent(html, 'property', 'og:image');
+    if (!isAbsoluteAssetUrl(ogImage)) {
+        failures.push(`${url}: og:image не абсолютный адрес картинки («${ogImage}»)`);
+    }
+
+    const twitterImage = metaContent(html, 'name', 'twitter:image');
+    if (!isAbsoluteAssetUrl(twitterImage)) {
+        failures.push(`${url}: twitter:image не абсолютный адрес картинки («${twitterImage}»)`);
+    }
+
+    const canonical = /<link rel="canonical" href="([^"]+)">/.exec(html);
+    if (!canonical) {
+        failures.push(`${url}: нет canonical`);
+    }
+    else if (canonical[1] !== base + url) {
+        failures.push(`${url}: canonical «${canonical[1]}», ожидался «${base}${url}»`);
+    }
+
+    return failures;
+}
+
+async function main() {
+    const failures = [];
+
+    const robots = await fetch(base + '/robots.txt');
+    const robotsBody = await robots.text();
+    if (robots.status !== 200) {
+        failures.push(`/robots.txt: HTTP ${robots.status}`);
+    }
+    if (!/text\/plain/.test(robots.headers.get('content-type') || '')) {
+        failures.push(`/robots.txt: тип ${robots.headers.get('content-type')}`);
+    }
+    if (!robotsBody.includes('Disallow: /admin/')) {
+        failures.push('/robots.txt: нет Disallow: /admin/');
+    }
+    if (!robotsBody.includes('Sitemap: ' + base + '/sitemap.xml')) {
+        failures.push(`/robots.txt: директива Sitemap не указывает на ${base}/sitemap.xml`);
+    }
+    if (!robotsBody.includes('Clean-param:')) {
+        failures.push('/robots.txt: нет Clean-param для фильтров');
+    }
+
+    const sitemap = await fetch(base + '/sitemap.xml');
+    const xml = await sitemap.text();
+    if (sitemap.status !== 200) {
+        failures.push(`/sitemap.xml: HTTP ${sitemap.status}`);
+    }
+    if (!/application\/xml/.test(sitemap.headers.get('content-type') || '')) {
+        failures.push(`/sitemap.xml: тип ${sitemap.headers.get('content-type')}`);
+    }
+    if (!xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')) {
+        failures.push('/sitemap.xml: нет XML-пролога');
+    }
+
+    const blocks = [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((match) => match[1]);
+    const locs = blocks.map((block) => {
+        const loc = /<loc>([^<]+)<\/loc>/.exec(block);
+        const lastmod = /<lastmod>([^<]+)<\/lastmod>/.exec(block);
+
+        return {
+            loc: loc ? loc[1] : '',
+            lastmod: lastmod ? lastmod[1] : '',
+        };
+    });
+
+    const inventory = [...rootPages, ...readInventory()];
+    const expected = inventory.filter((url) => !closed.includes(url));
+
+    if (locs.length !== expected.length) {
+        failures.push(`/sitemap.xml: адресов ${locs.length}, ожидалось ${expected.length}`);
+    }
+
+    const seen = new Set();
+
+    for (const entry of locs) {
+        if (!entry.loc.startsWith(base + '/')) {
+            failures.push(`/sitemap.xml: <loc> ${entry.loc} не на этом сайте`);
+            continue;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.lastmod)) {
+            failures.push(`/sitemap.xml: у ${entry.loc} lastmod «${entry.lastmod}»`);
+        }
+
+        const local = entry.loc.slice(base.length) || '/';
+        seen.add(local);
+
+        if (closed.includes(local)) {
+            failures.push(`/sitemap.xml: закрытый в robots адрес ${local} попал в карту`);
+        }
+    }
+
+    for (const url of expected) {
+        if (!seen.has(url)) {
+            failures.push(`/sitemap.xml: адреса ${url} нет в карте`);
+        }
+    }
+
+    for (const url of seen) {
+        const response = await fetch(base + url, { redirect: 'manual' });
+        if (response.status !== 200) {
+            failures.push(`/sitemap.xml: ${url} отвечает ${response.status}`);
+            continue;
+        }
+
+        const detail = /^\/([a-z]+)\/[a-z0-9-]+\/$/.exec(url);
+        if (detail) {
+            failures.push(...checkDetailPage(url, await response.text()));
+        }
+    }
+
+    const home = await (await fetch(base + '/')).text();
+    const ld = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(home);
+    if (!ld) {
+        failures.push('главная: нет <script type="application/ld+json">');
+    }
+    else {
+        let data = null;
+        try {
+            data = JSON.parse(ld[1]);
+        }
+        catch (error) {
+            failures.push('главная: JSON-LD не разбирается (' + error.message + ')');
+        }
+
+        if (data) {
+            const graph = Array.isArray(data['@graph']) ? data['@graph'] : [];
+            const org = graph.find((node) => isOrgType(node['@type']));
+            const website = graph.find((node) => node['@type'] === 'WebSite');
+
+            if (!org) {
+                failures.push('главная: в JSON-LD нет узла организации (Organization)');
+            }
+            else {
+                if (!org.address || !org.address.streetAddress) {
+                    failures.push('главная: в JSON-LD организации нет адреса');
+                }
+                if (!org.openingHoursSpecification) {
+                    failures.push('главная: в JSON-LD организации нет часов работы');
+                }
+            }
+
+            if (!website || !website.potentialAction) {
+                failures.push('главная: в JSON-LD нет WebSite с SearchAction');
+            }
+        }
+    }
+
+    const rss = await fetch(base + '/rss.xml');
+    const rssBody = await rss.text();
+
+    if (rss.status !== 200) {
+        failures.push(`/rss.xml: HTTP ${rss.status}`);
+    }
+    if (!/application\/rss\+xml/.test(rss.headers.get('content-type') || '')) {
+        failures.push(`/rss.xml: тип ${rss.headers.get('content-type')}`);
+    }
+    if (!rssBody.startsWith('<?xml version="1.0" encoding="UTF-8"?>')) {
+        failures.push('/rss.xml: нет XML-пролога');
+    }
+    if (!/<rss version="2\.0"/.test(rssBody)) {
+        failures.push('/rss.xml: корневой элемент не RSS 2.0');
+    }
+
+    const channelLink = /<channel>[\s\S]*?<link>([^<]+)<\/link>/.exec(rssBody);
+    if (!channelLink || channelLink[1] !== base + '/news/') {
+        failures.push(`/rss.xml: ссылка канала «${channelLink ? channelLink[1] : 'нет'}», ожидалась «${base}/news/»`);
+    }
+
+    const rssItems = [...rssBody.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => match[1]);
+    const expectedNews = expected.filter((url) => /^\/news\/[a-z0-9-]+\/$/.test(url)).length;
+    const expectedItems = Math.min(expectedNews, 20);
+
+    if (rssItems.length !== expectedItems) {
+        failures.push(`/rss.xml: записей ${rssItems.length}, ожидалось ${expectedItems} (новостей ${expectedNews})`);
+    }
+
+    for (const item of rssItems) {
+        const title = /<title>([^<]*)<\/title>/.exec(item);
+        const link = /<link>([^<]+)<\/link>/.exec(item);
+        const guid = /<guid[^>]*>([^<]+)<\/guid>/.exec(item);
+        const pubDate = /<pubDate>([^<]+)<\/pubDate>/.exec(item);
+
+        if (!title || title[1].trim() === '') {
+            failures.push('/rss.xml: у записи нет title');
+        }
+        if (!link || !link[1].startsWith(base + '/news/')) {
+            failures.push(`/rss.xml: ссылка записи «${link ? link[1] : 'нет'}» не на этом сайте`);
+        }
+        if (!guid || !link || guid[1] !== link[1]) {
+            failures.push('/rss.xml: guid расходится со ссылкой');
+        }
+        if (!pubDate || Number.isNaN(Date.parse(pubDate[1]))) {
+            failures.push(`/rss.xml: pubDate «${pubDate ? pubDate[1] : 'нет'}» не разбирается`);
+        }
+    }
+
+    const alternate = /<link[^>]*rel="alternate"[^>]*type="application\/rss\+xml"[^>]*href="([^"]+)"[^>]*>/.exec(home);
+    if (!alternate || !alternate[1].endsWith('/rss.xml')) {
+        failures.push('главная: нет <link rel="alternate"> на /rss.xml');
+    }
+
+    for (const rule of redirects) {
+        const response = await fetch(base + rule.from, { redirect: 'manual' });
+        const location = response.headers.get('location') || '';
+
+        if (response.status !== 301) {
+            failures.push(`${rule.from}: HTTP ${response.status}, ожидался 301`);
+            continue;
+        }
+        if (location !== base + rule.to && !location.endsWith(rule.to)) {
+            failures.push(`${rule.from}: Location «${location}», ожидался «${base}${rule.to}»`);
+        }
+    }
+
+    const detailSample = expected.find((url) => /^\/news\/[a-z0-9-]+\/$/.test(url));
+    if (detailSample) {
+        const slug = detailSample.split('/')[2];
+        const old = '/news/detail.php?CODE=' + slug + '&utm_source=seo-check';
+        const response = await fetch(base + old, { redirect: 'manual' });
+        const location = response.headers.get('location') || '';
+
+        if (response.status !== 301) {
+            failures.push(`${old}: HTTP ${response.status}, ожидался 301`);
+        }
+        else if (location !== base + detailSample + '?utm_source=seo-check') {
+            failures.push(`${old}: Location «${location}», ожидался «${base}${detailSample}?utm_source=seo-check»`);
+        }
+    }
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: robots.txt и sitemap.xml (${locs.length} адресов, все 200), /rss.xml (${rssItems.length} записей), 301 со старых адресов, JSON-LD организации + WebSite + узел записи (Article/Event/Product/Service)`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-headers.mjs =====
+
+#!/usr/bin/env node
+/**
+ * Заголовки безопасности живого сайта: CSP, X-Frame-Options, Referrer-Policy,
+ * Permissions-Policy, HSTS-условие и nonce инлайнового скрипта.
+ *
+ * Что проверяется (P1-4, Stage 10):
+ *   - каждая публичная страница отдаёт полный набор статических заголовков;
+ *   - CSP содержит `default-src 'self'`, `frame-ancestors 'none'`,
+ *     `object-src 'none'`, `script-src 'self' 'nonce-…'`, `style-src` с
+ *     `'unsafe-inline'` (инлайновый CSS темы) и **не** содержит `unsafe-eval`;
+ *   - nonce из заголовка совпадает с атрибутом `nonce` инлайнового скрипта
+ *     фильтров (`/news/`, `/books/`, `/events/`), а инлайновых скриптов без
+ *     nonce на странице нет;
+ *   - два запроса получают разные nonce (значение одноразовое);
+ *   - админка (`BACKEND_URI`, по умолчанию `/admin`) остаётся без CSP
+ *     и с `X-Frame-Options: SAMEORIGIN` — иначе ломаются виджеты October;
+ *   - страница 404 получает те же заголовки, а не «голый» ответ.
+ *
+ *   node tools/check-headers.mjs [--base=http://127.0.0.1:8080]
+ *
+ * Требуется запущенный `php artisan serve` (порт по умолчанию 8080).
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+
+const pages = [
+    '/',
+    '/books/',
+    '/printing/',
+    '/news/',
+    '/services/',
+    '/events/',
+    '/collections/',
+    '/about/',
+    '/contacts/',
+    '/feedback/',
+    '/subscribe/',
+    '/search/',
+];
+
+const inlinePages = ['/news/', '/books/', '/events/'];
+
+function backendUri() {
+    const envFile = path.join(root, '.env');
+
+    if (!fs.existsSync(envFile)) {
+        return 'admin';
+    }
+
+    const line = fs.readFileSync(envFile, 'utf8')
+        .split(/\r?\n/)
+        .find((row) => /^BACKEND_URI=/.test(row));
+
+    if (!line) {
+        return 'admin';
+    }
+
+    return line.slice('BACKEND_URI='.length).trim().replace(/^["']|["']$/g, '').replace(/^\/|\/$/g, '') || 'admin';
+}
+
+function nonceOf(csp) {
+    const match = /'nonce-([^']+)'/.exec(csp || '');
+
+    return match ? match[1] : '';
+}
+
+async function main() {
+    const failures = [];
+    const seenNonces = new Set();
+
+    for (const url of pages) {
+        const response = await fetch(base + url);
+        const headers = response.headers;
+
+        if (response.status !== 200) {
+            failures.push(`${url}: HTTP ${response.status}`);
+            continue;
+        }
+
+        const expected = {
+            'x-content-type-options': 'nosniff',
+            'x-frame-options': 'DENY',
+            'referrer-policy': 'strict-origin-when-cross-origin',
+        };
+
+        for (const [name, value] of Object.entries(expected)) {
+            const actual = headers.get(name);
+            if (actual !== value) {
+                failures.push(`${url}: ${name} «${actual || 'нет'}», ожидался «${value}»`);
+            }
+        }
+
+        const permissions = headers.get('permissions-policy') || '';
+        for (const feature of ['camera=()', 'microphone=()', 'geolocation=()']) {
+            if (!permissions.includes(feature)) {
+                failures.push(`${url}: Permissions-Policy без ${feature}`);
+            }
+        }
+
+        const csp = headers.get('content-security-policy');
+
+        if (!csp) {
+            failures.push(`${url}: нет Content-Security-Policy`);
+            continue;
+        }
+
+        const required = [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "img-src 'self' data:",
+            "style-src 'self' 'unsafe-inline'",
+            "connect-src 'self'",
+        ];
+
+        for (const directive of required) {
+            if (!csp.includes(directive)) {
+                failures.push(`${url}: CSP без «${directive}»`);
+            }
+        }
+
+        if (csp.includes('unsafe-eval')) {
+            failures.push(`${url}: CSP разрешает unsafe-eval`);
+        }
+
+        const nonce = nonceOf(csp);
+
+        if (!nonce) {
+            failures.push(`${url}: CSP без nonce для инлайновых скриптов`);
+            continue;
+        }
+
+        seenNonces.add(nonce);
+
+        if (!csp.includes(`script-src 'self' 'nonce-${nonce}'`)) {
+            failures.push(`${url}: script-src не содержит nonce этого ответа`);
+        }
+
+        if (headers.get('strict-transport-security')) {
+            failures.push(`${url}: HSTS на http-ответе`);
+        }
+
+        if (!inlinePages.includes(url)) {
+            continue;
+        }
+
+        const html = await response.text();
+        const inline = /<script nonce="([^"]*)">/.exec(html);
+
+        if (!inline) {
+            failures.push(`${url}: инлайновый скрипт фильтров без nonce`);
+        }
+        else if (inline[1] !== nonce) {
+            failures.push(`${url}: nonce скрипта «${inline[1]}» не совпадает с заголовком «${nonce}»`);
+        }
+
+        const rogue = /<script(?![^>]*\bsrc=)(?![^>]*\bnonce=)(?![^>]*type="application\/ld\+json")[^>]*>/i.exec(html);
+        if (rogue) {
+            failures.push(`${url}: инлайновый скрипт без nonce — ${rogue[0].slice(0, 80)}`);
+        }
+    }
+
+    if (seenNonces.size !== pages.length) {
+        failures.push(`nonce повторяется: ${seenNonces.size} разных значений на ${pages.length} страниц`);
+    }
+
+    const admin = `/${backendUri()}`;
+    const backend = await fetch(base + admin);
+    const backendHeaders = backend.headers;
+
+    if (![200, 302].includes(backend.status)) {
+        failures.push(`${admin}: HTTP ${backend.status}, ожидался 200 или 302`);
+    }
+    if (backendHeaders.get('content-security-policy')) {
+        failures.push(`${admin}: CSP на админке ломает виджеты October`);
+    }
+    if (backendHeaders.get('x-frame-options') !== 'SAMEORIGIN') {
+        failures.push(`${admin}: X-Frame-Options «${backendHeaders.get('x-frame-options') || 'нет'}», ожидался SAMEORIGIN`);
+    }
+    if (backendHeaders.get('x-content-type-options') !== 'nosniff') {
+        failures.push(`${admin}: нет X-Content-Type-Options`);
+    }
+
+    const missing = await fetch(base + '/non-existent-page-check/');
+    if (missing.status !== 404) {
+        failures.push(`/non-existent-page-check/: HTTP ${missing.status}, ожидался 404`);
+    }
+    if (missing.headers.get('x-frame-options') !== 'DENY') {
+        failures.push('404: нет X-Frame-Options DENY');
+    }
+    if (!missing.headers.get('content-security-policy')) {
+        failures.push('404: нет Content-Security-Policy');
+    }
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: заголовки на ${pages.length} страницах, CSP с уникальным nonce, админка без CSP (${admin}), 404 с заголовками`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-pwa.mjs =====
+
+#!/usr/bin/env node
+/**
+ * PWA-оболочка живого сайта: manifest, service worker и офлайн-страница.
+ *
+ * Что проверяется (M10, Stage 12):
+ *   - `/manifest.webmanifest` — 200 `application/manifest+json`, JSON
+ *     разбирается, есть `id`/`name`/`start_url`/`scope`/`display`, каждая
+ *     иконка и каждый shortcut отвечают 200;
+ *   - `/sw.js` — 200, `javascript`, `Service-Worker-Allowed: /`, подставлены
+ *     версия (8 hex) и список `SHELL`, плейсхолдеров не осталось, каждый файл
+ *     оболочки отвечает 200, в списке есть `/offline.html` и manifest;
+ *   - `/offline.html` — 200 `text/html`, без `<script>` и `onclick=`
+ *     (их заблокирует CSP Stage 10), есть ссылка на главную;
+ *   - на главной есть `<link rel="manifest">` и скрипт регистрации
+ *     `assets/js/pwa.js`.
+ *
+ *   node tools/check-pwa.mjs [--base=http://127.0.0.1:8080]
+ *
+ * Требуется запущенный `php artisan serve` (порт по умолчанию 8080).
+ */
+
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+
+async function main() {
+    const failures = [];
+
+    const manifestResponse = await fetch(base + '/manifest.webmanifest');
+    const manifestBody = await manifestResponse.text();
+
+    if (manifestResponse.status !== 200) {
+        failures.push(`/manifest.webmanifest: HTTP ${manifestResponse.status}`);
+    }
+    if (!/application\/manifest\+json/.test(manifestResponse.headers.get('content-type') || '')) {
+        failures.push(`/manifest.webmanifest: тип ${manifestResponse.headers.get('content-type')}`);
+    }
+
+    let manifest = null;
+    try {
+        manifest = JSON.parse(manifestBody);
+    }
+    catch (error) {
+        failures.push('/manifest.webmanifest: не разбирается как JSON (' + error.message + ')');
+    }
+
+    if (manifest) {
+        for (const field of ['id', 'name', 'short_name', 'start_url', 'scope', 'display', 'lang']) {
+            if (!manifest[field]) {
+                failures.push(`/manifest.webmanifest: нет поля ${field}`);
+            }
+        }
+
+        if (manifest.scope !== '/') {
+            failures.push(`/manifest.webmanifest: scope «${manifest.scope}», ожидался «/»`);
+        }
+
+        if (!Array.isArray(manifest.icons) || manifest.icons.length < 2) {
+            failures.push('/manifest.webmanifest: меньше двух иконок');
+        }
+
+        for (const icon of manifest.icons || []) {
+            const response = await fetch(base + icon.src);
+            if (response.status !== 200) {
+                failures.push(`иконка ${icon.src}: HTTP ${response.status}`);
+            }
+            if (!/image\//.test(response.headers.get('content-type') || '')) {
+                failures.push(`иконка ${icon.src}: тип ${response.headers.get('content-type')}`);
+            }
+        }
+
+        for (const shortcut of manifest.shortcuts || []) {
+            const response = await fetch(base + shortcut.url);
+            if (response.status !== 200) {
+                failures.push(`shortcut ${shortcut.url}: HTTP ${response.status}`);
+            }
+        }
+    }
+
+    const workerResponse = await fetch(base + '/sw.js');
+    const workerBody = await workerResponse.text();
+
+    if (workerResponse.status !== 200) {
+        failures.push(`/sw.js: HTTP ${workerResponse.status}`);
+    }
+    if (!/javascript/.test(workerResponse.headers.get('content-type') || '')) {
+        failures.push(`/sw.js: тип ${workerResponse.headers.get('content-type')}`);
+    }
+    if (workerResponse.headers.get('service-worker-allowed') !== '/') {
+        failures.push('/sw.js: нет Service-Worker-Allowed: /');
+    }
+    if (workerBody.includes('__VERSION__') || workerBody.includes('__SHELL__')) {
+        failures.push('/sw.js: не подставлены VERSION или SHELL');
+    }
+
+    const version = /const VERSION = '([0-9a-f]{8})';/.exec(workerBody);
+    if (!version) {
+        failures.push('/sw.js: нет 8-символьной версии кеша');
+    }
+
+    const shellMatch = /const SHELL = (\[[^\]]*\]);/.exec(workerBody);
+    if (!shellMatch) {
+        failures.push('/sw.js: нет списка SHELL');
+    }
+    else {
+        let shell = [];
+        try {
+            shell = JSON.parse(shellMatch[1]);
+        }
+        catch (error) {
+            failures.push('/sw.js: SHELL не разбирается (' + error.message + ')');
+        }
+
+        for (const url of shell) {
+            const response = await fetch(base + url);
+            if (response.status !== 200) {
+                failures.push(`оболочка ${url}: HTTP ${response.status}`);
+            }
+        }
+
+        for (const required of ['/offline.html', '/manifest.webmanifest']) {
+            if (!shell.includes(required)) {
+                failures.push(`/sw.js: в SHELL нет ${required}`);
+            }
+        }
+    }
+
+    if (!workerBody.includes("url.pathname.startsWith('/admin/')")) {
+        failures.push('/sw.js: админка не исключена из перехвата');
+    }
+
+    const offlineResponse = await fetch(base + '/offline.html');
+    const offlineBody = await offlineResponse.text();
+
+    if (offlineResponse.status !== 200) {
+        failures.push(`/offline.html: HTTP ${offlineResponse.status}`);
+    }
+    if (!/text\/html/.test(offlineResponse.headers.get('content-type') || '')) {
+        failures.push(`/offline.html: тип ${offlineResponse.headers.get('content-type')}`);
+    }
+    if (offlineBody.includes('<script')) {
+        failures.push('/offline.html: инлайновый <script> заблокирует CSP');
+    }
+    if (offlineBody.includes('onclick=')) {
+        failures.push('/offline.html: инлайновый обработчик заблокирует CSP');
+    }
+    if (!/href="\/"/.test(offlineBody)) {
+        failures.push('/offline.html: нет ссылки на главную');
+    }
+
+    const home = await (await fetch(base + '/')).text();
+
+    if (!/<link rel="manifest" href="https?:\/\/[^"]+\/manifest\.webmanifest">/.test(home)) {
+        failures.push('главная: нет <link rel="manifest">');
+    }
+    if (!/assets\/js\/pwa\.js/.test(home)) {
+        failures.push('главная: нет скрипта регистрации service worker');
+    }
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: manifest (${manifest.icons.length} иконки, ${manifest.shortcuts.length} shortcut), sw.js версии ${version[1]}, офлайн-страница и регистрация на главной`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-health.mjs =====
+
+#!/usr/bin/env node
+/**
+ * Health-эндпоинт живого сайта (P1-21, Stage 13).
+ *
+ * Что проверяется:
+ *   - `/health` — 200 `application/json`, `status: "ok"`, все три компонента
+ *     (`db`, `cache`, `queue`) отвечают true;
+ *   - `Cache-Control` содержит `no-store` (пробу нельзя кэшировать);
+ *   - нет `Set-Cookie` (проба не должна плодить сессии);
+ *   - в теле нет DSN, SQL, путей и текста исключений: 503 обязан объяснять
+ *     отказ именами компонентов, а не `SQLSTATE[…]`.
+ *
+ *   node tools/check-health.mjs [--base=http://127.0.0.1:8080]
+ *
+ * Требуется запущенный `php artisan serve`. Отказ БД здесь не воспроизводится
+ * (останавливать базу под живым сервером нельзя) — этот путь закрыт
+ * `tests/HealthTest.php`.
+ */
+
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+
+const leaks = ['SQLSTATE', 'mysql', 'password', '127.0.0.1', 'Exception', 'vendor/', 'storage/'];
+
+async function main() {
+    const failures = [];
+
+    const response = await fetch(base + '/health');
+    const body = await response.text();
+
+    if (response.status !== 200) {
+        failures.push(`/health: HTTP ${response.status}`);
+    }
+    if (!/application\/json/.test(response.headers.get('content-type') || '')) {
+        failures.push(`/health: тип ${response.headers.get('content-type')}`);
+    }
+    if (!/no-store/.test(response.headers.get('cache-control') || '')) {
+        failures.push(`/health: Cache-Control «${response.headers.get('cache-control')}», ожидался no-store`);
+    }
+    if (response.headers.get('set-cookie')) {
+        failures.push('/health: ответ ставит cookie — маршрут попал в сессионную группу');
+    }
+
+    let payload = null;
+    try {
+        payload = JSON.parse(body);
+    }
+    catch (error) {
+        failures.push('/health: не разбирается как JSON (' + error.message + ')');
+    }
+
+    if (payload) {
+        if (payload.status !== 'ok') {
+            failures.push(`/health: status «${payload.status}»`);
+        }
+        for (const component of ['db', 'cache', 'queue']) {
+            if (payload.checks?.[component] !== true) {
+                failures.push(`/health: ${component} — ${JSON.stringify(payload.checks?.[component])}`);
+            }
+        }
+        if (!payload.time) {
+            failures.push('/health: нет отметки времени');
+        }
+    }
+
+    const lower = body.toLowerCase();
+    for (const needle of leaks) {
+        if (lower.includes(needle.toLowerCase())) {
+            failures.push(`/health: в теле есть «${needle}»`);
+        }
+    }
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: /health 200, db/cache/queue живы, no-store, без cookie и внутренних деталей (${payload.time})`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-orphans.mjs =====
+
+#!/usr/bin/env node
+/**
+ * Сироты: у каждого адреса карты сайта должна быть входящая внутренняя ссылка.
+ *
+ * Что проверяется (P2-22):
+ *   - `/sitemap.xml` разбирается, в нём есть адреса;
+ *   - каждая страница карты отдаёт 200 (иначе «ссылка есть» не проверяема);
+ *   - у каждого адреса, кроме главной и перечисленных в ALLOWED_ORPHANS, есть
+ *     хотя бы одна входящая ссылка с другой страницы сайта (ссылка на себя
+ *     не считается);
+ *   - ссылки с параметрами и якорем сводятся к пути, внешние хосты
+ *     игнорируются.
+ *
+ *   node tools/check-orphans.mjs [--base=http://127.0.0.1:8080]
+ *   node tools/check-orphans.mjs --self-test
+ *
+ * `--self-test` проверяет сам разбор ссылок и поиск сирот на синтетических
+ * данных: гейт, который зеленеет потому, что ничего не нашёл, ничего не
+ * доказывает. Живой прогон требует `php artisan serve` (порт 8080).
+ */
+
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+const origin = new URL(base).origin;
+
+const ALLOWED_ORPHANS = ['/404'];
+
+const CONCURRENCY = 6;
+
+const failures = [];
+
+/**
+ * fetchText забирает страницу и возвращает тело либо null с записью ошибки.
+ */
+async function fetchText(url) {
+    const response = await fetch(url, { redirect: 'follow' });
+
+    if (!response.ok) {
+        failures.push(`${url.slice(base.length) || '/'}: HTTP ${response.status}`);
+        return null;
+    }
+
+    return response.text();
+}
+
+/**
+ * sitemapPaths вытаскивает пути из `<loc>` карты сайта, отбрасывая чужие хосты.
+ */
+function sitemapPaths(xml) {
+    return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
+        .map((match) => {
+            let url;
+
+            try {
+                url = new URL(match[1]);
+            }
+            catch {
+                return null;
+            }
+
+            return url.origin === origin ? url.pathname : null;
+        })
+        .filter((pathname) => pathname !== null);
+}
+
+/**
+ * internalLinks вытаскивает внутренние пути из `href` страницы.
+ */
+function internalLinks(html, currentPath) {
+    const links = new Set();
+
+    for (const match of html.matchAll(/href="([^"]+)"/g)) {
+        const raw = match[1];
+
+        if (raw.startsWith('mailto:') || raw.startsWith('tel:') || raw.startsWith('javascript:')) {
+            continue;
+        }
+
+        let url;
+
+        try {
+            url = new URL(raw, base + currentPath);
+        }
+        catch {
+            continue;
+        }
+
+        if (url.origin !== origin) {
+            continue;
+        }
+
+        const pathname = url.pathname;
+
+        if (pathname === currentPath) {
+            continue;
+        }
+
+        links.add(pathname);
+    }
+
+    return links;
+}
+
+/**
+ * orphansOf возвращает адреса без входящих ссылок (главная и исключения — нет).
+ */
+function orphansOf(paths, incoming) {
+    return paths.filter((pathname) => {
+        if (pathname === '/' || ALLOWED_ORPHANS.includes(pathname)) {
+            return false;
+        }
+
+        return (incoming.get(pathname) || 0) === 0;
+    });
+}
+
+/**
+ * mapLimit выполняет fn по списку с ограничением параллельности.
+ */
+async function mapLimit(items, limit, fn) {
+    const results = new Array(items.length);
+    let index = 0;
+
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+        while (index < items.length) {
+            const current = index++;
+            results[current] = await fn(items[current], current);
+        }
+    });
+
+    await Promise.all(workers);
+
+    return results;
+}
+
+/**
+ * selfTest проверяет разбор ссылок и поиск сирот без живого сервера.
+ */
+function selfTest() {
+    const problems = [];
+
+    const html = [
+        '<a href="/a/">внутренняя</a>',
+        '<a href="/a/?page=2#top">с параметром и якорем</a>',
+        '<a href="/a/">дубль</a>',
+        '<a href="https://other.example/b/">внешняя</a>',
+        '<a href="mailto:info@example.by">почта</a>',
+        '<a href="#top">якорь на себя</a>',
+        '<a href="/a/">ссылка на себя же</a>',
+        '<a href="/c/d/">вложенная</a>',
+    ].join('');
+
+    const links = internalLinks(html, '/a/');
+
+    if (!links.has('/a/') && links.size === 0) {
+        problems.push('internalLinks не нашёл ни одной ссылки');
+    }
+
+    if (!links.has('/c/d/')) {
+        problems.push('internalLinks потерял вложенный путь /c/d/');
+    }
+
+    if (links.has('/b/')) {
+        problems.push('internalLinks пропустил внешний хост');
+    }
+
+    const selfLinks = internalLinks('<a href="/a/">сама</a>', '/a/');
+
+    if (selfLinks.has('/a/')) {
+        problems.push('ссылка на себя считается входящей');
+    }
+
+    const paths = sitemapPaths('<urlset><url><loc>' + base + '/a/</loc></url><url><loc>https://other.example/x/</loc></url></urlset>');
+
+    if (paths.length !== 1 || paths[0] !== '/a/') {
+        problems.push('sitemapPaths: ' + JSON.stringify(paths));
+    }
+
+    const incoming = new Map([['/', 5], ['/a/', 1], ['/b/', 0], ['/404', 0]]);
+    const orphans = orphansOf(['/', '/a/', '/b/', '/404'], incoming);
+
+    if (JSON.stringify(orphans) !== JSON.stringify(['/b/'])) {
+        problems.push('orphansOf: ' + JSON.stringify(orphans));
+    }
+
+    if (problems.length > 0) {
+        console.error('FAIL: ' + problems.length + ' проблем самопроверки');
+        for (const line of problems) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log('OK: самопроверка разбора ссылок и поиска сирот');
+}
+
+async function main() {
+    if (process.argv.includes('--self-test')) {
+        selfTest();
+        return;
+    }
+
+    const xml = await fetchText(base + '/sitemap.xml');
+
+    if (xml === null) {
+        throw new Error('карта сайта недоступна');
+    }
+
+    const paths = sitemapPaths(xml);
+
+    if (paths.length === 0) {
+        throw new Error('в карте сайта нет адресов');
+    }
+
+    const unique = [...new Set(paths)];
+    const incoming = new Map(unique.map((pathname) => [pathname, 0]));
+
+    await mapLimit(unique, CONCURRENCY, async (pathname) => {
+        const html = await fetchText(base + pathname);
+
+        if (html === null) {
+            return;
+        }
+
+        for (const link of internalLinks(html, pathname)) {
+            if (incoming.has(link)) {
+                incoming.set(link, incoming.get(link) + 1);
+            }
+        }
+    });
+
+    for (const pathname of orphansOf(unique, incoming)) {
+        failures.push(`${pathname}: ни одной входящей ссылки`);
+    }
+
+    const allowed = ALLOWED_ORPHANS.filter((pathname) => unique.includes(pathname)).length;
+    const checked = unique.length - allowed - 1;
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: ${checked} адресов, у каждого есть входящая ссылка (карта: ${unique.length}, исключения: ${ALLOWED_ORPHANS.join(', ') || 'нет'})`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-api.mjs =====
+
+#!/usr/bin/env node
+/**
+ * Контракт публичного JSON (`/api/v1/...`, P2-14) на живом сайте.
+ *
+ * Что проверяется:
+ *   - каждый раздел из `Sitemap::SECTIONS` отвечает 200 `application/json`,
+ *     `meta.section` совпадает с handle, `meta.count` — с длиной `data`;
+ *   - у каждой записи есть обязательные поля контракта (`id`, `slug`, `title`,
+ *     `excerpt`, `image`, `url`, `updated_at`), `url` абсолютный;
+ *   - **каждый `url` из списка открывается 200**: API не отдаёт запись,
+ *     которой нет в вёрстке (фильтр `applyVisibleFrontend` не разошёлся
+ *     с темой);
+ *   - `{handle}/{slug}` первой записи отвечает 200 с тем же `id`;
+ *   - неизвестный handle — 404 в JSON, `limit=0` — 422.
+ *
+ *   node tools/check-api.mjs [--base=http://127.0.0.1:8080]
+ *
+ * Требуется запущенный `php artisan serve` (порт по умолчанию 8080).
+ */
+
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+const base = (baseArg ? baseArg.slice('--base='.length) : 'http://127.0.0.1:8080').replace(/\/$/, '');
+
+const SECTIONS = ['books', 'printing', 'news', 'services', 'events', 'collections'];
+
+const REQUIRED = ['id', 'slug', 'title', 'excerpt', 'image', 'url', 'updated_at'];
+
+const failures = [];
+
+/**
+ * getJson забирает JSON и возвращает пару «ответ, тело» либо null с ошибкой.
+ */
+async function getJson(path) {
+    const response = await fetch(base + path);
+    const text = await response.text();
+
+    try {
+        return { response, data: JSON.parse(text) };
+    }
+    catch {
+        failures.push(`${path}: тело не JSON (${text.slice(0, 80)})`);
+        return { response, data: null };
+    }
+}
+
+function checkItem(path, item) {
+    for (const field of REQUIRED) {
+        if (!Object.prototype.hasOwnProperty.call(item, field)) {
+            failures.push(`${path}: в записи нет поля ${field}`);
+        }
+    }
+
+    if (!/^https?:\/\//.test(item.url || '')) {
+        failures.push(`${path}: url не абсолютный (${item.url})`);
+    }
+}
+
+async function main() {
+    let total = 0;
+
+    for (const section of SECTIONS) {
+        const path = `/api/v1/${section}`;
+        const { response, data } = await getJson(path);
+
+        if (response.status !== 200) {
+            failures.push(`${path}: HTTP ${response.status}`);
+            continue;
+        }
+
+        if (!(response.headers.get('content-type') || '').includes('application/json')) {
+            failures.push(`${path}: content-type ${response.headers.get('content-type')}`);
+        }
+
+        if (!data || !data.meta || data.meta.section !== section) {
+            failures.push(`${path}: meta.section = ${data && data.meta ? data.meta.section : 'нет'}`);
+            continue;
+        }
+
+        if (!Array.isArray(data.data) || data.meta.count !== data.data.length) {
+            failures.push(`${path}: meta.count не совпадает с длиной data`);
+            continue;
+        }
+
+        for (const item of data.data) {
+            checkItem(path, item);
+        }
+
+        total += data.data.length;
+
+        const first = data.data[0];
+
+        if (!first) {
+            continue;
+        }
+
+        const detail = await getJson(`${path}/${first.slug}`);
+
+        if (detail.response.status !== 200) {
+            failures.push(`${path}/${first.slug}: HTTP ${detail.response.status}`);
+        }
+        else if (!detail.data || !detail.data.data || detail.data.data.id !== first.id) {
+            failures.push(`${path}/${first.slug}: id не совпал со списком`);
+        }
+
+        for (const item of data.data) {
+            const page = await fetch(base + new URL(item.url).pathname, { redirect: 'manual' });
+
+            if (page.status !== 200) {
+                failures.push(`${new URL(item.url).pathname}: страница отдала ${page.status}`);
+            }
+        }
+    }
+
+    const unknown = await getJson('/api/v1/unknown');
+
+    if (unknown.response.status !== 404) {
+        failures.push(`/api/v1/unknown: HTTP ${unknown.response.status}, ожидался 404`);
+    }
+
+    const badLimit = await getJson('/api/v1/books?limit=0');
+
+    if (badLimit.response.status !== 422) {
+        failures.push(`/api/v1/books?limit=0: HTTP ${badLimit.response.status}, ожидался 422`);
+    }
+
+    if (failures.length > 0) {
+        console.error('FAIL: ' + failures.length + ' проблем');
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+        process.exit(1);
+    }
+
+    console.log(`OK: API ${SECTIONS.length} разделов, ${total} записей, поля контракта, страницы записей 200, 404/422 на ошибки`);
+}
+
+main().catch((error) => {
+    console.error('FAIL: ' + error.message);
+    process.exit(1);
+});
+
+===== FILE: tools/check-package.mjs =====
+
+#!/usr/bin/env node
+/**
+ * Упаковка продукта: тема и плагин как товар (P2-26, Stage 37).
+ *
+ * Что проверяется:
+ *   - `themes/elv/composer.json` существует, валиден и его `name` после
+ *     преобразования ядра (`System::composerToOctoberCode()`) совпадает
+ *     с `authorCode.code` из `themes/elv/theme.yaml`
+ *     (`modules/cms/classes/ThemeManager.php:229-231`, `:354-366`);
+ *   - `authorCode` в `theme.yaml` есть, `version.yaml` темы содержит версию —
+ *     без них тема не опознаётся как продукт и не обновляется
+ *     (`ThemeManager.php:371-393`);
+ *   - `screenshot.png` темы существует, это PNG и не пустой
+ *     (требование карточки Marketplace, ядром не используется);
+ *   - `LICENSE.md` есть в теме и в плагине, тексты совпадают
+ *     (`"license": "proprietary"` в `composer.json` без файла лицензии
+ *     противоречит продаже);
+ *   - `composer.json` плагина — форма `vendor/name`, тип `october-plugin`;
+ *   - в поставляемом коде нет абсолютных путей вида `D:/` или `C:\`
+ *     (`plugins/elv/site`, `themes/elv`, `config/*.php`) — локальный путь
+ *     в `Import.php` был ровно один и удалён в этом же этапе.
+ *
+ *   node tools/check-package.mjs
+ *
+ * Сервер не нужен.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const themeDir = path.join(root, 'themes/elv');
+const pluginDir = path.join(root, 'plugins/elv/site');
+const failures = [];
+
+function fail(message) {
+    failures.push(message);
+}
+
+function readJson(file) {
+    if (!fs.existsSync(file)) {
+        fail(`${path.relative(root, file)}: файла нет`);
+
+        return null;
+    }
+
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf8'));
+    }
+    catch (error) {
+        fail(`${path.relative(root, file)}: невалидный JSON (${error.message})`);
+
+        return null;
+    }
+}
+
+function yamlValue(file, key) {
+    if (!fs.existsSync(file)) {
+        return null;
+    }
+
+    const match = new RegExp(`^${key}\\s*:\\s*(.+)$`, 'm').exec(fs.readFileSync(file, 'utf8'));
+
+    return match ? match[1].trim().replace(/^['"]|['"]$/g, '') : null;
+}
+
+function octoberCode(composerName) {
+    let name = String(composerName || '').toLowerCase();
+    name = name.split('-plugin')[0] || name;
+    name = name.split('-theme')[0] || name;
+
+    const parts = name.split('/');
+    const vendor = parts[0] || '';
+    const packageName = (parts[1] || '').replace(/^oc-/, '');
+
+    return `${vendor}.${packageName}`.replace(/\.+$/, '');
+}
+
+function checkTheme() {
+    const composer = readJson(path.join(themeDir, 'composer.json'));
+    const authorCode = yamlValue(path.join(themeDir, 'theme.yaml'), 'authorCode');
+    const code = yamlValue(path.join(themeDir, 'theme.yaml'), 'code');
+
+    if (!authorCode) {
+        fail('themes/elv/theme.yaml: нет authorCode');
+    }
+
+    if (!code) {
+        fail('themes/elv/theme.yaml: нет code');
+    }
+
+    if (composer && authorCode && code) {
+        if (composer.type !== 'october-theme') {
+            fail(`themes/elv/composer.json: type «${composer.type || '—'}» вместо october-theme`);
+        }
+
+        const expected = `${authorCode}.${code}`.toLowerCase();
+        const actual = octoberCode(composer.name);
+
+        if (actual !== expected) {
+            fail(`themes/elv/composer.json: name «${composer.name}» даёт код ${actual}, ожидается ${expected}`);
+        }
+
+        if (!composer.license) {
+            fail('themes/elv/composer.json: нет license');
+        }
+    }
+
+    const versionFile = path.join(themeDir, 'version.yaml');
+
+    if (!fs.existsSync(versionFile)) {
+        fail('themes/elv/version.yaml: нет файла версий (тема не обновится)');
+    }
+    else {
+        const version = yamlValue(versionFile, '1.0.0');
+
+        if (!version) {
+            fail('themes/elv/version.yaml: нет записи 1.0.0');
+        }
+    }
+
+    const screenshot = path.join(themeDir, 'screenshot.png');
+
+    if (!fs.existsSync(screenshot)) {
+        fail('themes/elv/screenshot.png: нет карточки продукта');
+    }
+    else {
+        const bytes = fs.readFileSync(screenshot);
+        const isPng = bytes.length > 8 && bytes[0] === 0x89 && bytes.toString('ascii', 1, 4) === 'PNG';
+
+        if (!isPng) {
+            fail('themes/elv/screenshot.png: файл не PNG');
+        }
+
+        if (bytes.length < 10 * 1024) {
+            fail(`themes/elv/screenshot.png: подозрительно маленький (${bytes.length} байт)`);
+        }
+    }
+}
+
+function checkPlugin() {
+    const composer = readJson(path.join(pluginDir, 'composer.json'));
+
+    if (!composer) {
+        return;
+    }
+
+    if (!/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(String(composer.name || ''))) {
+        fail(`plugins/elv/site/composer.json: name «${composer.name || '—'}» не в форме vendor/name`);
+    }
+
+    if (!String(composer.name || '').endsWith('-plugin')) {
+        fail('plugins/elv/site/composer.json: имя пакета плагина должно кончаться на -plugin');
+    }
+
+    if (composer.type !== 'october-plugin') {
+        fail(`plugins/elv/site/composer.json: type «${composer.type || '—'}» вместо october-plugin`);
+    }
+}
+
+function checkLicenses() {
+    const themeLicense = path.join(themeDir, 'LICENSE.md');
+    const pluginLicense = path.join(pluginDir, 'LICENSE.md');
+
+    for (const file of [themeLicense, pluginLicense]) {
+        if (!fs.existsSync(file)) {
+            fail(`${path.relative(root, file)}: нет текста лицензии покупателя`);
+        }
+        else if (fs.readFileSync(file, 'utf8').trim().length < 200) {
+            fail(`${path.relative(root, file)}: текст лицензии подозрительно короткий`);
+        }
+    }
+
+    if (fs.existsSync(themeLicense) && fs.existsSync(pluginLicense)) {
+        const theme = fs.readFileSync(themeLicense, 'utf8').trim();
+        const plugin = fs.readFileSync(pluginLicense, 'utf8').trim();
+
+        if (theme !== plugin) {
+            fail('LICENSE.md темы и плагина расходятся: у покупателя две разные лицензии');
+        }
+    }
+}
+
+function walk(dir, files = []) {
+    if (!fs.existsSync(dir)) {
+        return files;
+    }
+
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+            if (entry.name === 'preview' || entry.name === 'node_modules') {
+                continue;
+            }
+
+            walk(full, files);
+        }
+        else {
+            files.push(full);
+        }
+    }
+
+    return files;
+}
+
+function checkAbsolutePaths() {
+    const extensions = new Set(['.php', '.yaml', '.yml', '.htm', '.html', '.js', '.mjs', '.json', '.md', '.css', '.txt']);
+    const targets = [
+        ...walk(path.join(pluginDir)),
+        ...walk(themeDir),
+        ...walk(path.join(root, 'config')),
+    ];
+    const pattern = /(^|[^A-Za-z0-9])([A-Za-z]):[\\/]/;
+
+    for (const file of targets) {
+        if (!extensions.has(path.extname(file).toLowerCase())) {
+            continue;
+        }
+
+        const relative = path.relative(root, file);
+
+        if (relative.includes('themes/elv/assets/vendor/')) {
+            continue;
+        }
+
+        const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+
+        lines.forEach((line, index) => {
+            if (pattern.test(line)) {
+                fail(`${relative}:${index + 1}: абсолютный путь в поставляемом коде`);
+            }
+        });
+    }
+}
+
+function main() {
+    checkTheme();
+    checkPlugin();
+    checkLicenses();
+    checkAbsolutePaths();
+
+    if (failures.length > 0) {
+        console.error(`FAIL: ${failures.length} проблем упаковки`);
+
+        for (const line of failures) {
+            console.error('  - ' + line);
+        }
+
+        process.exit(1);
+    }
+
+    console.log(
+        'OK: тема опознаётся как продукт (elv.elv, 1.0.0), у темы и плагина есть лицензия, '
+        + 'карточка screenshot.png на месте, абсолютных путей в поставляемом коде нет'
+    );
+}
+
+main();
+
+===== FILE: docs/architecture.md =====
+
+# Архитектура
+
+## 1. Место в стеке
+
+Сайт — обычное Laravel-приложение October CMS. Поток запроса:
+
+```
+nginx/apache → index.php (корень проекта) → October bootstrap → plugin routes / CMS page
+  → компонент (Header, Menu, Breadcrumbs, List, Detail, Form, Search)
+  → Eloquent / Tailor-запись
+  → Blade-шаблон темы elv → HTML (инлайн CSS)
+```
+
+Никакого SPA, клиентского роутинга и сборки фронтенда. JS — `bootstrap.bundle` +
+`script.js` как в источнике.
+
+## 2. Плагин `elv/site`
+
+```
+plugins/elv/site/
+  Plugin.php               # регистрация прав, навигации, расписания, тегов разметки, middleware
+  blueprints/              # 6 контентных сущностей Tailor (YAML)
+  models/                  # Eloquent: Request, Booking, Order, Slot, Service, Subscriber
+  updates/                 # миграции (forward-only)
+  classes/
+    Content.php            # выборки Tailor-записей и разделов
+    Seo.php                # мета, canonical, JSON-LD, robots (источник elv_seo.php)
+    Sitemap.php            # sitemap.xml, lastmod из mtime текстовых страниц
+    Rss.php                # /rss.xml
+    Pwa.php                # manifest, sw.js с версией, SHELL, offline
+    Health.php             # /health: БД, кэш, очередь
+    BookingService.php     # слоты: генерация, занятость, транзакция
+    Labels.php, Media.php, FormFields.php
+    Http/                  # SecurityHeaders, CompressResponse, LegacyRedirect,
+                           # SeoController, PwaController, HealthController, формы
+    Search.php             # план (M8): порт BM25 из elv_search.php (1 272 строки)
+    TextFilter.php         # план (M8): фильтр чата
+    Push.php               # план (M9): порт elv_push.php (769 строк)
+  console/                 # elv:import, elv:slots-generate, elv:health-report
+  routes.php               # формы, SEO, PWA, health
+  tests/                   # PHPUnit + RefreshDatabase
+```
+
+Компонентов темы (`components/`) нет: разметка собрана в `themes/elv/partials`
+и тегах `{{ elv_*() }}`, зарегистрированных в `Plugin::registerMarkupTags()`.
+
+## 3. Tailor или Eloquent: правило разделения
+
+- **Tailor** — read-mostly контент, который правится в админке полями: `news`, `events`,
+  `collections`, `books`, `services`, `printing`.
+- **Eloquent** — всё, что требует транзакций, уникальных индексов, статусных переходов,
+  идемпотентности и тестов: `requests`, `bookings`, `orders`, `slots`, `subscribers`,
+  `push_subscriptions`.
+
+Исключение: `services` меняется и в Tailor (контент), и в Eloquent-таблице `slots`
+(расписание). Источник правды по расписанию — Eloquent, blueprint услуги хранит только
+презентационные поля.
+
+## 4. Таблица переноса: 9 инфоблоков → blueprints/модели
+
+Источник — `db/config/iblocks.php` (28 832 байта): 9 инфоблоков, 74 свойства, 12 разделов,
+91 элемент. Проверено разбором файла на этапе 0.
+
+### 4.1. Контент (Tailor-blueprints, 6 сущностей, 27 элементов)
+
+| Хендл | Свойства источника → поле blueprint | Тип поля | Разделов | Элементов |
+|---|---|---|---|---|
+| `news` | `AUTHOR` | `text` | 2 (`library`, `announcements`) | 10 |
+| | `TAGS` (L, multi: books, digital, events, kids, science, library) | `taglist` | | |
+| | `READ_TIME` | `text` | | |
+| | `SOURCE_URL` | `text` (url) | | |
+| `events` | `DATE` (DateTime) | `datepicker` (`mode: datetime`) | 4 (`literature`, `children`, `tech`, `lectures`) | 6 |
+| | `PLACE` | `text` | | |
+| | `CATEGORY` (L: literature, children, tech, lecture) | `dropdown` | | |
+| | `FORMAT` (L: offline, online, hybrid) | `dropdown` | | |
+| | `SEATS` (N) | `number` | | |
+| | `PRICE` | `text` | | |
+| | `DURATION` | `text` | | |
+| | `REGISTER_URL` | `text` (url) | | |
+| `collections` | `COUNT` (N) | `number` | — | 6 |
+| | `COLOR` (L: primary, green, sky, pink, orange) | `dropdown` | | |
+| | `ICON` | `text` | | |
+| `books` | `AUTHOR` | `text` | 6 (`fiction`, `history`, `science`, `children`, `business`, `art`) | 24 |
+| | `YEAR` | `text` | | |
+| | `ISBN` | `text` | | |
+| | `PUBLISHER` | `text` | | |
+| | `PAGES` (N) | `number` | | |
+| | `AGE_LIMIT` (L: all, kids, adult) | `dropdown` | | |
+| | `AVAILABLE` (L: available, reserved, unavailable) | `dropdown` | | |
+| | `SHELF` | `text` | | |
+| | `PRICE` (N) | `number` | | |
+| `services` | `ICON` | `text` | — | 8 |
+| | `COLOR` (L: primary, green, sky, pink, orange) | `dropdown` | | |
+| | `SUBTITLE` | `text` | | |
+| | `PRICE_FROM` (N) | `number` | | |
+| | `PRICE_LABEL` | `text` | | |
+| | `DURATION` | `text` | | |
+| | `SCHEDULE` (S, multi) | `repeater`/`textarea`, вывод построчно | | |
+| | `PHONE` | `text` | | |
+| | `EMAIL` | `text` (email) | | |
+| | `FEATURES` (S, multi) | `taglist` | | |
+| | `TARIFFS` (S, multi) | `repeater`/`textarea` | | |
+| `printing` | `ICON` | `text` | — | 37 |
+| | `COLOR` (L: primary, green, sky, pink, orange) | `dropdown` | | |
+| | `PRICE_FROM` (N) | `number` | | |
+| | `UNIT` | `text` | | |
+
+Итого контентных элементов: 10 + 6 + 6 + 24 + 8 + 37 = **91**. Свойств: 4 + 8 + 3 + 9 +
+11 + 4 = **39**. Разделов: 2 + 4 + 6 = **12**.
+
+Общие поля элемента в источнике (`db/config/data/*.php`): `xml_id`, `sort`, `name`, `code`,
+`active_from`, `section`, `image` (не у всех), `preview_text`, `detail_text`, `properties`.
+В Tailor это: `title`, `slug`, `published_at`, `parent` (раздел), `image` (`mediafinder`),
+`excerpt`, `content`, плюс поля свойств.
+
+Фото: `image` есть у 32 элементов из 91 (services 8, events 6, news 10, printing 8);
+без снимка 59 — books 24, printing 29, collections 6. Это дефект источника (P1-11),
+а не свойство переезда.
+
+### 4.2. Заявки (Eloquent, 3 сущности, 35 свойств)
+
+| Таблица | Поля источника → колонки | Перечисление |
+|---|---|---|
+| `elv_requests` | `EMAIL`, `PHONE`, `SUBJECT`, `MESSAGE`, `PAGE`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED` (datetime), `STATUS` | `new`, `in_progress`, `done` (по умолчанию `new`) |
+| `elv_bookings` | `SERVICE`, `SERVICE_CODE`, `TARIFF`, `PRICE`, `DATE`, `TIME`, `PERSON`, `PHONE`, `EMAIL`, `COMMENT`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED`, `STATUS` | `new`, `confirmed`, `cancelled` (по умолчанию `new`) |
+| `elv_orders` | `ITEM`, `ARTICLE`, `PRICE` (N), `QTY` (N), `PERSON`, `PHONE`, `EMAIL`, `COMMENT`, `SOURCE`, `CREATED_BY`, `DATE_PROCESSED`, `STATUS` | `new`, `processing`, `done`, `cancelled` (по умолчанию `new`) |
+
+Свойств: 9 + 14 + 12 = **35**. Вместе с контентом — **74**, как в источнике.
+
+Правило схемы: перечисление в БД (`ENUM`/белый список кода) обязано совпадать с формой.
+Клиент отбивается `FormRequest` **до** записи, а не `QueryException` из MySQL.
+
+## 5. Компоненты
+
+| Компонент | Что делает | Источник |
+|---|---|---|
+| `Header` | topbar, бренд, меню, поиск, кабинет, спрайт, инлайн CSS, meta | `header.php` |
+| `Menu` | верхнее меню, выпадающие списки разделов (услуги, печать) | `db/menu/top.menu.php`, `*.left.menu.php` |
+| `Breadcrumbs` | крошки по дереву страниц | `header.php:256` |
+| `Search` | модалка, мгновенная выдача, страница `/search/` | `header.php:228`, `local/ajax/search.php` |
+| `Chat` | виджет, правила ответов, промо-подсказки | `footer.php:208`, `script.js:169/281` |
+| `Subscribe` | форма в подвале, double opt-in, отписка | `footer.php:92` |
+| `Feedback` | модалка и страница `/feedback/` | `footer.php:250` |
+| `Booking` | форма брони на детальной услуги | `elv_forms.php` (`booking`) |
+| `Order` | заказ сувенира | `elv_forms.php` (`order`) |
+| `Picture` | `<picture>` с WebP/AVIF, `srcset` 480/960/1280 | `elv_media.php` (`elv_picture()`) |
+| `Footer` | подвал, подписка, FAB, чат, модалки, скрипты | `footer.php` |
+
+## 6. Маршруты
+
+### 6.1. Публичные (110 адресов)
+
+| Шаблон | Страница |
+|---|---|
+| `/` | главная |
+| `/about/`, `/contacts/`, `/rules/`, `/privacy/`, `/terms/`, `/personal/`, `/auth/` | CMS-страницы |
+| `/feedback/`, `/subscribe/` | формы (GET + POST) |
+| `/search/` | поиск (`?q=`, `&limit=`) |
+| `/sitemap/`, `/sitemap.xml` | карта сайта, XML |
+| `/news/`, `/news/{slug}/` | список и детальная |
+| `/events/`, `/events/{slug}/` | список и детальная |
+| `/services/`, `/services/{slug}/` | список и детальная |
+| `/printing/`, `/printing/{slug}/` | список и детальная |
+| `/books/`, `/books/{slug}/` | список и детальная |
+| `/collections/`, `/collections/{slug}/` | список и детальная |
+| `/404` | 404 |
+
+Правила источника — `urlrewrite.php:14`: семь правил, `CODE=$1&$2` (query-строка
+пробрасывается без потери: `/services/{slug}/?utm_source=...`).
+
+110 адресов инвентаря не значат 110 `<loc>`: в карту сайта входят 106
+адресов — 15 статических страниц и 91 детальная. `/404` адресом не является, а
+`/auth/`, `/personal/`, `/search/` закрыты в `robots.txt`: `Disallow` и `<loc>`
+в карте противоречат друг другу.
+
+### 6.2. Служебные
+
+| Маршрут | Назначение | Контракт |
+|---|---|---|
+| `POST /feedback/` | обратная связь (P0-4) | `elv_requests` + письмо в очередь; `201` JSON / `302 ?sent=1#form`; `422` на пустые поля |
+| `POST /subscribe/` | подписка (P0-5) | `elv_subscribers` + письмо double opt-in; повторный адрес не даёт второй строки |
+| `GET /subscribe/confirm/{token}` | подтверждение подписки | `200` страница «Подписка подтверждена», `410` на использованный токен |
+| `GET /unsubscribe/{token}` | отписка | `200` страница «Вы отписались», повторный переход безопасен |
+| `POST /booking/` | бронь услуги (P1-9) | `elv_bookings` + слот + два письма; `409 SLOT_UNAVAILABLE` на занятое время, `422` вне окна слотов |
+| `POST /order/` | заказ сувенира (P1-12) | `elv_orders` + письмо; `422` на `QTY < 1` и отрицательную цену |
+| `GET /ajax/search` — **план (M8)** | мгновенная выдача | `?q=`, `&limit=`; коды `200/400/405/503` (как `local/ajax/search.php`); маршрута пока нет |
+| `POST /api/chat` — **план (P1-17)** | проверка сообщения чата | `200/400/403/405/413/422/503`, `{ok, verdict, error}`; маршрута пока нет |
+| `POST /api/bookings` — **план (P1-16)** | REST для Telegram-бота | `Bearer`-токен, идемпотентность по `external_id`, `200/201/400/401/409/422/429`; маршрута пока нет |
+| `POST /ajax/push/subscribe`, `POST /ajax/push/unsubscribe` — **план (M9)** | Web Push | VAPID из `.env`; маршрутов пока нет |
+| `GET /api/v1/{handle}` | JSON контента для приложения и бота (P2-14) | `200` `{data, meta:{section,count}}`, `404` JSON для чужого раздела, `422` для `limit` вне 1…100 |
+| `GET /api/v1/{handle}/{slug}` | одна запись | `200` `{data}`, `404` для отключённой и несуществующей |
+
+REST API контента (`classes/Http/ApiController.php`) отдаёт поля
+`id, slug, title, excerpt, image, url, updated_at` (константа `ApiController::FIELDS`
+— это и есть контракт). `handle` — префикс адреса из `Sitemap::SECTIONS`
+(`books`, `printing`, `news`, `services`, `events`, `collections`), поэтому
+API и карта сайта не могут разойтись: список разделов один. Выборка идёт через
+`Content::records()`/`Content::record()`, то есть с тем же фильтром
+`applyVisibleFrontend()`: отключённая запись не попадает ни в список, ни в
+`{slug}`. `url` и `image` абсолютные (картинка строится через
+`Media::themeUrl()`), `excerpt` — из анонса или из текста без разметки (до 200
+символов), `limit` по умолчанию не ограничен, потолок —
+`ApiController::MAX_LIMIT` (100). Группа без `web`: сессия и CSRF API не нужны,
+лимит запросов — `throttle:60,1`, ответы кешируются на минуту
+(`Cache-Control: public, max-age=60`).
+
+
+Формы (`plugins/elv/site/routes.php`) сидят в группе `web`: обязателен
+`_token` (в шаблоне — `{{ elv_csrf()|raw }}`), лимит `throttle:30,1`.
+Поля источника `PROPERTY[EMAIL][0]` разбирает `classes/FormFields.php` в плоские
+`EMAIL`, `DATE`, … Возврат — на страницу формы из `Referer` того же хоста,
+иначе на `fallbackPath()`: чужой `Referer` не превращается в открытый редирект.
+
+`GET /sitemap.xml` и `GET /robots.txt` — `classes/Http/SeoController.php`:
+файлы генерируются, а не лежат в `public/`, потому что домен появится только на
+M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поисковиков на чужой сайт.
+Адрес берётся из запроса (`url('/')`), как в источнике (`sitemap.php`).
+
+### 6.3. Админка
+
+| Раздел (меню «Библиотека») | Контроллер (`plugins/elv/site/controllers`) | Право |
+|---|---|---|
+| Обращения | `Requests.php` — `elv/site/requests` | `elv.site.requests` |
+| Брони | `Bookings.php` — `elv/site/bookings` | `elv.site.bookings` |
+| Заказы | `Orders.php` — `elv/site/orders` | `elv.site.orders` |
+| Подписчики | `Subscribers.php` — `elv/site/subscribers` | `elv.site.subscribers` |
+
+Права и меню объявлены в `Plugin.php` (`registerPermissions()`,
+`registerNavigation()`): у каждого пункта свой `permissions`, поэтому оператор
+видит только выданные разделы. Списки — `ListController` + `columns.yaml`
+(поиск по теме, e-mail, телефону, услуге, товару, адресу); правка —
+`FormController` + `fields.yaml`, где данные гостя только для чтения
+(`disabled`), а редактируется один `status`.
+
+Смена статуса — единственное действие админки, и оно не обходит бизнес-логику:
+
+- `Request::saving` / `Order::saving` ставят `date_processed`, когда статус стал
+  «Выполнено»/«Отменён»;
+- `Booking::updating` при статусе «Отменена» освобождает слот через
+  `BookingService::releaseSlot()` (общий код с `BookingService::cancel()`), а
+  возврат отменённой брони в работу запрещён `ApplicationException` — иначе
+  слот вернулся бы в продажу без брони.
+
+Демо-подсказка «часть слотов занята» и массовые действия (удаление, экспорт)
+не делались: их нет в приёмке.
+
+### 6.4. SEO и старые адреса
+
+| Что | Где | Как работает |
+|---|---|---|
+| Мета страницы | `themes/elv/layouts/default.htm:10-35` | `seo_title`/`seo_description` страницы → `<title>`, description, OG, Twitter, canonical, `og:image` |
+| Мета записи | `classes/Seo.php:356` | `applyRecord()`: `seo_title`/`seo_description` записи перекрывают имя и `excerpt`, пустые — прежнее поведение; картинка → `seo_image`; зовётся из шести `*-detail.htm:14` |
+| JSON-LD | `classes/Seo.php:255` | `Library` (адрес, телефон, часы) + `WebSite` с `SearchAction` + узел записи (`Article`/`Event`/`Product`/`Service`, `recordNode` §399) + `BreadcrumbList` (`breadcrumbs` §118, «Главная → раздел → страница»); на всех страницах через `elv_jsonld(this.page)`; на главной и на 404 крошек нет |
+| `robots.txt` | `classes/Seo.php:660` | те же директивы, что в источнике, плюс `Disallow: /admin/`; `Sitemap:` — текущий хост |
+| `/rss.xml` | `classes/Rss.php:36` | 20 свежих новостей из `Content::records('Elv\News')`, сортировка по `published_at` (откат на `created_at`), RSS 2.0 с `atom:self`; отключённая запись не попадает |
+| `sitemap.xml` | `classes/Sitemap.php:70` | 15 статических (`PAGES`) + 91 детальная из `Content::records()`; `lastmod` — из `updated_at` записи, у текстовых страниц — `filemtime` |
+| 301 | `classes/Http/LegacyRedirect.php:50` | `/index.php`, `/sitemap.php`, `/{section}/index.php`, `/{section}/detail.php?CODE=slug` |
+| Редиректы из админки | `classes/Http/ManagedRedirect.php:18` | `models/Redirect.php` поверх таблицы `elv_redirects` (версия плагина 2.1.0): включённое правило отдаёт 301/302/307/308 и переносит параметры запроса, счётчик переходов пишется «как получится», кэш на 600 с снимается на `saved`/`deleted`; идёт после `LegacyRedirect`, а недоступная БД пропускает запрос, а не отдаёт 500; страница — `controllers/Redirects.php` под правом `elv.site.redirects` |
+| PWA | `classes/Pwa.php:22` | `SHELL` — один список файлов оболочки; `manifest.webmanifest`, `sw.js` и `offline.html` отдаёт `classes/Http/PwaController.php:19` с корня (`routes.php:24-26`), иначе область service worker ограничилась бы `/themes/elv/`; версия кеша — `mtime` файлов, восемь hex |
+| Заголовки | `classes/Http/SecurityHeaders.php:27` | CSP с nonce на каждый ответ, `X-Frame-Options` (фронт `DENY`, админка `SAMEORIGIN`), HSTS только на HTTPS; статические заголовки дублирует `nginx.conf` |
+| Панель SEO в записи | `formwidgets/SeoPanel.php:14` | поле `seo_focus_keyphrase` типа `seo_panel` (поле Tailor — `classes/ContentFields/SeoPanelField.php:17`, регистрация — `Plugin.php:128` и `:135`): превью сниппета, счётчики длин, пересчёт без сохранения через `onAnalyze` (`:61`); шаблоны и ассеты — `formwidgets/seopanel/` |
+| Анализ контента | `classes/SeoAnalyzer.php:67` | 18 проверок светофором `good/ok/bad`; числа — только эвристики гайда (плотность 0,75–3 %, title 40–60, description 120–155, пассив до 10 %), без выдуманной «оценки SEO»; пустой черновик не приговаривается, но разметка без текста проверяется |
+
+Карта сайта собирается из тех же записей, что показывает тема: отключённая или
+удалённая запись в карту не попадает, а новая страница темы без строки в
+`Sitemap::PAGES` роняет `tests/SeoTest.php`, а не выпадает из индекса молча.
+
+`LegacyRedirect` читает сырой `REQUEST_URI` через `RequestPath::from()`
+(`classes/Http/RequestPath.php:18`): Symfony принимает `/index.php` за
+`SCRIPT_NAME` и `path()` отдаёт `/`, иначе старый адрес главной не отличить от
+самой главной. `CODE` отбрасывается, остальные параметры (`utm_*`, `PAGEN_1`)
+переносятся в новый адрес. Middleware подключён в `Plugin.php:117` только вне
+консоли — юнит-тесты гоняют его напрямую; рядом `ManagedRedirect`
+(`Plugin.php:125`, идёт после), `SecurityHeaders` (`Plugin.php:121`) и
+`CompressResponse` (`Plugin.php:113`).
+
+Мета записи: у шести blueprints (`news`, `events`, `books`, `services`,
+`printing`, `collections`) есть `seo_title` и `seo_description`,
+`Seo::applyRecord()` (`classes/Seo.php:169`) выставляет их в `<head>`, пустые
+поля откатываются на имя записи и `excerpt` (обрезка 160 знаков). Canonical
+собирается как `getSchemeAndHttpHost() . $path` (`Seo::canonical()`,
+`classes/Seo.php:84`), иначе `url('/x/')` срезает хвостовой слэш и адрес
+расходится с `<loc>` карты. Микроразметка записи (`Article`, `Event`,
+`Product`, `Service`) — `Seo::recordNode()` (`classes/Seo.php:399`), Stage 9.
+Панель в записи и разбор контента — Stage 33, редиректы редактора — Stage 34
+(таблица выше). Остаток: сводка по всем записям (P2-35), CWV после домена
+(M17); FAQ отклонён — на сайте нет видимого блока «вопрос-ответ».
+
+## 7. Очереди и планировщик
+
+| Задача | Тип | Что делает |
+|---|---|---|
+| `FeedbackNotification` | `Mailable` в очереди | письмо сотрудникам об обращении с сайта |
+| `BookingNotification` | `Mailable` в очереди | письмо сотрудникам о новой брони |
+| `BookingConfirmation` | `Mailable` в очереди | подтверждение брони клиенту |
+| `OrderNotification` | `Mailable` в очереди | письмо сотрудникам о заказе сувенира |
+| `SubscriptionConfirmation` | `Mailable` в очереди | double opt-in и ссылка отписки |
+| `NotifyStaffPush` | план | Web Push персоналу о брони |
+| `elv:health-report` | schedule (ежечасно) | JSON-строка состояния: ответ БД, очередь, диск, компоненты |
+| `elv:slots-generate` | schedule (ежедневно, 03:10) | генерация слотов из расписания услуг |
+| `elv:search-index` | план (M8) | переиндексация BM25 |
+| `ExpireUnconfirmedBookings` | план | снятие просроченных броней |
+
+Отдельных job-классов нет: письмо ставит в очередь контроллер формы
+(`Mail::queue(new …)`), письма — `plugins/elv/site/classes/Mail/`. Очередь
+`QUEUE_CONNECTION=database`, поэтому без воркера (`php artisan queue:work`)
+письма лежат в таблице `jobs` и не уходят — это требование хостинга, а не код.
+
+SMTP у владельца нет: `MAIL_MAILER=log`, письма проверяются в
+`storage/logs/system.log` и Mailpit. Код обязан работать с реальным SMTP без правок.
+
+## 8. Медиа и CSS
+
+- Картинки: варианты 480/960/1280 в WebP/AVIF собирает `tools/build-image-variants.php`
+  (GD, `imagewebp`, `imageavif`) — переносится как есть.
+- `<picture>` выводит `Picture`-компонент: `srcset`, `width`/`height`,
+  `fetchpriority="high"` у hero, `loading="lazy"` ниже первого экрана.
+- CSS: `bootstrap.min.css` (51 758 байт) собирается `tools/purge-css.mjs` из
+  `bootstrap.source.min.css` (232 803 байта) по классам, которые реально есть в
+  `themes/elv/**` и `plugins/elv/**`; каталог `controllers` в обход сканера —
+  это разметка админки, её стилизует тема backend, а не CSS сайта. Вместе со
+  `styles.css` (84 995 байт) результат минифицируется хелпером
+  `Media::minifyCss()` и встраивается инлайном в layout. Кеш — по `mtime`,
+  отдельного `styles.min.css` не существует (рассинхрон «файл есть, а его никто
+  не пересобрал» недопустим).
+
+## 9. Зависимости
+
+Плагин не тянет сторонних пакетов, кроме идущих с October. Запрещено: демо-плагины,
+RainLab.Blog, «универсальные» SEO-пакеты, Tailwind, React, Vite, Google Fonts.
+Причина: лишние запросы и лишний CSS убивают 100/100/100/100.
+
+Порядок установки сторонних плагинов и список допустимых — `docs/plugins.md`.
+Там же зафиксировано, почему не берём Winter CMS: нет Tailor и Laravel 9 без
+security-фиксов.

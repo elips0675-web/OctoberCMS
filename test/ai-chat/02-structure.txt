@@ -1,0 +1,493 @@
+# Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
+`docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
+Изображения сгруппированы — они не текстовые.
+
+## Корень
+
+- `.babelrc` (0.3 КБ)
+- `.editorconfig` (0.2 КБ)
+- `.env.example` (1.7 КБ)
+- `.gitattributes` (0.0 КБ)
+- `.gitignore` (2.7 КБ)
+- `.htaccess` (2.4 КБ)
+- `.jshintrc` (0.1 КБ)
+- `AGENTS.md` (18.0 КБ)
+- `CHANGELOG.md` (26.1 КБ)
+- `LICENSE.md` (26.3 КБ)
+- `README.md` (9.2 КБ)
+- `artisan` (1.6 КБ)
+- `composer.json` (1.8 КБ)
+- `index.php` (1.2 КБ)
+- `nginx.conf` (3.5 КБ)
+- `package.json` (1.4 КБ)
+- `phpcs.xml` (1.6 КБ)
+- `phpunit.elv.xml` (1.1 КБ)
+- `phpunit.xml` (1.4 КБ)
+- `project-context.md` (14.8 КБ)
+- `server.php` (1.3 КБ)
+- `Что доделать.txt` (88.3 КБ)
+- `Что сделано.txt` (205.0 КБ)
+- `запуск.bat` (4.6 КБ)
+
+## .devcontainer
+
+- `devcontainer.json` (0.6 КБ)
+- `post-create.sh` (0.7 КБ)
+- `post-start.sh` (2.0 КБ)
+
+## app
+
+- `Provider.php` (0.5 КБ)
+
+## app/assets/css
+
+- `brand_styles.css` (2.1 КБ)
+
+## app/assets/images
+
+- `dashboard-icon.svg` (0.6 КБ)
+- `favicon.svg` (0.6 КБ)
+- `logo.svg` (0.9 КБ)
+- `menu-logo.svg` (0.7 КБ)
+
+## app/blueprints
+
+- `.gitkeep` (0.0 КБ)
+
+## bootstrap
+
+- `app.php` (0.5 КБ)
+- `autoload.php` (3.1 КБ)
+- `providers.php` (0.3 КБ)
+
+## config
+
+- `app.php` (4.8 КБ)
+- `backend.php` (8.6 КБ)
+- `broadcasting.php` (1.4 КБ)
+- `cache.php` (3.4 КБ)
+- `cms.php` (9.6 КБ)
+- `database.php` (6.9 КБ)
+- `editor.php` (3.1 КБ)
+- `filesystems.php` (4.0 КБ)
+- `hashing.php` (1.5 КБ)
+- `logging.php` (4.3 КБ)
+- `mail.php` (4.2 КБ)
+- `media.php` (3.4 КБ)
+- `multisite.php` (1.9 КБ)
+- `queue.php` (4.1 КБ)
+- `services.php` (1.2 КБ)
+- `session.php` (7.6 КБ)
+- `system.php` (6.5 КБ)
+- `view.php` (1.0 КБ)
+
+## docs
+
+- `README.md` (5.2 КБ)
+- `architecture.md` (26.4 КБ)
+- `content.md` (6.5 КБ)
+- `db.md` (18.8 КБ)
+- `design-system.md` (3.6 КБ)
+- `free-plan.md` (10.0 КБ)
+- `installation.md` (14.0 КБ)
+- `monetization.md` (22.2 КБ)
+- `october-integration.md` (13.8 КБ)
+- `plugins.md` (13.7 КБ)
+- `qa-checklist.md` (14.3 КБ)
+- `roadmap.md` (48.6 КБ)
+- `security-performance.md` (10.6 КБ)
+- `theme-universality.md` (10.7 КБ)
+
+## docs/archive
+
+- `README.md` (1.6 КБ)
+
+## plugins/elv/site
+
+- `LICENSE.md` (2.2 КБ)
+- `Plugin.php` (10.2 КБ)
+- `composer.json` (0.3 КБ)
+- `routes.php` (1.6 КБ)
+
+## plugins/elv/site/blueprints/blocks
+
+- `builder.yaml` (5.4 КБ)
+
+## plugins/elv/site/blueprints/books
+
+- `item.yaml` (3.1 КБ)
+- `section.yaml` (0.8 КБ)
+
+## plugins/elv/site/blueprints/collections
+
+- `item.yaml` (2.5 КБ)
+
+## plugins/elv/site/blueprints/events
+
+- `item.yaml` (3.1 КБ)
+- `section.yaml` (0.8 КБ)
+
+## plugins/elv/site/blueprints/news
+
+- `item.yaml` (2.8 КБ)
+- `section.yaml` (0.8 КБ)
+
+## plugins/elv/site/blueprints/page
+
+- `structure.yaml` (1.3 КБ)
+
+## plugins/elv/site/blueprints/posts
+
+- `item.yaml` (2.8 КБ)
+- `section.yaml` (0.6 КБ)
+
+## plugins/elv/site/blueprints/printing
+
+- `item.yaml` (2.7 КБ)
+
+## plugins/elv/site/blueprints/services
+
+- `item.yaml` (4.1 КБ)
+
+## plugins/elv/site/classes
+
+- `BookingService.php` (7.5 КБ)
+- `Brand.php` (5.5 КБ)
+- `Content.php` (5.0 КБ)
+- `FormFields.php` (3.0 КБ)
+- `Health.php` (4.3 КБ)
+- `Labels.php` (4.0 КБ)
+- `Media.php` (14.4 КБ)
+- `PageBuilder.php` (13.2 КБ)
+- `Pwa.php` (4.5 КБ)
+- `Rss.php` (6.0 КБ)
+- `Seo.php` (34.7 КБ)
+- `SeoAnalyzer.php` (31.0 КБ)
+- `Sitemap.php` (8.7 КБ)
+- `SlotUnavailableException.php` (0.5 КБ)
+
+## plugins/elv/site/classes/ContentFields
+
+- `SeoPanelField.php` (0.8 КБ)
+
+## plugins/elv/site/classes/Http
+
+- `ApiController.php` (5.6 КБ)
+- `BookingController.php` (4.1 КБ)
+- `CompressResponse.php` (3.8 КБ)
+- `FeedbackController.php` (2.4 КБ)
+- `FormController.php` (5.8 КБ)
+- `HealthController.php` (0.9 КБ)
+- `LegacyRedirect.php` (4.1 КБ)
+- `ManagedRedirect.php` (2.0 КБ)
+- `OrderController.php` (2.9 КБ)
+- `PwaController.php` (1.6 КБ)
+- `RequestPath.php` (0.9 КБ)
+- `SecurityHeaders.php` (3.8 КБ)
+- `SeoController.php` (1.9 КБ)
+- `SubscriberController.php` (3.8 КБ)
+
+## plugins/elv/site/classes/Mail
+
+- `BookingConfirmation.php` (0.6 КБ)
+- `BookingNotification.php` (0.6 КБ)
+- `FeedbackNotification.php` (0.6 КБ)
+- `MailSettings.php` (0.6 КБ)
+- `OrderNotification.php` (0.6 КБ)
+- `SubscriptionConfirmation.php` (0.7 КБ)
+
+## plugins/elv/site/console
+
+- `HealthReport.php` (1.5 КБ)
+- `Import.php` (14.7 КБ)
+- `SlotsGenerate.php` (4.7 КБ)
+
+## plugins/elv/site/controllers
+
+- `Bookings.php` (0.9 КБ)
+- `Orders.php` (0.6 КБ)
+- `Redirects.php` (1.1 КБ)
+- `Requests.php` (0.7 КБ)
+- `Subscribers.php` (0.6 КБ)
+
+## plugins/elv/site/controllers/bookings
+
+- `config_form.yaml` (0.1 КБ)
+- `config_list.yaml` (0.5 КБ)
+- `index.htm` (0.0 КБ)
+- `update.htm` (0.6 КБ)
+
+## plugins/elv/site/controllers/orders
+
+- `config_form.yaml` (0.1 КБ)
+- `config_list.yaml` (0.5 КБ)
+- `index.htm` (0.0 КБ)
+- `update.htm` (0.6 КБ)
+
+## plugins/elv/site/controllers/redirects
+
+- `config_form.yaml` (0.1 КБ)
+- `config_list.yaml` (0.6 КБ)
+- `create.htm` (0.6 КБ)
+- `index.htm` (0.0 КБ)
+- `update.htm` (0.6 КБ)
+
+## plugins/elv/site/controllers/requests
+
+- `config_form.yaml` (0.1 КБ)
+- `config_list.yaml` (0.5 КБ)
+- `index.htm` (0.0 КБ)
+- `update.htm` (0.6 КБ)
+
+## plugins/elv/site/controllers/subscribers
+
+- `config_list.yaml` (0.4 КБ)
+- `index.htm` (0.0 КБ)
+
+## plugins/elv/site/formwidgets
+
+- `SeoPanel.php` (3.9 КБ)
+
+## plugins/elv/site/formwidgets/seopanel/assets/css
+
+- `seopanel.css` (3.1 КБ)
+
+## plugins/elv/site/formwidgets/seopanel/assets/js
+
+- `seopanel.js` (5.2 КБ)
+
+## plugins/elv/site/formwidgets/seopanel/partials
+
+- `_analysis.php` (1.3 КБ)
+- `_seopanel.php` (1.8 КБ)
+
+## plugins/elv/site/models
+
+- `Booking.php` (2.8 КБ)
+- `Order.php` (2.0 КБ)
+- `Redirect.php` (5.9 КБ)
+- `Request.php` (1.8 КБ)
+- `Slot.php` (3.3 КБ)
+- `Subscriber.php` (2.7 КБ)
+
+## plugins/elv/site/models/booking
+
+- `columns.yaml` (0.7 КБ)
+- `fields.yaml` (1.6 КБ)
+
+## plugins/elv/site/models/order
+
+- `columns.yaml` (0.7 КБ)
+- `fields.yaml` (1.3 КБ)
+
+## plugins/elv/site/models/redirect
+
+- `columns.yaml` (0.5 КБ)
+- `fields.yaml` (1.7 КБ)
+
+## plugins/elv/site/models/request
+
+- `columns.yaml` (0.6 КБ)
+- `fields.yaml` (1.0 КБ)
+
+## plugins/elv/site/models/subscriber
+
+- `columns.yaml` (0.4 КБ)
+
+## plugins/elv/site/tests
+
+- `AdminTest.php` (8.9 КБ)
+- `ApiTest.php` (4.5 КБ)
+- `BookingTest.php` (6.2 КБ)
+- `FooterTest.php` (2.0 КБ)
+- `FormsTest.php` (19.1 КБ)
+- `HealthTest.php` (6.4 КБ)
+- `ImportTest.php` (6.2 КБ)
+- `LabelsTest.php` (2.8 КБ)
+- `MediaTest.php` (7.4 КБ)
+- `ModelsTest.php` (3.9 КБ)
+- `PageBuilderTest.php` (10.5 КБ)
+- `PwaTest.php` (5.7 КБ)
+- `RedirectTest.php` (9.5 КБ)
+- `RssTest.php` (6.4 КБ)
+- `SecurityHeadersTest.php` (5.9 КБ)
+- `SeoAnalyzerTest.php` (16.7 КБ)
+- `SeoPanelTest.php` (8.9 КБ)
+- `SeoTemplateTest.php` (8.0 КБ)
+- `SeoTest.php` (31.3 КБ)
+- `SlotMapTest.php` (2.9 КБ)
+- `SlotsGenerateTest.php` (2.9 КБ)
+
+## plugins/elv/site/tests/fixtures/db/config
+
+- `iblocks.php` (1.0 КБ)
+
+## plugins/elv/site/tests/fixtures/db/config/data
+
+- `books.php` (0.9 КБ)
+- `collections.php` (0.6 КБ)
+- `events.php` (0.9 КБ)
+- `news.php` (1.3 КБ)
+- `printing.php` (0.6 КБ)
+- `services.php` (1.6 КБ)
+
+## plugins/elv/site/updates
+
+- `create_elv_bookings_table.php` (1.6 КБ)
+- `create_elv_orders_table.php` (1.4 КБ)
+- `create_elv_redirects_table.php` (0.9 КБ)
+- `create_elv_requests_table.php` (1.2 КБ)
+- `create_elv_slots_table.php` (1.1 КБ)
+- `create_elv_subscribers_table.php` (0.9 КБ)
+- `rename_legacy_tables_to_elv.php` (0.8 КБ)
+- `version.yaml` (0.9 КБ)
+
+## plugins/elv/site/views
+
+- `action.htm` (1.1 КБ)
+
+## plugins/elv/site/views/mail
+
+- `booking-client.htm` (1.0 КБ)
+- `booking-staff.htm` (1.2 КБ)
+- `feedback.htm` (0.7 КБ)
+- `order-staff.htm` (1.0 КБ)
+- `subscribe-confirm.htm` (0.8 КБ)
+
+## test
+
+- `README.md` (3.3 КБ)
+- `Для анализа.txt` (14.8 КБ)
+
+## tests
+
+- `README.md` (4.1 КБ)
+- `bootstrap.php` (0.1 КБ)
+
+## themes/elv
+
+- `LICENSE.md` (2.2 КБ)
+- `composer.json` (0.3 КБ)
+- `theme.yaml` (6.6 КБ)
+- `version.yaml` (0.1 КБ)
+- … 1 ассетов, 1.9 МБ
+
+## themes/elv/assets/css
+
+- `styles.css` (83.0 КБ)
+
+## themes/elv/assets/icons
+
+- `icon.svg` (0.6 КБ)
+- … 5 ассетов, 0.1 МБ
+
+## themes/elv/assets/images
+
+- `avatar-tatyana.svg` (3.5 КБ)
+- … 165 ассетов, 8.2 МБ
+
+## themes/elv/assets/js
+
+- `consent.js` (2.7 КБ)
+- `push.js` (7.3 КБ)
+- `pwa.js` (0.8 КБ)
+- `script.js` (73.2 КБ)
+
+## themes/elv/assets/pwa
+
+- `manifest.webmanifest` (1.8 КБ)
+- `offline.html` (4.2 КБ)
+- `sw.js` (5.6 КБ)
+
+## themes/elv/assets/vendor
+
+- `bootstrap.bundle.min.js` (78.8 КБ)
+- `bootstrap.min.css` (51.9 КБ)
+- `bootstrap.source.min.css` (227.3 КБ)
+
+## themes/elv/layouts
+
+- `default.htm` (3.4 КБ)
+
+## themes/elv/pages
+
+- `404.htm` (0.2 КБ)
+- `about.htm` (7.2 КБ)
+- `auth.htm` (3.0 КБ)
+- `blog-detail.htm` (2.7 КБ)
+- `blog.htm` (1.4 КБ)
+- `books-detail.htm` (6.1 КБ)
+- `books.htm` (3.0 КБ)
+- `builder.htm` (1.2 КБ)
+- `collections-detail.htm` (1.7 КБ)
+- `collections.htm` (1.9 КБ)
+- `contacts.htm` (6.0 КБ)
+- `events-detail.htm` (2.7 КБ)
+- `events.htm` (2.1 КБ)
+- `feedback.htm` (5.9 КБ)
+- `index.htm` (48.5 КБ)
+- `news-detail.htm` (2.3 КБ)
+- `news.htm` (1.4 КБ)
+- `personal.htm` (1.0 КБ)
+- `printing-detail.htm` (2.0 КБ)
+- `printing.htm` (4.4 КБ)
+- `privacy.htm` (4.2 КБ)
+- `rules.htm` (3.5 КБ)
+- `search.htm` (2.3 КБ)
+- `services-detail.htm` (12.1 КБ)
+- `services.htm` (4.9 КБ)
+- `sitemap.htm` (3.7 КБ)
+- `subscribe.htm` (3.0 КБ)
+- `terms.htm` (3.5 КБ)
+
+## themes/elv/partials
+
+- `filter-script.htm` (0.7 КБ)
+- `footer.htm` (14.0 КБ)
+- `header.htm` (6.9 КБ)
+- `not-found.htm` (1.8 КБ)
+- `sprite.htm` (7.2 КБ)
+
+## themes/elv/partials/blocks
+
+- `list.htm` (0.2 КБ)
+- `quote.htm` (0.5 КБ)
+- `records.htm` (0.5 КБ)
+- `text-image.htm` (0.9 КБ)
+- `text.htm` (0.3 КБ)
+- `toc.htm` (0.5 КБ)
+- `video.htm` (0.6 КБ)
+
+## themes/elv/partials/cards
+
+- `book.htm` (1.0 КБ)
+- `collection.htm` (0.7 КБ)
+- `event.htm` (1.5 КБ)
+- `news.htm` (0.7 КБ)
+- `post.htm` (0.8 КБ)
+- `print.htm` (1.1 КБ)
+- `service.htm` (1.5 КБ)
+
+## tools
+
+- `check-admin-brand.mjs` (8.4 КБ)
+- `check-api.mjs` (5.0 КБ)
+- `check-clean-tree.mjs` (3.0 КБ)
+- `check-css-budget.mjs` (6.1 КБ)
+- `check-dom-parity.mjs` (7.0 КБ)
+- `check-headers.mjs` (7.7 КБ)
+- `check-health.mjs` (3.4 КБ)
+- `check-orphans.mjs` (8.0 КБ)
+- `check-package.mjs` (8.6 КБ)
+- `check-pwa.mjs` (7.0 КБ)
+- `check-seo.mjs` (18.6 КБ)
+- `check-urls.mjs` (7.1 КБ)
+- `css-size.php` (1.1 КБ)
+- `import-preview-pages.mjs` (6.5 КБ)
+- `purge-css.mjs` (10.6 КБ)
+- `serve-static.php` (2.8 КБ)
+

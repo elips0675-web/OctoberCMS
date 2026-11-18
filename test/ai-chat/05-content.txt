@@ -1,0 +1,1812 @@
+# Контент: Tailor-записи, конструктор страниц, метки, медиа, блог
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Пути — от корня репозитория; содержимое файлов не переписано.
+
+===== FILE: plugins/elv/site/classes/Content.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Tailor\Models\EntryRecord;
+use Tailor\Models\StructureRecord;
+
+/**
+ * Content — выборка Tailor-записей для страниц темы.
+ *
+ * Запросы держатся в одном месте: шаблоны не знают про Tailor-модели,
+ * а разделы (section) резолвятся по коду, а не по числовому id.
+ */
+class Content
+{
+    /**
+     * @var array<string, array>
+     */
+    protected static $cache = [];
+
+    /**
+     * flush сбрасывает кеш выборок.
+     *
+     * Живому запросу он не нужен (кеш умирает вместе с запросом), но тесты
+     * и импорт выполняются в одном процессе: без сброса следующий тест увидит
+     * записи предыдущего, а карта сайта — удалённую запись.
+     */
+    public static function flush(): void
+    {
+        static::$cache = [];
+    }
+
+    /**
+     * records возвращает опубликованные записи раздела по сортировке.
+     *
+     * @return array<int, EntryRecord>
+     */
+    public static function records(string $handle, $limit = null): array
+    {
+        $key = 'records|' . $handle . '|' . (string) $limit;
+        if (array_key_exists($key, static::$cache)) {
+            return static::$cache[$key];
+        }
+
+        $query = EntryRecord::inSection($handle)
+            ->applyVisibleFrontend()
+            ->orderBy('sort')
+            ->orderBy('id');
+
+        if ($limit !== null) {
+            $query->limit((int) $limit);
+        }
+
+        return static::$cache[$key] = $query->get()->all();
+    }
+
+    /**
+     * recordsInSection возвращает записи одного раздела по его коду.
+     *
+     * @return array<int, EntryRecord>
+     */
+    public static function recordsInSection(string $handle, string $sectionHandle, string $code, $limit = null): array
+    {
+        $id = static::sectionId($sectionHandle, $code);
+        if ($id === null) {
+            return [];
+        }
+
+        $key = 'records-section|' . $handle . '|' . $id . '|' . (string) $limit;
+        if (array_key_exists($key, static::$cache)) {
+            return static::$cache[$key];
+        }
+
+        $query = EntryRecord::inSection($handle)
+            ->applyVisibleFrontend()
+            ->where('section_id', $id)
+            ->orderBy('sort')
+            ->orderBy('id');
+
+        if ($limit !== null) {
+            $query->limit((int) $limit);
+        }
+
+        return static::$cache[$key] = $query->get()->all();
+    }
+
+    /**
+     * record находит запись по slug.
+     */
+    public static function record(string $handle, $slug): ?EntryRecord
+    {
+        $slug = trim((string) $slug);
+        if ($slug === '') {
+            return null;
+        }
+
+        $key = 'record|' . $handle . '|' . $slug;
+        if (array_key_exists($key, static::$cache)) {
+            return static::$cache[$key];
+        }
+
+        $record = EntryRecord::inSection($handle)
+            ->applyVisibleFrontend()
+            ->where('slug', $slug)
+            ->first();
+
+        return static::$cache[$key] = $record;
+    }
+
+    /**
+     * sections возвращает разделы инфоблока по сортировке.
+     *
+     * @return array<int, StructureRecord>
+     */
+    public static function sections(string $handle): array
+    {
+        $key = 'sections|' . $handle;
+        if (array_key_exists($key, static::$cache)) {
+            return static::$cache[$key];
+        }
+
+        return static::$cache[$key] = StructureRecord::inSection($handle)
+            ->where('is_enabled', true)
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get()
+            ->all();
+    }
+
+    /**
+     * sectionId возвращает id раздела по его коду.
+     */
+    public static function sectionId(string $handle, string $code): ?int
+    {
+        foreach (static::sections($handle) as $section) {
+            if ((string) $section->code === (string) $code) {
+                return (int) $section->id;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * sectionCode возвращает код раздела по его id.
+     */
+    public static function sectionCode(string $handle, $id): string
+    {
+        foreach (static::sections($handle) as $section) {
+            if ((int) $section->id === (int) $id) {
+                return (string) $section->code;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * sectionTitle возвращает название раздела по его id.
+     */
+    public static function sectionTitle(string $handle, $id): string
+    {
+        foreach (static::sections($handle) as $section) {
+            if ((int) $section->id === (int) $id) {
+                return (string) $section->title;
+            }
+        }
+
+        return '';
+    }
+}
+
+===== FILE: plugins/elv/site/classes/PageBuilder.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Str;
+use MediaLibrary;
+use Tailor\Models\StructureRecord;
+
+/**
+ * PageBuilder — страница, собранная из блоков Tailor.
+ *
+ * Модель данных — blueprint `Elv\Page` (type `structure`): у записи есть
+ * заголовок, адрес и повторитель `blocks` с группами из `Elv\Blocks`.
+ * Здесь только чтение и подготовка данных к рендеру: шаблоны не знают ни про
+ * Tailor-модели, ни про то, как хранятся группы повторителя.
+ *
+ * Три правила, которые держат конструктор в рамках проекта:
+ *
+ * 1. Белый список блоков и разделов: ключи групп совпадают с именами
+ *    партиалов `themes/elv/partials/blocks/*.htm`, ключи разделов — с
+ *    `SOURCES`. Неизвестная группа пропускается, а не роняет страницу.
+ * 2. Отключённая страница не отдаётся: выборка идёт через
+ *    `applyVisibleFrontend()` — тот же фильтр, что у новостей и книг.
+ * 3. Блок «сетка записей» берёт записи только через `Content::records()`:
+ *    второй источник выборки означал бы второй фильтр опубликованности.
+ */
+class PageBuilder
+{
+    /**
+     * @var string SECTION blueprint-раздел страниц
+     */
+    public const SECTION = 'Elv\\Page';
+
+    /**
+     * @var int MAX_LIMIT потолок записей в блоке «сетка»
+     */
+    public const MAX_LIMIT = 12;
+
+    /**
+     * @var array<int, string> GROUPS группы повторителя, они же имена партиалов
+     */
+    public const GROUPS = ['text', 'text-image', 'quote', 'records', 'video', 'toc'];
+
+    /**
+     * @var array<string, array<string, string>> SOURCES разделы для блока «сетка»
+     */
+    public const SOURCES = [
+        'books' => [
+            'handle' => 'Elv\\Book',
+            'card' => 'cards/book',
+            'title' => 'Сувениры и подарки',
+            'url' => '/books/',
+        ],
+        'collections' => [
+            'handle' => 'Elv\\Collection',
+            'card' => 'cards/collection',
+            'title' => 'Подборки',
+            'url' => '/collections/',
+        ],
+        'events' => [
+            'handle' => 'Elv\\Event',
+            'card' => 'cards/event',
+            'title' => 'События',
+            'url' => '/events/',
+        ],
+        'news' => [
+            'handle' => 'Elv\\News',
+            'card' => 'cards/news',
+            'title' => 'Новости',
+            'url' => '/news/',
+        ],
+        'printing' => [
+            'handle' => 'Elv\\Printing',
+            'card' => 'cards/print',
+            'title' => 'Печать',
+            'url' => '/printing/',
+        ],
+        'services' => [
+            'handle' => 'Elv\\Service',
+            'card' => 'cards/service',
+            'title' => 'Услуги',
+            'url' => '/services/',
+        ],
+    ];
+
+    /**
+     * @var array<string, array<int, string>> FIELDS поля каждой группы
+     */
+    public const FIELDS = [
+        'text' => ['title', 'body'],
+        'text-image' => ['title', 'body', 'image', 'image_position', 'caption'],
+        'quote' => ['kind', 'text', 'author'],
+        'records' => ['title', 'source', 'limit'],
+        'video' => ['title', 'file', 'poster', 'caption'],
+        'toc' => ['title', 'include_h3'],
+    ];
+
+    /**
+     * @var array<string, array|null> cache выборок по адресу
+     */
+    protected static $cache = [];
+
+    /**
+     * @var array<int, array{slug: string, lastmod: string}>|null cache для карты сайта
+     */
+    protected static $pages;
+
+    /**
+     * flush сбрасывает кеш выборок между тестами и импортом.
+     */
+    public static function flush(): void
+    {
+        static::$cache = [];
+        static::$pages = null;
+    }
+
+    /**
+     * pages отдаёт опубликованные страницы конструктора для карты сайта.
+     *
+     * Отдельный список нужен потому, что статические страницы темы перечислены
+     * в `Sitemap::PAGES` руками, а собранные в админке появляются и исчезают
+     * без правки кода — карта сайта обязана видеть их через БД.
+     *
+     * @return array<int, array{slug: string, lastmod: string}>
+     */
+    public static function pages(): array
+    {
+        if (static::$pages !== null) {
+            return static::$pages;
+        }
+
+        $pages = [];
+
+        $records = StructureRecord::inSection(static::SECTION)
+            ->applyVisibleFrontend()
+            ->whereNull('parent_id')
+            ->get();
+
+        foreach ($records as $page) {
+            $slug = trim((string) $page->slug);
+
+            if ($slug === '') {
+                continue;
+            }
+
+            $pages[] = [
+                'slug' => $slug,
+                'lastmod' => date('Y-m-d', strtotime((string) $page->updated_at ?: 'now')),
+            ];
+        }
+
+        return static::$pages = $pages;
+    }
+
+    /**
+     * find находит опубликованную страницу по адресу.
+     *
+     * Берутся только страницы верхнего уровня: адрес страницы — `/slug/`,
+     * вложенность в конструкторе не поддерживается (`structure.maxDepth: 1`),
+     * иначе `fullslug` перестал бы совпадать с адресом.
+     */
+    public static function find(string $slug): ?StructureRecord
+    {
+        $slug = trim($slug);
+
+        if ($slug === '') {
+            return null;
+        }
+
+        if (array_key_exists($slug, static::$cache)) {
+            return static::$cache[$slug];
+        }
+
+        $page = StructureRecord::inSection(static::SECTION)
+            ->applyVisibleFrontend()
+            ->where('slug', $slug)
+            ->whereNull('parent_id')
+            ->first();
+
+        return static::$cache[$slug] = $page;
+    }
+
+    /**
+     * prepare готовит блоки к рендеру.
+     *
+     * Возвращает `rows` (по строке на блок: `group`, `id`, `data`) и `toc`
+     * (оглавление страницы, собранное из подзаголовков всех текстовых блоков).
+     *
+     * @return array{rows: array<int, array>, toc: array<int, array>}
+     */
+    public static function prepare(?StructureRecord $page): array
+    {
+        $rows = [];
+        $toc = [];
+        $used = [];
+
+        if (!$page) {
+            return ['rows' => [], 'toc' => []];
+        }
+
+        foreach ($page->blocks as $item) {
+            $group = (string) $item->content_group;
+
+            if (!in_array($group, static::GROUPS, true)) {
+                continue;
+            }
+
+            $data = static::data($group, $item);
+            $data = static::applyHeadings($group, $data, $toc, $used);
+
+            if ($group === 'records') {
+                $data = static::applyRecords($data);
+            }
+
+            if ($group === 'quote') {
+                $data['kind_class'] = ($data['kind'] ?? '') === 'warning' ? 'alert-warning' : 'alert-info';
+            }
+
+            if ($group === 'video' && isset($data['file'])) {
+                $data['src'] = static::fileUrl((string) $data['file']);
+            }
+
+            $rows[] = [
+                'group' => $group,
+                'id' => (int) $item->id,
+                'data' => $data,
+            ];
+        }
+
+        return ['rows' => $rows, 'toc' => $toc];
+    }
+
+    /**
+     * grid возвращает записи раздела для блока «сетка».
+     *
+     * Раздел вне белого списка даёт пустой массив, а не выборку «по всему»:
+     * опечатка в YAML не должна вываливать на страницу весь инфоблок.
+     *
+     * @return array<int, \Tailor\Models\EntryRecord>
+     */
+    public static function grid(string $source, int $limit = 3): array
+    {
+        $meta = static::SOURCES[$source] ?? null;
+
+        if ($meta === null) {
+            return [];
+        }
+
+        $limit = max(1, min(static::MAX_LIMIT, $limit));
+
+        return Content::records($meta['handle'], $limit);
+    }
+
+    /**
+     * fileUrl превращает значение mediafinder в адрес файла.
+     *
+     * Внешние адреса отбрасываются: CSP разрешает медиа только со своего
+     * домена (`media-src` не выводится, работает `default-src 'self'`),
+     * поэтому вставленный чужой плеер всё равно не заработал бы.
+     */
+    public static function fileUrl(string $value): string
+    {
+        $path = Media::imagePath($value);
+
+        if ($path === '' || preg_match('#^(https?:)?//#i', $path)) {
+            return '';
+        }
+
+        if ($path[0] === '/') {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            return '/' . $path;
+        }
+
+        if (str_starts_with($path, 'assets/')) {
+            return Media::themeUrl($path);
+        }
+
+        return (string) MediaLibrary::url($path);
+    }
+
+    /**
+     * data собирает поля группы в массив для партиала.
+     */
+    protected static function data(string $group, $item): array
+    {
+        $data = [];
+
+        foreach (static::FIELDS[$group] as $field) {
+            $value = $item->{$field};
+            $data[$field] = is_string($value) ? trim($value) : $value;
+        }
+
+        return $data;
+    }
+
+    /**
+     * applyHeadings добавляет якоря подзаголовкам и собирает оглавление.
+     *
+     * Заголовок самого блока и `<h2>/<h3>` внутри richeditor нумеруются
+     * в одном пространстве: два блока с одинаковым подзаголовком получают
+     * `-2`, `-3`, иначе ссылка из оглавления ведёт не туда.
+     */
+    protected static function applyHeadings(string $group, array $data, array &$toc, array &$used): array
+    {
+        if (!in_array($group, ['text', 'text-image'], true)) {
+            return $data;
+        }
+
+        $title = (string) ($data['title'] ?? '');
+
+        if ($title !== '') {
+            $data['title_id'] = static::anchor($title, $used);
+            $toc[] = ['level' => 2, 'id' => $data['title_id'], 'text' => $title];
+        }
+
+        $data['body'] = static::bodyAnchors((string) ($data['body'] ?? ''), $toc, $used);
+
+        return $data;
+    }
+
+    /**
+     * bodyAnchors расставляет id у `<h2>/<h3>` и дополняет оглавление.
+     */
+    protected static function bodyAnchors(string $html, array &$toc, array &$used): string
+    {
+        if ($html === '' || !preg_match('/<h[23][\s>]/i', $html)) {
+            return $html;
+        }
+
+        $result = preg_replace_callback('/<h([23])([^>]*)>(.*?)<\/h\1>/is', function ($matches) use (&$toc, &$used) {
+            $level = (int) $matches[1];
+            $attrs = (string) $matches[2];
+            $text = trim(strip_tags((string) $matches[3]));
+
+            if ($text === '') {
+                return $matches[0];
+            }
+
+            if (preg_match('/\bid=["\']([^"\']+)["\']/i', $attrs, $found)) {
+                $id = $found[1];
+            }
+            else {
+                $id = static::anchor($text, $used);
+                $attrs .= ' id="' . e($id) . '"';
+            }
+
+            $toc[] = ['level' => $level, 'id' => $id, 'text' => $text];
+
+            return '<h' . $level . $attrs . '>' . $matches[3] . '</h' . $level . '>';
+        }, $html);
+
+        return (string) $result;
+    }
+
+    /**
+     * anchor возвращает уникальный якорь из текста подзаголовка.
+     */
+    protected static function anchor(string $text, array &$used): string
+    {
+        $base = Str::slug($text);
+
+        if ($base === '') {
+            $base = 'section';
+        }
+
+        $id = $base;
+        $counter = 2;
+
+        while (isset($used[$id])) {
+            $id = $base . '-' . $counter;
+            $counter++;
+        }
+
+        $used[$id] = true;
+
+        return $id;
+    }
+
+    /**
+     * applyRecords дополняет блок «сетка» записями и адресами карточки.
+     */
+    protected static function applyRecords(array $data): array
+    {
+        $source = (string) ($data['source'] ?? '');
+        $limit = (int) ($data['limit'] ?? 3);
+
+        $data['items'] = static::grid($source, $limit);
+        $data['card'] = static::SOURCES[$source]['card'] ?? '';
+        $data['more_url'] = static::SOURCES[$source]['url'] ?? '';
+
+        return $data;
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Labels.php =====
+
+<?php namespace Elv\Site\Classes;
+
+/**
+ * Labels — подписи свойств и цвета карточек.
+ *
+ * Значения взяты из db/config/iblocks.php источника: шаблоны не хранят
+ * русский текст свойств, а берут его из одного места.
+ */
+class Labels
+{
+    /**
+     * @var array<string, string>
+     */
+    protected static $tags = [
+        'books' => 'Книги',
+        'digital' => 'Цифровые ресурсы',
+        'events' => 'События',
+        'kids' => 'Дети',
+        'science' => 'Наука',
+        'library' => 'О нас',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected static $eventCategories = [
+        'literature' => 'Литература',
+        'children' => 'Для детей',
+        'tech' => 'Технологии',
+        'lecture' => 'Лекции',
+        'lectures' => 'Лекции',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected static $eventGradients = [
+        'literature' => 'bg-grad-sky',
+        'children' => 'bg-grad-pink',
+        'tech' => 'bg-grad-green',
+        'lecture' => 'bg-grad-orange',
+        'lectures' => 'bg-grad-orange',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected static $formats = [
+        'offline' => 'Офлайн',
+        'online' => 'Онлайн',
+        'hybrid' => 'Гибрид',
+    ];
+
+    /**
+     * @var array<string, array{label: string, class: string}>
+     */
+    protected static $availability = [
+        'available' => ['label' => 'В наличии', 'class' => 'is-available'],
+        'reserved' => ['label' => 'Под заказ', 'class' => 'is-reserved'],
+        'unavailable' => ['label' => 'Нет в наличии', 'class' => 'is-unavailable'],
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected static $ages = [
+        'all' => 'Всем',
+        'kids' => 'Детям',
+        'adult' => 'Взрослым',
+    ];
+
+    /**
+     * eventCategories возвращает все категории событий в порядке источника.
+     *
+     * @return array<string, string>
+     */
+    public static function eventCategories(): array
+    {
+        return [
+            'literature' => 'Литература',
+            'children' => 'Для детей',
+            'tech' => 'Технологии',
+            'lecture' => 'Лекции',
+        ];
+    }
+
+    /**
+     * tag возвращает подпись тега новости.
+     */
+    public static function tag($code): string
+    {
+        $code = (string) $code;
+
+        return static::$tags[$code] ?? $code;
+    }
+
+    /**
+     * eventCategory возвращает подпись категории события.
+     */
+    public static function eventCategory($code): string
+    {
+        $code = (string) $code;
+
+        return static::$eventCategories[$code] ?? 'Событие';
+    }
+
+    /**
+     * eventGradient возвращает класс градиента категории события.
+     */
+    public static function eventGradient($code): string
+    {
+        return static::$eventGradients[(string) $code] ?? 'bg-grad-sky';
+    }
+
+    /**
+     * format возвращает подпись формата события.
+     */
+    public static function format($code): string
+    {
+        $code = (string) $code;
+
+        return static::$formats[$code] ?? $code;
+    }
+
+    /**
+     * availability возвращает подпись и класс статуса наличия.
+     *
+     * @return array{label: string, class: string}
+     */
+    public static function availability($code): array
+    {
+        return static::$availability[(string) $code]
+            ?? ['label' => 'Нет в наличии', 'class' => 'is-unavailable'];
+    }
+
+    /**
+     * age возвращает подпись возрастной группы.
+     */
+    public static function age($code): string
+    {
+        $code = (string) $code;
+
+        return static::$ages[$code] ?? $code;
+    }
+}
+
+===== FILE: plugins/elv/site/classes/FormFields.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Illuminate\Http\Request;
+
+/**
+ * FormFields — разбор полей формы в формате источника (Bitrix).
+ *
+ * Источник присылает вложенные имена (`PROPERTY[EMAIL][0]`), Laravel раскладывает
+ * их в массив `PROPERTY => [EMAIL => [0 => …]]`. Здесь это превращается в плоский
+ * набор `EMAIL`, `PHONE`, `DATE`, … — с ним работают валидация и модели, а не с
+ * именами Битрикса.
+ */
+class FormFields
+{
+    /**
+     * fromRequest собирает плоские поля из запроса.
+     *
+     * @return array<string, string>
+     */
+    public static function fromRequest(Request $request): array
+    {
+        return static::normalize((array) $request->all());
+    }
+
+    /**
+     * normalize превращает `PROPERTY[*][0]` и простые имена в плоский массив.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, string>
+     */
+    public static function normalize(array $input): array
+    {
+        $fields = [];
+
+        foreach ((array) ($input['PROPERTY'] ?? []) as $name => $value) {
+            $fields[static::key($name)] = static::scalar($value);
+        }
+
+        foreach ($input as $name => $value) {
+            if (!is_string($name) || is_array($value)) {
+                continue;
+            }
+
+            $key = static::key($name);
+            if ($key !== '' && !array_key_exists($key, $fields)) {
+                $fields[$key] = static::scalar($value);
+            }
+        }
+
+        return array_filter($fields, static function ($value) {
+            return $value !== '';
+        });
+    }
+
+    /**
+     * consentGiven отвечает, отмечен ли чекбокс согласия.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public static function consentGiven(array $input): bool
+    {
+        $fields = static::normalize($input);
+        $value = mb_strtolower((string) ($fields['CONSENT'] ?? ''));
+
+        return in_array($value, ['y', 'yes', '1', 'on', 'true'], true);
+    }
+
+    /**
+     * page возвращает путь страницы, с которой пришла форма.
+     */
+    public static function page(Request $request): ?string
+    {
+        $referer = (string) $request->headers->get('referer', '');
+        if ($referer === '') {
+            return null;
+        }
+
+        $path = (string) parse_url($referer, PHP_URL_PATH);
+
+        return $path !== '' ? mb_substr($path, 0, 255) : null;
+    }
+
+    protected static function key($name): string
+    {
+        return strtoupper(trim((string) $name));
+    }
+
+    /**
+     * scalar берёт первое значение из `[0 => …]` и приводит его к строке.
+     */
+    protected static function scalar($value): string
+    {
+        if (is_array($value)) {
+            $value = reset($value);
+        }
+
+        return is_scalar($value) ? trim((string) $value) : '';
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Media.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Cms\Classes\Theme;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
+
+/**
+ * Media — адаптивные картинки и встроенный CSS темы.
+ *
+ * Перенос elv_media.php из источника: <picture> с AVIF/WebP и JPG-фолбэком,
+ * кеш вариантов на время запроса, минификация CSS без внешних зависимостей.
+ */
+class Media
+{
+    /**
+     * @var array<string, array>
+     */
+    protected static $variantCache = [];
+
+    /**
+     * @var array<string, string>
+     */
+    protected static $cssCache = [];
+
+    /**
+     * themePath возвращает абсолютный путь файла темы.
+     */
+    public static function themePath(string $relative): string
+    {
+        $theme = Theme::getActiveTheme();
+        $root = $theme ? $theme->getPath() : base_path('themes/elv');
+
+        return $root . '/' . ltrim($relative, '/');
+    }
+
+    /**
+     * themeUrl превращает путь внутри темы в адрес от корня сайта.
+     */
+    public static function themeUrl(string $relative): string
+    {
+        $theme = Theme::getActiveTheme();
+        $code = $theme ? $theme->getDirName() : 'elv';
+
+        return '/themes/' . $code . '/' . ltrim($relative, '/');
+    }
+
+    /**
+     * imagePath достаёт путь из значения mediafinder.
+     *
+     * Tailor хранит картинку как JSON-строку ("assets/images/news-1.jpg"),
+     * поэтому значение сначала декодируется, а уже потом используется.
+     */
+    public static function imagePath($value): string
+    {
+        if (is_array($value)) {
+            $value = reset($value);
+        }
+
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $first = $value[0];
+        if ($first === '"' || $first === '[' || $first === '{') {
+            $decoded = json_decode($value, true);
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+            if (is_array($decoded)) {
+                $decoded = reset($decoded);
+
+                return is_string($decoded) ? $decoded : '';
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * picture выводит <picture> с AVIF/WebP и JPG-фолбэком.
+     *
+     * $options: class, sizes, loading, decoding, priority, fetchpriority.
+     */
+    public static function picture($src, string $alt = '', array $options = []): string
+    {
+        $src = static::imagePath($src);
+        if ($src === '') {
+            return '';
+        }
+
+        $class = (string) ($options['class'] ?? '');
+        $sizes = (string) ($options['sizes'] ?? '100vw');
+        $loading = (string) ($options['loading'] ?? 'lazy');
+        $decoding = (string) ($options['decoding'] ?? 'async');
+        $priority = !empty($options['priority']);
+        $fetchPriority = (string) ($options['fetchpriority'] ?? '');
+
+        if ($priority) {
+            $loading = 'eager';
+        } elseif ($loading !== 'eager' && $fetchPriority === '') {
+            $fetchPriority = 'low';
+        }
+
+        $url = static::themeUrl($src);
+        $attrs = '';
+        if ($class !== '') {
+            $attrs .= ' class="' . static::escape($class) . '"';
+        }
+        $attrs .= ' src="' . static::escape($url) . '"';
+        $attrs .= ' alt="' . static::escape($alt) . '"';
+        $attrs .= ' loading="' . static::escape($loading) . '"';
+        $attrs .= ' decoding="' . static::escape($decoding) . '"';
+        if ($priority) {
+            $attrs .= ' fetchpriority="high"';
+        } elseif ($fetchPriority !== '') {
+            $attrs .= ' fetchpriority="' . static::escape($fetchPriority) . '"';
+        }
+
+        $variants = static::variants($src);
+        if ($variants === []) {
+            return '<img' . $attrs . '>';
+        }
+
+        $sizesAttribute = $sizes !== '' ? ' sizes="' . static::escape($sizes) . '"' : '';
+        $jpegSrcset = static::srcset($variants, 'jpg');
+        if ($jpegSrcset !== '') {
+            $attrs .= ' srcset="' . static::escape($jpegSrcset) . '"';
+        }
+
+        $sources = '';
+        foreach (['avif' => 'image/avif', 'webp' => 'image/webp'] as $format => $type) {
+            $srcset = static::srcset($variants, $format);
+            if ($srcset === '') {
+                continue;
+            }
+            $sources .= '<source type="' . $type . '" srcset="' . static::escape($srcset) . '"'
+                . $sizesAttribute . '>' . "\n";
+        }
+
+        return '<picture class="elv-picture">' . "\n"
+            . $sources
+            . '<img' . $attrs . $sizesAttribute . '>' . "\n"
+            . '</picture>';
+    }
+
+    /**
+     * variants собирает варианты ширины и форматов для исходника.
+     *
+     * @return array{full: array, widths: array}|array
+     */
+    public static function variants(string $src): array
+    {
+        if (array_key_exists($src, static::$variantCache)) {
+            return static::$variantCache[$src];
+        }
+
+        static::$variantCache[$src] = [];
+
+        if (!preg_match('~\.jpe?g$~i', $src)) {
+            return [];
+        }
+
+        $file = static::themePath($src);
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $size = @getimagesize($file);
+        if (!$size) {
+            return [];
+        }
+
+        $width = (int) $size[0];
+        $stemUrl = (string) preg_replace('~\.jpe?g$~i', '', $src);
+        $stemFile = (string) preg_replace('~\.jpe?g$~i', '', $file);
+
+        $pick = static function (string $suffix) use ($stemUrl, $stemFile): string {
+            return is_file($stemFile . $suffix) ? $stemUrl . $suffix : '';
+        };
+
+        $full = [
+            'width' => $width,
+            'jpg' => $src,
+            'webp' => $pick('.webp'),
+            'avif' => $pick('.avif'),
+        ];
+
+        $widths = [];
+        foreach ([480, 768, 960, 1280] as $target) {
+            if ($target >= $width || !is_file($stemFile . '-' . $target . '.jpg')) {
+                continue;
+            }
+            $widths[] = [
+                'width' => $target,
+                'jpg' => $stemUrl . '-' . $target . '.jpg',
+                'webp' => $pick('-' . $target . '.webp'),
+                'avif' => $pick('-' . $target . '.avif'),
+            ];
+        }
+
+        if ($widths === [] && $full['webp'] === '' && $full['avif'] === '') {
+            return [];
+        }
+
+        return static::$variantCache[$src] = ['full' => $full, 'widths' => $widths];
+    }
+
+    /**
+     * srcset собирает строку srcset для указанного формата.
+     */
+    public static function srcset(array $variants, string $format): string
+    {
+        $parts = [];
+        foreach ($variants['widths'] as $variant) {
+            if (($variant[$format] ?? '') !== '') {
+                $parts[] = static::themeUrl($variant[$format]) . ' ' . $variant['width'] . 'w';
+            }
+        }
+
+        $full = $variants['full'];
+        if (($full[$format] ?? '') !== '') {
+            $parts[] = static::themeUrl($full[$format]) . ' ' . $full['width'] . 'w';
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * minifyCss сжимает CSS, не трогая строки, url() и calc().
+     */
+    public static function minifyCss(string $css): string
+    {
+        $out = '';
+        $length = strlen($css);
+        $quote = '';
+        $paren = 0;
+        $space = false;
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $css[$i];
+
+            if ($quote !== '') {
+                $out .= $char;
+                if ($char === '\\' && $i + 1 < $length) {
+                    $out .= $css[++$i];
+                    continue;
+                }
+                if ($char === $quote) {
+                    $quote = '';
+                }
+                continue;
+            }
+
+            if ($char === '/' && $i + 1 < $length && $css[$i + 1] === '*') {
+                $end = strpos($css, '*/', $i + 2);
+                $i = $end === false ? $length : $end + 1;
+                $space = true;
+                continue;
+            }
+
+            if ($char === '"' || $char === "'") {
+                if ($space && $out !== '' && !in_array(substr($out, -1), ['{', '}', ';', ','], true)) {
+                    $out .= ' ';
+                }
+                $out .= $char;
+                $quote = $char;
+                $space = false;
+                continue;
+            }
+
+            if ($char === '(') {
+                $paren++;
+            } elseif ($char === ')') {
+                $paren = max(0, $paren - 1);
+            }
+
+            if (ctype_space($char)) {
+                $space = true;
+                continue;
+            }
+
+            if ($space && $out !== '') {
+                $previous = substr($out, -1);
+                $drop = in_array($previous, ['{', '}', ';', ','], true)
+                    || ($paren === 0 && in_array($char, ['{', '}', ';', ','], true));
+                if (!$drop) {
+                    $out .= ' ';
+                }
+            }
+
+            $out .= $char;
+            $space = false;
+        }
+
+        return $out;
+    }
+
+    /**
+     * inlineCss отдаёт сжатый CSS файла темы, кешируя по mtime и размеру.
+     */
+    public static function inlineCss(string $relative): string
+    {
+        if (array_key_exists($relative, static::$cssCache)) {
+            return static::$cssCache[$relative];
+        }
+
+        $file = static::themePath($relative);
+        if (!is_file($file)) {
+            return static::$cssCache[$relative] = '';
+        }
+
+        clearstatcache(true, $file);
+        $key = 'elv-css-' . md5($relative . '|' . filemtime($file) . '|' . filesize($file));
+
+        return static::$cssCache[$relative] = (string) Cache::rememberForever(
+            $key,
+            static function () use ($file): string {
+                return Media::minifyCss((string) File::get($file));
+            }
+        );
+    }
+
+    /**
+     * num форматирует целое с пробелом как разделителем тысяч.
+     */
+    public static function num($value): string
+    {
+        return number_format((int) $value, 0, '', ' ');
+    }
+
+    /**
+     * price превращает число в «от 350 ₽», ноль — в пустую строку.
+     */
+    public static function price($value): string
+    {
+        $number = (int) $value;
+        if ($number <= 0) {
+            return '';
+        }
+
+        return 'от ' . static::num($number) . ' ₽';
+    }
+
+    /**
+     * money выводит сумму без приставки «от».
+     */
+    public static function money($value): string
+    {
+        $number = (int) $value;
+
+        return static::num($number) . ' ₽';
+    }
+
+    /**
+     * coverColor выбирает цвет обложки сувенира по названию.
+     *
+     * Цвет не хранится в БД источника — он считается от crc32 названия,
+     * поэтому хелпер повторяет ту же формулу, что и эталон.
+     */
+    public static function coverColor($title): string
+    {
+        $palette = ['primary', 'green', 'sky', 'pink', 'orange'];
+
+        return $palette[abs(crc32((string) $title)) % count($palette)];
+    }
+
+    /**
+     * collectionColor переводит цвет записи в суффикс CSS-класса.
+     */
+    public static function collectionColor($color): string
+    {
+        $map = [
+            'primary' => 'blue',
+            'green' => 'green',
+            'sky' => 'sky',
+            'pink' => 'violet',
+            'orange' => 'orange',
+        ];
+
+        return $map[(string) $color] ?? 'blue';
+    }
+
+    /**
+     * priceLabel выбирает подпись цены услуги.
+     */
+    public static function priceLabel($label, $from = 0): string
+    {
+        $label = trim((string) $label);
+        if ($label !== '') {
+            return $label;
+        }
+
+        $price = static::price($from);
+
+        return $price !== '' ? $price : 'Бесплатно для читателей';
+    }
+
+    /**
+     * schedule делит строки «День: часы» на пары.
+     *
+     * @return array<int, array{day: string, time: string}>
+     */
+    public static function schedule($value): array
+    {
+        $rows = [];
+        foreach (static::lines($value) as $line) {
+            $parts = explode(':', $line, 2);
+            $rows[] = [
+                'day' => trim($parts[0]),
+                'time' => trim((string) ($parts[1] ?? '')),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * phoneLink оставляет в телефоне только цифры и плюс для href="tel:".
+     */
+    public static function phoneLink($value): string
+    {
+        return (string) preg_replace('~[^+\d]~', '', (string) $value);
+    }
+
+    /**
+     * dateRu форматирует дату по-русски: «6 ноября 2026».
+     */
+    public static function dateRu($value, string $format = 'j F Y'): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $date = $value instanceof \DateTimeInterface
+            ? \Carbon\Carbon::instance($value)
+            : \Carbon\Carbon::parse((string) $value);
+
+        return $date->locale('ru')->translatedFormat($format);
+    }
+
+    /**
+     * value приводит значение поля к строке без null.
+     */
+    public static function value($value): string
+    {
+        if (is_array($value)) {
+            return implode(', ', array_map('strval', $value));
+        }
+
+        return trim((string) $value);
+    }
+
+    /**
+     * lines режет текстовое поле на непустые строки.
+     *
+     * @return array<int, string>
+     */
+    public static function lines($value): array
+    {
+        $value = static::value($value);
+        if ($value === '') {
+            return [];
+        }
+
+        $lines = array_map('trim', preg_split('~\r\n|\r|\n~', $value) ?: []);
+
+        return array_values(array_filter($lines, static function ($line) {
+            return $line !== '';
+        }));
+    }
+
+    protected static function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Rss.php =====
+
+<?php namespace Elv\Site\Classes;
+
+/**
+ * Rss — лента новостей `/rss.xml` в формате RSS 2.0.
+ *
+ * Источник отдавал `/news/rss/`; адрес сохранён смыслом, но не путём: лента
+ * одна на сайт, поэтому `/rss.xml` — как у большинства статических сайтов.
+ * Записи берутся из того же `Content::records()`, что и страница новостей,
+ * поэтому отключённая или удалённая новость в ленту не попадает.
+ *
+ * Сортировка — по дате публикации (свежие сверху), а не по `sort` из админки:
+ * лента читается подрядчиком, порядок в списке новостей для неё неважен.
+ * Дата без `published_at` откатывается на `created_at`, иначе такая запись
+ * уехала бы в конец ленты навсегда.
+ */
+class Rss
+{
+    /**
+     * HANDLE — Tailor-раздел, из которого собирается лента.
+     */
+    public const HANDLE = 'Elv\News';
+
+    /**
+     * PREFIX — адрес списка новостей.
+     */
+    public const PREFIX = '/news/';
+
+    /**
+     * LIMIT — сколько записей отдавать: RSS-читалки не любят простыни.
+     */
+    public const LIMIT = 20;
+
+    /**
+     * xml собирает готовый документ ленты.
+     *
+     * Параметры с умолчаниями отдают новости (`/rss.xml`); блог вызывает
+     * тот же код со своим разделом и адресом (`/blog/rss.xml`), чтобы формат
+     * ленты не расползался на две копии.
+     */
+    public static function xml(
+        string $baseUrl,
+        string $handle = self::HANDLE,
+        string $prefix = self::PREFIX,
+        string $feedPath = '/rss.xml',
+        string $channelTitle = '',
+        string $channelDescription = ''
+    ): string {
+        $base = rtrim($baseUrl, '/');
+        $channelTitle = $channelTitle !== '' ? $channelTitle : Seo::siteName() . ' — новости';
+        $channelDescription = $channelDescription !== '' ? $channelDescription : 'Новости: услуги, встречи и события.';
+
+        $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">' . "\n";
+        $out .= "  <channel>\n";
+        $out .= '    <title>' . static::escape($channelTitle) . "</title>\n";
+        $out .= '    <link>' . static::escape($base . $prefix) . "</link>\n";
+        $out .= '    <description>' . static::escape($channelDescription) . "</description>\n";
+        $out .= "    <language>ru</language>\n";
+        $out .= '    <lastBuildDate>' . date(DATE_RSS) . "</lastBuildDate>\n";
+        $out .= '    <atom:link href="' . static::escape($base . $feedPath) . '" rel="self" type="application/rss+xml"/>' . "\n";
+
+        foreach (static::items($handle) as $record) {
+            $link = $base . $prefix . trim((string) $record->slug) . '/';
+            $title = trim((string) $record->title);
+            $description = trim((string) $record->excerpt);
+
+            if ($description === '') {
+                $description = static::plain((string) $record->content);
+            }
+
+            $out .= "    <item>\n";
+            $out .= '      <title>' . static::escape($title) . "</title>\n";
+            $out .= '      <link>' . static::escape($link) . "</link>\n";
+            $out .= '      <guid isPermaLink="true">' . static::escape($link) . "</guid>\n";
+            $out .= '      <pubDate>' . static::date($record) . "</pubDate>\n";
+
+            if ($description !== '') {
+                $out .= '      <description>' . static::escape($description) . "</description>\n";
+            }
+
+            $out .= "    </item>\n";
+        }
+
+        $out .= "  </channel>\n";
+        $out .= '</rss>' . "\n";
+
+        return $out;
+    }
+
+    /**
+     * items — опубликованные записи раздела, свежие сверху.
+     *
+     * @return array<int, \Tailor\Models\EntryRecord>
+     */
+    public static function items(string $handle = self::HANDLE): array
+    {
+        $records = Content::records($handle);
+
+        usort($records, function ($left, $right) {
+            $order = static::timestamp($right) <=> static::timestamp($left);
+
+            return $order !== 0 ? $order : strcmp((string) $left->slug, (string) $right->slug);
+        });
+
+        return array_slice($records, 0, static::LIMIT);
+    }
+
+    /**
+     * date — дата записи в формате RFC 2822.
+     */
+    protected static function date($record): string
+    {
+        $timestamp = static::timestamp($record);
+
+        return $timestamp > 0 ? date(DATE_RSS, $timestamp) : date(DATE_RSS);
+    }
+
+    /**
+     * timestamp — момент публикации записи.
+     */
+    protected static function timestamp($record): int
+    {
+        $value = $record->published_at ?: $record->created_at;
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->getTimestamp();
+        }
+
+        return $value ? (int) strtotime((string) $value) : 0;
+    }
+
+    /**
+     * plain — текст без разметки для описания новости.
+     */
+    protected static function plain(string $html): string
+    {
+        $spaced = preg_replace('/<[^>]+>/u', ' ', $html) ?? $html;
+        $text = trim(preg_replace('/\s+/u', ' ', strip_tags($spaced)) ?? '');
+
+        if (mb_strlen($text) <= 300) {
+            return $text;
+        }
+
+        return rtrim(mb_substr($text, 0, 300)) . '…';
+    }
+
+    /**
+     * escape — экранирование для XML.
+     */
+    protected static function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    }
+}
+
+===== FILE: plugins/elv/site/blueprints/posts/item.yaml =====
+
+uuid: e7acb90b-b6e0-40a2-9ccb-d379ead069c5
+handle: Elv\Post
+type: stream
+name: Статья
+drafts: true
+
+primaryNavigation:
+    label: Блог
+    icon: octo-icon-pencil
+    order: 90
+
+navigation:
+    label: Все статьи
+    icon: octo-icon-pencil
+    order: 100
+
+fields:
+    sort:
+        label: Сортировка
+        type: number
+        default: 100
+        span: left
+
+    title:
+        label: Заголовок
+        type: text
+        required: true
+        span: right
+
+    slug:
+        label: Адрес (slug)
+        commentAbove: 'Латиница и дефисы. Адрес страницы: /blog/{slug}/'
+        type: text
+        required: true
+
+    published_at:
+        label: Дата публикации
+        type: datepicker
+        mode: datetime
+        span: left
+
+    is_enabled:
+        label: Опубликовано
+        type: checkbox
+        default: true
+        span: right
+
+    category:
+        label: Рубрика
+        type: entries
+        source: Elv\PostCategory
+        maxItems: 1
+        span: left
+
+    is_featured:
+        label: На главной блога
+        commentAbove: 'Статья выводится крупной карточкой первой.'
+        type: checkbox
+        default: false
+        span: right
+
+    image:
+        label: Обложка
+        type: mediafinder
+        mode: image
+
+    excerpt:
+        label: Анонс
+        commentAbove: '1–2 предложения для карточки и для поиска, если описание пустое.'
+        type: textarea
+        size: small
+
+    seo_focus_keyphrase:
+        label: 'Ключевая фраза'
+        commentAbove: 'Одна фраза, под которую пишется статья. Панель ниже проверяет заголовок, описание, адрес и текст.'
+        type: seo_panel
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — Блог — ELV». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — анонс. До 160 символов.'
+        type: textarea
+        size: small
+
+    content:
+        label: Текст статьи
+        type: richeditor
+
+    author:
+        label: Автор
+        type: text
+        span: left
+
+    read_time:
+        label: Время чтения
+        type: text
+        span: right
+
+    tags:
+        label: Теги
+        type: taglist
+        options:
+            books: Книги
+            print: Печать
+            gifts: Подарки
+            kids: Детям
+            design: Оформление
+            howto: Инструкции
+            library: Бренд
+
+===== FILE: plugins/elv/site/blueprints/posts/section.yaml =====
+
+uuid: 758a9e2b-83a2-4c56-8ae6-63ca4a29cb0b
+handle: Elv\PostCategory
+type: structure
+name: Рубрика блога
+drafts: false
+
+structure:
+    maxDepth: 1
+
+navigation:
+    label: Рубрики
+    parent: Elv\Post
+    icon: octo-icon-list-ul
+    order: 90
+
+fields:
+    code:
+        label: Код
+        commentAbove: 'Латиница. Используется в фильтре: /blog/?category={код}.'
+        type: text
+        required: true
+
+    is_enabled:
+        label: Опубликована
+        type: checkbox
+        default: true
+
+    sort:
+        label: Сортировка
+        type: number
+        default: 100
+
+===== FILE: plugins/elv/site/blueprints/page/structure.yaml =====
+
+uuid: ace6d6b4-c8ae-4343-83cb-154a07bfc19d
+handle: Elv\Page
+type: structure
+name: Страница
+drafts: false
+
+structure:
+    maxDepth: 1
+
+primaryNavigation:
+    label: Страницы
+    icon: octo-icon-file
+    order: 130
+
+fields:
+    excerpt:
+        label: Краткое описание
+        commentAbove: '1–2 предложения: уходит в описание для поиска, если не заполнено поле ниже.'
+        type: textarea
+        size: small
+
+    seo_focus_keyphrase:
+        label: 'Ключевая фраза'
+        commentAbove: 'Одна фраза для заголовка, описания и адреса. Панель анализа живёт в записях разделов: у страницы текст лежит в блоках.'
+        type: text
+
+    seo_title:
+        label: 'Заголовок для поиска'
+        commentAbove: 'Если пусто — «Название — ELV». До 60 символов.'
+        type: text
+
+    seo_description:
+        label: 'Описание для поиска'
+        commentAbove: 'Если пусто — краткое описание. До 160 символов.'
+        type: textarea
+        size: small
+
+    blocks:
+        label: Блоки страницы
+        type: mixin
+        source: Elv\Blocks
+
+===== FILE: themes/elv/pages/blog.htm =====
+
+title = "Блог — {brand}"
+url = "/blog/"
+layout = "default"
+seo_description = "Блог ELV: как выбрать книгу, что заказать в печать, идеи подарков и разборы оформления."
+==
+<main class="site-main" id="main">
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow--green">Статьи</span>
+        <h1 class="page-title">Блог</h1>
+        <p class="page-lead">
+            Длинные тексты о книгах, печати и подарках: что выбрать, как оформить
+            и на что смотреть, прежде чем заказывать.
+        </p>
+
+        <ul class="section-chips" aria-label="Рубрики блога" data-elv-filter>
+            <li><button class="section-chip is-active" type="button" data-filter="all">Все статьи</button></li>
+            {% for section in elv_sections('Elv\\PostCategory') %}
+                <li><button class="section-chip" type="button" data-filter="{{ section.code }}">{{ section.title }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+<section class="section pt-0">
+    <div class="container">
+        <div class="row g-4">
+            {% for item in elv_records('Elv\\Post') %}
+                {% partial 'cards/post' item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% partial 'filter-script' %}
+</main>
+
+===== FILE: themes/elv/pages/blog-detail.htm =====
+
+title = "Статья — {brand}"
+url = "/blog/:slug"
+layout = "default"
+==
+<?php
+function onStart()
+{
+    $record = \Elv\Site\Classes\Content::record('Elv\\Post', $this->param('slug'));
+    if (!$record) {
+        $this->controller->setStatusCode(404);
+        $this->page->title = 'Страница не найдена — ' . \Elv\Site\Classes\Brand::get('name');
+    }
+    else {
+        \Elv\Site\Classes\Seo::applyRecord($this->page, $record, 'article');
+    }
+
+    $this['record'] = $record;
+}
+?>
+==
+{% if not record %}
+<main class="site-main" id="main">{% partial 'not-found' %}</main>
+{% else %}
+<main class="site-main" id="main">
+<section class="section"><div class="container"><article class="article">
+    <header class="article-head">
+        {% if record.category or record.published_at %}
+            <p class="article-meta">
+                <svg class="i i-20" aria-hidden="true"><use href="#i-calendar"/></svg>
+                {% if record.category %}{{ record.category.title }}{% endif %}
+                {% if record.category and record.published_at %} · {% endif %}
+                {% if record.published_at %}{{ record.published_at|elv_date('j F Y') }}{% endif %}
+            </p>
+        {% endif %}
+        <h1 class="page-title">{{ record.title }}</h1>
+        <p class="section-lead">{{ record.excerpt }}</p>
+        {% if record.tags|length %}
+            <ul class="tag-list" aria-label="Теги">
+                {% for tag in record.tags %}<li>{{ elv_tag(tag) }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+    </header>
+    {% if record.image %}
+        <figure class="article-cover">
+            {{ elv_picture(record.image, record.title, {sizes: '(max-width: 991px) 100vw, 760px'})|raw }}
+        </figure>
+    {% endif %}
+    <div class="article-body">
+        <div class="bitrix-content">{{ record.content|raw }}</div>
+        <aside class="article-aside">
+            <h2 class="h5 mb-3">Коротко</h2>
+            <dl class="article-props">
+                {% if record.author %}<div><dt>Автор</dt><dd>{{ record.author }}</dd></div>{% endif %}
+                {% if record.read_time %}<div><dt>Время чтения</dt><dd>{{ record.read_time }}</dd></div>{% endif %}
+                {% if record.published_at %}<div><dt>Опубликовано</dt><dd>{{ record.published_at|elv_date('j F Y') }}</dd></div>{% endif %}
+            </dl>
+        </aside>
+    </div>
+    <footer class="article-footer">
+        <a class="btn btn-elv-outline btn-icon" href="/blog/">
+            <svg class="i" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+            Все статьи
+        </a>
+    </footer>
+</article></div></section>
+</main>
+{% endif %}
+
+===== FILE: themes/elv/pages/builder.htm =====
+
+title = "Страница — {brand}"
+url = "/:slug"
+layout = "default"
+==
+<?php
+use Elv\Site\Classes\PageBuilder;
+use Elv\Site\Classes\Seo;
+
+function onStart()
+{
+    $record = PageBuilder::find((string) $this->param('slug'));
+
+    if (!$record) {
+        $this->controller->setStatusCode(404);
+        $this->page->title = 'Страница не найдена — ' . \Elv\Site\Classes\Brand::get('name');
+        $this->page->seo_description = 'Запрошенная страница не найдена.';
+    }
+    else {
+        Seo::applyRecord($this->page, $record, '');
+    }
+
+    $prepared = PageBuilder::prepare($record);
+
+    $this['builder'] = $record;
+    $this['rows'] = $prepared['rows'];
+    $this['toc'] = $prepared['toc'];
+}
+?>
+==
+{% if not builder %}
+<main class="site-main" id="main">{% partial 'not-found' %}</main>
+{% else %}
+<main class="site-main" id="main">
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">{{ builder.title }}</h1>
+        {% if builder.excerpt %}<p class="page-lead">{{ builder.excerpt }}</p>{% endif %}
+        {% partial 'blocks/list' rows=rows toc=toc %}
+    </div>
+</section>
+</main>
+{% endif %}

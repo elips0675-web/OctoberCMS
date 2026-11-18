@@ -1,0 +1,3246 @@
+# SEO, микроразметка, карта сайта, редиректы и PWA
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Пути — от корня репозитория; содержимое файлов не переписано.
+
+===== FILE: plugins/elv/site/classes/Seo.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Cms\Classes\Theme;
+
+/**
+ * Seo — базовая микроразметка schema.org и robots.txt.
+ *
+ * Мета-теги страницы (title, description, canonical, OG, Twitter) отдаёт макет
+ * (`themes/elv/layouts/default.htm`), здесь — то, что одинаково для всего
+ * сайта: организация и сайт с поиском (JSON-LD), а также
+ * директивы обхода.
+ */
+class Seo
+{
+    /**
+     * siteName — название организации из настроек темы.
+     */
+    public static function siteName(): string
+    {
+        return Brand::get('name');
+    }
+
+    /**
+     * contacts — контакты из настроек темы для schema.org.
+     */
+    public static function contacts(): array
+    {
+        $socials = array_values(array_filter([
+            Brand::get('social_telegram'),
+            Brand::get('social_vk'),
+            Brand::get('social_youtube'),
+        ]));
+
+        return [
+            'telephone' => str_replace(' ', '-', Brand::get('phone')),
+            'email' => Brand::get('email'),
+            'postalCode' => Brand::get('postal_code'),
+            'addressCountry' => Brand::get('country'),
+            'addressLocality' => Brand::get('city'),
+            'streetAddress' => Brand::get('street'),
+            'opens' => Brand::get('opens'),
+            'closes' => Brand::get('closes'),
+            'sameAs' => $socials,
+        ];
+    }
+
+    /**
+     * settings — SEO-настройки темы: запасные, затем default из `theme.yaml`,
+     * затем сохранённые настройки.
+     *
+     * @return array<string, string>
+     */
+    public static function settings(): array
+    {
+        if (static::$settings !== null) {
+            return static::$settings;
+        }
+
+        $values = static::SETTINGS_FALLBACK;
+
+        try {
+            $theme = Theme::getActiveTheme();
+        }
+        catch (\Throwable $ex) {
+            return static::$settings = $values;
+        }
+
+        if (!$theme) {
+            return static::$settings = $values;
+        }
+
+        foreach ((array) ($theme->getFormConfig()['fields'] ?? []) as $key => $field) {
+            $key = (string) $key;
+            $default = $field['default'] ?? null;
+
+            if (array_key_exists($key, $values) && is_scalar($default)) {
+                $values[$key] = is_bool($default) ? ($default ? '1' : '0') : (string) $default;
+            }
+        }
+
+        $data = $theme->getCustomData()->getAttribute('data');
+
+        if (is_string($data)) {
+            $data = json_decode($data, true) ?: [];
+        }
+
+        foreach ((array) $data as $key => $value) {
+            $key = (string) $key;
+
+            if (array_key_exists($key, $values) && is_scalar($value) && trim((string) $value) !== '') {
+                $values[$key] = trim((string) $value);
+            }
+        }
+
+        return static::$settings = $values;
+    }
+
+    /**
+     * setting — одно значение SEO-настроек.
+     */
+    public static function setting(string $key, string $default = ''): string
+    {
+        $values = static::settings();
+
+        return $values[$key] ?? $default;
+    }
+
+    /**
+     * forgetSettings — сбросить собранные настройки (тесты и смена настроек).
+     */
+    public static function forgetSettings(): void
+    {
+        static::$settings = null;
+    }
+
+    /**
+     * title собирает `<title>` записи по шаблону из настроек темы.
+     *
+     * Переменные шаблона: `{title}`, `{section}`, `{brand}`, `{separator}`,
+     * `{year}`. Пустой `{title}` не оставляет висящего разделителя.
+     */
+    public static function title(string $title, string $section = ''): string
+    {
+        $template = trim(static::setting('seo_title_template'));
+
+        if ($template === '') {
+            $template = (string) static::SETTINGS_FALLBACK['seo_title_template'];
+        }
+
+        $result = static::applyTemplate($template, [
+            'title' => trim($title),
+            'section' => trim($section),
+            'brand' => static::siteName(),
+            'separator' => trim(static::setting('seo_separator')),
+            'year' => date('Y'),
+        ]);
+
+        return $result !== '' ? $result : static::siteName();
+    }
+
+    /**
+     * description собирает описание записи по шаблону и обрезает по словам.
+     */
+    public static function description(string $text, string $section = ''): string
+    {
+        $text = trim((string) preg_replace('/\s+/u', ' ', strip_tags($text)));
+
+        $template = trim(static::setting('seo_description_template'));
+
+        if ($template !== '') {
+            $applied = static::applyTemplate($template, [
+                'description' => $text,
+                'section' => trim($section),
+                'brand' => static::siteName(),
+                'separator' => trim(static::setting('seo_separator')),
+                'year' => date('Y'),
+            ]);
+
+            if ($applied !== '') {
+                $text = $applied;
+            }
+        }
+
+        return static::truncate($text, static::DESCRIPTION_LIMIT);
+    }
+
+    /**
+     * truncate обрезает текст по границе слова, не длиннее лимита.
+     *
+     * Поисковик режет сниппет сам, но обрывок «…предоставл» в мета-описании
+     * выглядит как ошибка вёрстки, а не как экономия места.
+     */
+    public static function truncate(string $text, int $limit): string
+    {
+        $text = trim($text);
+
+        if ($limit < 1 || mb_strlen($text) <= $limit) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, $limit + 1);
+        $space = mb_strrpos($cut, ' ');
+
+        if ($space !== false && $space > (int) ($limit / 2)) {
+            $cut = mb_substr($cut, 0, $space);
+        }
+        else {
+            $cut = mb_substr($text, 0, $limit);
+        }
+
+        return (string) preg_replace('/[\s.,;:—–-]+$/u', '', $cut);
+    }
+
+    /**
+     * defaultImage — картинка для соцсетей по умолчанию, если у страницы своей нет.
+     */
+    public static function defaultImage(): string
+    {
+        $value = trim(static::setting('seo_default_image'));
+
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $value) ? $value : url($value);
+    }
+
+    /**
+     * verification — коды подтверждения прав на сайт: meta-имя => значение.
+     *
+     * @return array<string, string>
+     */
+    public static function verification(): array
+    {
+        $map = [
+            'google-site-verification' => static::setting('seo_verify_google'),
+            'yandex-verification' => static::setting('seo_verify_yandex'),
+            'msvalidate.01' => static::setting('seo_verify_bing'),
+        ];
+
+        $result = [];
+
+        foreach ($map as $name => $code) {
+            $code = trim($code);
+
+            if ($code !== '') {
+                $result[$name] = $code;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * servicePagesIndexable — открыты ли служебные страницы для поиска.
+     */
+    public static function servicePagesIndexable(): bool
+    {
+        $value = strtolower(trim(static::setting('seo_index_service_pages')));
+
+        return in_array($value, ['1', 'true', 'on', 'yes'], true);
+    }
+
+    /**
+     * applyTemplate подставляет переменные и убирает следы пустых.
+     *
+     * @param  array<string, string>  $values
+     */
+    protected static function applyTemplate(string $template, array $values): string
+    {
+        $result = $template;
+
+        foreach ($values as $key => $value) {
+            $result = str_replace('{' . $key . '}', (string) $value, $result);
+        }
+
+        $result = (string) preg_replace('/\{[a-z_]+\}/u', '', $result);
+        $result = (string) preg_replace('/\s+/u', ' ', $result);
+
+        $separator = trim((string) ($values['separator'] ?? ''));
+
+        if ($separator !== '') {
+            $quoted = preg_quote($separator, '/');
+            $result = (string) preg_replace('/(?:' . $quoted . '\s*){2,}/u', $separator . ' ', $result);
+            $result = (string) preg_replace('/^(?:\s*' . $quoted . '\s*)+/u', '', $result);
+            $result = (string) preg_replace('/(?:\s*' . $quoted . ')+$/u', '', $result);
+        }
+
+        return trim((string) preg_replace('/\s+/u', ' ', $result));
+    }
+
+    /**
+     * sectionFromPage — подпись раздела для шаблона по файлу страницы.
+     */
+    protected static function sectionFromPage($page): string
+    {
+        if (!is_object($page) || !method_exists($page, 'getBaseFileName')) {
+            return '';
+        }
+
+        $handle = (string) preg_replace('/-detail$/', '', (string) $page->getBaseFileName());
+
+        return static::SECTIONS[$handle] ?? '';
+    }
+
+    /**
+     * SECTIONS — подписи разделов для хлебных крошек (`BreadcrumbList`).
+     *
+     * Тексты совпадают с `<h1>` разделов в `themes/elv/pages/*.htm`; сверку
+     * держит `tests/SeoTest.php` (меняется h1 — краснеет тест, а не молча
+     * расходится микроразметка). Раздел без подписи крошек не получает.
+     */
+    public const SECTIONS = [
+        'about' => 'О центре',
+        'auth' => 'Вход в личный кабинет',
+        'books' => 'Сувениры и подарки',
+        'collections' => 'Подарочные наборы',
+        'contacts' => 'Контакты',
+        'events' => 'События',
+        'feedback' => 'Обратная связь',
+        'news' => 'Новости',
+        'personal' => 'Личный кабинет',
+        'printing' => 'Каталог печатных услуг',
+        'privacy' => 'Политика конфиденциальности',
+        'rules' => 'Правила пользования',
+        'search' => 'Поиск по сайту',
+        'services' => 'Наши услуги',
+        'sitemap' => 'Карта сайта',
+        'subscribe' => 'Подписка на рассылку',
+        'terms' => 'Условия использования',
+    ];
+
+    /**
+     * SERVICE_PAGES — служебные адреса: по умолчанию закрыты в robots.txt.
+     */
+    public const SERVICE_PAGES = ['/search/', '/auth/', '/personal/'];
+
+    /**
+     * SETTINGS_FALLBACK — SEO-настройки темы, значения по умолчанию.
+     *
+     * Ключи совпадают с полями `seo_*` в `themes/elv/theme.yaml`; значение
+     * берётся оттуда же (default), а сохранённые настройки перекрывают его.
+     */
+    public const SETTINGS_FALLBACK = [
+        'seo_separator' => '—',
+        'seo_title_template' => '{title} {separator} {brand}',
+        'seo_description_template' => '',
+        'seo_default_image' => '',
+        'seo_verify_google' => '',
+        'seo_verify_yandex' => '',
+        'seo_verify_bing' => '',
+        'seo_index_service_pages' => '0',
+    ];
+
+    /**
+     * TITLE_LIMIT, DESCRIPTION_LIMIT — ориентиры длины сниппета в поиске.
+     */
+    public const TITLE_LIMIT = 60;
+    public const DESCRIPTION_LIMIT = 160;
+
+    /**
+     * @var array|null SEO-настройки, собранные за текущий запрос
+     */
+    protected static $settings = null;
+
+    /**
+     * @var array|null узел микроразметки текущей записи
+     */
+    protected static $recordGraph = null;
+    /**
+     * @var string|null заголовок текущей записи для последней крошки
+     */
+    protected static $recordTitle = null;
+
+    /**
+     * canonical отдаёт адрес текущей страницы с хвостовым слэшем.
+     *
+     * `url('/x/')` срезает слэш, поэтому адрес собирается из хоста и пути
+     * запроса: canonical обязан совпадать с `<loc>` карты сайта побайтово.
+     */
+    public static function canonical(): string
+    {
+        $path = '/' . ltrim((string) request()->path(), '/');
+
+        if ($path !== '/') {
+            $path .= '/';
+        }
+
+        return request()->getSchemeAndHttpHost() . $path;
+    }
+
+    /**
+     * reset сбрасывает узел записи между запросами в одном процессе (тесты).
+     */
+    public static function reset(): void
+    {
+        static::$recordGraph = null;
+        static::$recordTitle = null;
+        static::$settings = null;
+    }
+
+    /**
+     * breadcrumbs собирает цепочку «Главная → раздел → страница» для крошек.
+     *
+     * Видимой навигационной цепочки в разметке нет (1:1 с эталоном), поэтому
+     * список строится из адреса запроса: первый сегмент ищется в SECTIONS,
+     * последняя крошка берёт заголовок записи (`applyRecord`) или заголовок
+     * страницы без суффикса сайта. Неизвестный раздел даёт пустой список:
+     * лучше без `BreadcrumbList`, чем с выдуманным названием. Страница ошибки
+     * крошек не получает — иначе у несуществующего адреса появился бы раздел
+     * и подпись «Страница не найдена».
+     *
+     * @param  \Cms\Classes\Page|null  $page
+     * @return array<int, array{name: string, url: string}>
+     */
+    public static function breadcrumbs($page = null): array
+    {
+        if ($page !== null && static::isNotFoundPage($page)) {
+            return [];
+        }
+
+        $controller = \Cms\Classes\Controller::getController();
+
+        if ($controller !== null && $controller->getStatusCode() === 404) {
+            return [];
+        }
+
+        $path = trim((string) request()->path(), '/');
+
+        if ($page !== null && !static::pageMatchesPath($page, $path)) {
+            return [];
+        }
+
+        if ($path === '') {
+            return [];
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), function ($part) {
+            return $part !== '';
+        }));
+
+        if ($segments === [] || !isset(static::SECTIONS[$segments[0]])) {
+            return [];
+        }
+
+        $base = rtrim(url('/'), '/');
+        $section = $segments[0];
+
+        $crumbs = [
+            ['name' => 'Главная', 'url' => $base . '/'],
+            ['name' => static::SECTIONS[$section], 'url' => $base . '/' . $section . '/'],
+        ];
+
+        if (count($segments) > 1) {
+            $name = static::currentName($page);
+
+            if ($name !== '') {
+                $crumbs[] = ['name' => $name, 'url' => static::canonical()];
+            }
+        }
+
+        return $crumbs;
+    }
+
+    /**
+     * isNotFoundPage — страница ошибки 404 крошек не получает.
+     */
+    protected static function isNotFoundPage($page): bool
+    {
+        if (method_exists($page, 'getBaseFileName') && $page->getBaseFileName() === '404') {
+            return true;
+        }
+
+        return (string) ($page->url ?? '') === '/404';
+    }
+
+    /**
+     * pageMatchesPath сверяет шаблон адреса страницы (`/books/:slug`) с путём запроса.
+     */
+    protected static function pageMatchesPath($page, string $path): bool
+    {
+        $pattern = trim((string) ($page->url ?? ''), '/');
+
+        if ($pattern === '') {
+            return true;
+        }
+
+        $pattern = preg_replace('~:[A-Za-z_]+~', '[^/]+', $pattern);
+
+        return (bool) preg_match('~^' . $pattern . '$~u', trim($path, '/'));
+    }
+
+    /**
+     * currentName — подпись последней крошки детальной страницы.
+     */
+    protected static function currentName($page = null): string
+    {
+        if (static::$recordTitle !== null && static::$recordTitle !== '') {
+            return static::$recordTitle;
+        }
+
+        if ($page === null) {
+            return '';
+        }
+
+        $seo = trim((string) ($page->seo_title ?? ''));
+
+        if ($seo !== '') {
+            return $seo;
+        }
+
+        $title = trim((string) ($page->title ?? ''));
+
+        if ($title === '') {
+            return '';
+        }
+
+        $suffix = ' — ' . static::siteName();
+
+        return str_ends_with($title, $suffix) ? substr($title, 0, -strlen($suffix)) : $title;
+    }
+
+    /**
+     * breadcrumbNode — узел `BreadcrumbList` из готовой цепочки.
+     *
+     * @param  array<int, array{name: string, url: string}>  $crumbs
+     */
+    protected static function breadcrumbNode(array $crumbs): array
+    {
+        $items = [];
+
+        foreach ($crumbs as $index => $crumb) {
+            $items[] = [
+                '@type' => 'ListItem',
+                'position' => $index + 1,
+                'name' => $crumb['name'],
+                'item' => $crumb['url'],
+            ];
+        }
+
+        return [
+            '@type' => 'BreadcrumbList',
+            '@id' => static::canonical() . '#breadcrumb',
+            'itemListElement' => $items,
+        ];
+    }
+
+    /**
+     * jsonld отдаёт связку Library + WebSite (+ крошки и запись) для `<script type="application/ld+json">`.
+     *
+     * @param  \Cms\Classes\Page|null  $page
+     */
+    public static function jsonld($page = null): string
+    {
+        $base = rtrim(url('/'), '/');
+        $contacts = static::contacts();
+
+        $data = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => Brand::get('schema_type'),
+                    '@id' => $base . '/#organization',
+                    'name' => static::siteName(),
+                    'url' => $base . '/',
+                    'logo' => $base . '/themes/elv/assets/icons/icon-512.png',
+                    'image' => $base . '/themes/elv/assets/images/hero-1.jpg',
+                    'description' => Brand::get('description'),
+                    'telephone' => $contacts['telephone'],
+                    'email' => $contacts['email'],
+                    'address' => [
+                        '@type' => 'PostalAddress',
+                        'postalCode' => $contacts['postalCode'],
+                        'addressCountry' => $contacts['addressCountry'],
+                        'addressLocality' => $contacts['addressLocality'],
+                        'streetAddress' => $contacts['streetAddress'],
+                    ],
+                    'openingHoursSpecification' => [
+                        [
+                            '@type' => 'OpeningHoursSpecification',
+                            'dayOfWeek' => [
+                                'Monday',
+                                'Tuesday',
+                                'Wednesday',
+                                'Thursday',
+                                'Friday',
+                                'Saturday',
+                                'Sunday',
+                            ],
+                            'opens' => $contacts['opens'],
+                            'closes' => $contacts['closes'],
+                        ],
+                    ],
+                    'sameAs' => $contacts['sameAs'],
+                ],
+                [
+                    '@type' => 'WebSite',
+                    '@id' => $base . '/#website',
+                    'url' => $base . '/',
+                    'name' => static::siteName(),
+                    'inLanguage' => 'ru',
+                    'publisher' => ['@id' => $base . '/#organization'],
+                    'potentialAction' => [
+                        '@type' => 'SearchAction',
+                        'target' => [
+                            '@type' => 'EntryPoint',
+                            'urlTemplate' => $base . '/search/?q={search_term_string}',
+                        ],
+                        'query-input' => 'required name=search_term_string',
+                    ],
+                ],
+            ],
+        ];
+
+        if (static::$recordGraph !== null) {
+            $data['@graph'][] = static::$recordGraph;
+        }
+
+        $crumbs = static::breadcrumbs($page);
+
+        if (count($crumbs) > 1) {
+            $data['@graph'][] = static::breadcrumbNode($crumbs);
+        }
+
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if ($json === false) {
+            return '';
+        }
+
+        return str_replace('</', '<\/', $json);
+    }
+
+    /**
+     * applyRecord проставляет мету и микроразметку детальной страницы.
+     *
+     * Пустые поля не затирают поведение по умолчанию: заголовок остаётся
+     * «Название — {brand}», описание берётся из анонса — ровно так
+     * страница выглядела до появления полей. Обрезка до 160 знаков держит
+     * description в разумных рамках: из текста записи он не собирается.
+     *
+     * Третий аргумент — вид schema.org (`article`, `event`, `product`,
+     * `service`): узел дописывается в `@graph` рядом с `Library` и `WebSite`.
+     * Без него страница отдаёт только общую разметку — так работают подборки,
+     * у которых нет ни цены, ни даты, ни автора.
+     *
+     * Картинка записи уходит в `seo_image` макета (`og:image` и
+     * `twitter:image`); без неё остаётся общая hero-картинка сайта.
+     *
+     * @param  \Cms\Classes\Page  $page
+     * @param  \Tailor\Models\EntryRecord  $record
+     * @param  string  $schema
+     */
+    public static function applyRecord($page, $record, string $schema = ''): void
+    {
+        $section = static::sectionFromPage($page);
+
+        $page->title = static::title((string) $record->title, $section);
+
+        $title = trim((string) ($record->seo_title ?? ''));
+
+        if ($title !== '') {
+            $page->seo_title = $title;
+        }
+
+        $description = static::description(static::recordDescription($record), $section);
+
+        if ($description !== '') {
+            $page->seo_description = $description;
+        }
+
+        $image = static::absoluteImage($record->image ?? '');
+
+        if ($image !== '') {
+            $page->seo_image = $image;
+        }
+
+        static::$recordGraph = static::recordNode($record, $schema);
+        static::$recordTitle = trim((string) $record->title);
+    }
+
+    /**
+     * recordDescription берёт описание из мета-поля, иначе из анонса.
+     */
+    protected static function recordDescription($record): string
+    {
+        $description = trim((string) ($record->seo_description ?? ''));
+
+        if ($description === '') {
+            $description = trim(strip_tags((string) $record->excerpt));
+        }
+
+        return $description;
+    }
+
+    /**
+     * recordNode собирает узел schema.org по виду записи.
+     */
+    protected static function recordNode($record, string $schema): ?array
+    {
+        return match (strtolower(trim($schema))) {
+            'article' => static::articleNode($record),
+            'event' => static::eventNode($record),
+            'product' => static::productNode($record),
+            'service' => static::serviceNode($record),
+            default => null,
+        };
+    }
+
+    /**
+     * articleNode — новость как `Article`: дата, автор, издатель.
+     */
+    protected static function articleNode($record): array
+    {
+        $url = static::canonical();
+
+        return static::withoutEmpty([
+            '@type' => 'Article',
+            '@id' => $url . '#article',
+            'headline' => (string) $record->title,
+            'description' => static::recordDescription($record),
+            'image' => static::absoluteImage($record->image),
+            'datePublished' => static::isoDate($record->published_at),
+            'dateModified' => static::isoDate($record->updated_at),
+            'author' => [
+                '@type' => 'Person',
+                'name' => trim((string) $record->author) ?: static::siteName(),
+            ],
+            'publisher' => ['@id' => static::siteBase() . '/#organization'],
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
+            'url' => $url,
+        ]);
+    }
+
+    /**
+     * eventNode — афиша как `Event`: начало, место, формат и цена.
+     */
+    protected static function eventNode($record): array
+    {
+        $url = static::canonical();
+        $contacts = static::contacts();
+
+        return static::withoutEmpty([
+            '@type' => 'Event',
+            '@id' => $url . '#event',
+            'name' => (string) $record->title,
+            'description' => static::recordDescription($record),
+            'url' => $url,
+            'image' => static::absoluteImage($record->image),
+            'startDate' => static::isoDate($record->event_date),
+            'eventAttendanceMode' => static::attendanceMode($record->format),
+            'eventStatus' => 'https://schema.org/EventScheduled',
+            'location' => [
+                '@type' => 'Place',
+                'name' => trim((string) $record->place) ?: static::siteName(),
+                'address' => [
+                    '@type' => 'PostalAddress',
+                    'postalCode' => $contacts['postalCode'],
+                    'addressCountry' => $contacts['addressCountry'],
+                    'addressLocality' => $contacts['addressLocality'],
+                    'streetAddress' => $contacts['streetAddress'],
+                ],
+            ],
+            'organizer' => ['@id' => static::siteBase() . '/#organization'],
+            'offers' => static::offer($url, static::price($record->price)),
+        ]);
+    }
+
+    /**
+     * productNode — сувенир и печать как `Product` с ценой и наличием.
+     *
+     * `publisher` в blueprints сувениров — упаковка («Картонная коробка»),
+     * а не бренд, поэтому `brand` всегда название организации: чужое значение
+     * попадало в сниппет как «Бренд: Прозрачный пакет».
+     */
+    protected static function productNode($record): array
+    {
+        $url = static::canonical();
+        $price = static::price($record->price);
+        $availability = static::availability($record->available);
+
+        if ($price === '') {
+            $price = static::price($record->price_from);
+            $availability = 'https://schema.org/InStock';
+        }
+
+        return static::withoutEmpty([
+            '@type' => 'Product',
+            '@id' => $url . '#product',
+            'name' => (string) $record->title,
+            'description' => static::recordDescription($record),
+            'image' => static::absoluteImage($record->image),
+            'sku' => trim((string) $record->isbn) ?: (string) $record->xml_id,
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => static::siteName(),
+            ],
+            'offers' => static::offer($url, $price, $availability),
+        ]);
+    }
+
+    /**
+     * serviceNode — услуга как `Service` с ценой «от».
+     */
+    protected static function serviceNode($record): array
+    {
+        $url = static::canonical();
+
+        return static::withoutEmpty([
+            '@type' => 'Service',
+            '@id' => $url . '#service',
+            'name' => (string) $record->title,
+            'description' => static::recordDescription($record),
+            'image' => static::absoluteImage($record->image),
+            'serviceType' => trim((string) $record->subtitle) ?: (string) $record->title,
+            'provider' => ['@id' => static::siteBase() . '/#organization'],
+            'areaServed' => static::contacts()['addressLocality'],
+            'offers' => static::offer($url, static::price($record->price_from)),
+        ]);
+    }
+
+    /**
+     * offer описывает цену; без цены предложение не выводится целиком.
+     */
+    protected static function offer(string $url, string $price, string $availability = 'https://schema.org/InStock'): array
+    {
+        if ($price === '') {
+            return [];
+        }
+
+        return [
+            '@type' => 'Offer',
+            'url' => $url,
+            'price' => $price,
+            'priceCurrency' => 'RUB',
+            'availability' => $availability,
+        ];
+    }
+
+    /**
+     * price приводит цену к числу: «Бесплатно» — 0, «1 490 ₽» — 1490.
+     *
+     * В blueprints цена хранится и числом, и текстом афиши, поэтому разбор
+     * один на все виды записей. Пустая строка означает «цены нет».
+     */
+    protected static function price($value): string
+    {
+        $raw = trim((string) $value);
+
+        if ($raw === '') {
+            return '';
+        }
+
+        if (preg_match('/бесплат/iu', $raw)) {
+            return '0';
+        }
+
+        if (!preg_match('/\d[\d\s\x{00A0}]*(?:[.,]\d+)?/u', $raw, $match)) {
+            return '';
+        }
+
+        return str_replace(',', '.', str_replace([' ', "\u{00A0}"], '', $match[0]));
+    }
+
+    /**
+     * availability переводит вариант наличия в словарь schema.org.
+     */
+    protected static function availability($value): string
+    {
+        return match ((string) $value) {
+            'reserved' => 'https://schema.org/PreOrder',
+            'unavailable' => 'https://schema.org/OutOfStock',
+            default => 'https://schema.org/InStock',
+        };
+    }
+
+    /**
+     * attendanceMode переводит формат события в словарь schema.org.
+     */
+    protected static function attendanceMode($value): string
+    {
+        return match ((string) $value) {
+            'online' => 'https://schema.org/OnlineEventAttendanceMode',
+            'hybrid' => 'https://schema.org/MixedEventAttendanceMode',
+            default => 'https://schema.org/OfflineEventAttendanceMode',
+        };
+    }
+
+    /**
+     * isoDate приводит дату записи к ISO 8601, пустую — к пустой строке.
+     */
+    protected static function isoDate($value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('c');
+        }
+
+        $raw = trim((string) $value);
+
+        if ($raw === '') {
+            return '';
+        }
+
+        $time = strtotime($raw);
+
+        return $time ? date('c', $time) : '';
+    }
+
+    /**
+     * absoluteImage превращает значение mediafinder в абсолютный адрес картинки.
+     */
+    protected static function absoluteImage($value): string
+    {
+        $path = Media::imagePath($value);
+
+        if ($path === '') {
+            return '';
+        }
+
+        return static::siteBase() . Media::themeUrl($path);
+    }
+
+    /**
+     * siteBase — корень сайта без хвостового слэша.
+     */
+    protected static function siteBase(): string
+    {
+        return rtrim(url('/'), '/');
+    }
+
+    /**
+     * withoutEmpty убирает пустые значения: пустой ключ в JSON-LD — ошибка.
+     */
+    protected static function withoutEmpty(array $data): array
+    {
+        $result = [];
+
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $value = static::withoutEmpty($value);
+            }
+
+            if ($value === '' || $value === null || $value === []) {
+                continue;
+            }
+
+            $result[$key] = $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * robots отдаёт robots.txt с абсолютным адресом карты сайта.
+     *
+     * Файл динамический, а не статический в `public/`: домен появится только
+     * на M17, а директива Sitemap с чужим адресом уводит поисковики на чужой
+     * сайт. Адрес берётся из запроса — как в источнике (`sitemap.php`).
+     */
+    public static function robots(string $sitemapUrl): string
+    {
+        $lines = [
+            '# robots.txt — ' . static::siteName(),
+            '',
+            'User-agent: *',
+            'Allow: /',
+            'Disallow: /admin/',
+        ];
+
+        if (!static::servicePagesIndexable()) {
+            foreach (static::SERVICE_PAGES as $path) {
+                $lines[] = 'Disallow: ' . $path;
+            }
+        }
+
+        $lines = array_merge($lines, [
+            'Disallow: /bitrix/',
+            'Disallow: /db/',
+            'Disallow: /tools/',
+            'Disallow: /*?section=',
+            'Disallow: /*?past=',
+            'Disallow: /*?PAGEN',
+            '',
+            '# Яндекс: параметры фильтров не создают новых страниц',
+            'Clean-param: section&past&PAGEN_1 /',
+            '',
+            'Sitemap: ' . $sitemapUrl,
+            '',
+        ]);
+
+        return implode("\n", $lines);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/SeoAnalyzer.php =====
+
+<?php namespace Elv\Site\Classes;
+
+/**
+ * SeoAnalyzer — проверка записи по правилам SEO-гайда.
+ *
+ * Одиннадцать проверок «светофора» без внешних сервисов и без морфологии:
+ * длина и наличие ключа в мета-полях, плотность фразы, структура заголовков,
+ * длина предложений и абзацев, пассив, переходные слова, ссылки и alt.
+ * Анализ считается на сервере, чтобы правила жили в одном месте и были
+ * покрыты PHPUnit, а панель в админке только показывает результат.
+ */
+class SeoAnalyzer
+{
+    public const GOOD = 'good';
+    public const OK = 'ok';
+    public const BAD = 'bad';
+
+    /**
+     * Границы длины заголовка и описания — по гайду 2026 года.
+     */
+    public const TITLE_MIN = 40;
+    public const TITLE_MAX = 60;
+    public const DESCRIPTION_MIN = 120;
+    public const DESCRIPTION_MAX = 155;
+
+    /**
+     * Плотность ключевой фразы, % от объёма текста.
+     */
+    public const DENSITY_MIN = 0.75;
+    public const DENSITY_MAX = 3.0;
+
+    /**
+     * Служебные границы читаемости.
+     */
+    public const LONG_SENTENCE_WORDS = 20;
+    public const SUBHEADING_WORDS = 300;
+    public const LONG_PARAGRAPH_WORDS = 120;
+
+    /**
+     * @var array<int, string> переходные слова из гайда
+     */
+    protected $transitionWords = [
+        'однако', 'следовательно', 'кроме того', 'таким образом', 'во-первых',
+        'во-вторых', 'например', 'поэтому', 'значит', 'итак', 'впрочем', 'кстати',
+        'в итоге', 'затем', 'далее', 'при этом', 'вместе с тем', 'тем не менее',
+        'в частности', 'к тому же', 'более того', 'наконец', 'в результате',
+    ];
+
+    /**
+     * @var array<int, string> маркеры пассива и безличных оборотов
+     */
+    protected $passiveMarkers = [
+        'был', 'была', 'было', 'были', 'будет', 'будут', 'быть',
+        'является', 'являются', 'являлся', 'являлась',
+        'делается', 'делаются', 'проводится', 'проводятся',
+        'считается', 'считаются', 'используется', 'используются',
+    ];
+
+    /**
+     * analyze проверяет запись и возвращает светофор со списком проверок.
+     *
+     * Вход: title, seo_title, seo_description, slug, keyphrase, content.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function analyze(array $data): array
+    {
+        $title = trim((string) ($data['title'] ?? ''));
+        $seoTitle = trim((string) ($data['seo_title'] ?? ''));
+        $description = trim((string) ($data['seo_description'] ?? ''));
+        $slug = trim((string) ($data['slug'] ?? ''));
+        $keyphrase = trim((string) ($data['keyphrase'] ?? ''));
+        $content = (string) ($data['content'] ?? '');
+
+        $effectiveTitle = $seoTitle !== '' ? $seoTitle : $title;
+
+        $plain = $this->plainText($content);
+        $words = $this->wordCount($plain);
+        $sentences = $this->sentences($plain);
+        $headings = $this->headings($content);
+        $links = $this->links($content);
+        $images = $this->images($content);
+        $density = $this->density($plain, $keyphrase);
+
+        $checks = [];
+
+        $checks[] = $this->check(
+            'keyphrase_set',
+            $keyphrase === '' ? self::OK : self::GOOD,
+            'Ключевая фраза',
+            $keyphrase === '' ? 'не задана' : $keyphrase,
+            'Задайте одну фразу, под которую пишется запись.'
+        );
+
+        $checks[] = $this->check(
+            'keyphrase_in_title',
+            $this->containsKeyphrase($effectiveTitle, $keyphrase) ? self::GOOD : self::BAD,
+            'Ключ в заголовке',
+            $seoTitle === '' ? 'взят из названия' : 'SEO-заголовок',
+            'Впишите фразу в SEO-заголовок — поисковик показывает его первым.'
+        );
+
+        $checks[] = $this->check(
+            'keyphrase_in_description',
+            $this->containsKeyphrase($description, $keyphrase) ? self::GOOD : self::BAD,
+            'Ключ в описании',
+            $description === '' ? 'описание пустое' : 'в описании',
+            'Добавьте фразу в описание: оно попадает в сниппет.'
+        );
+
+        $checks[] = $this->check(
+            'keyphrase_in_slug',
+            $this->slugContainsKeyphrase($slug, $keyphrase) ? self::GOOD : self::BAD,
+            'Ключ в адресе',
+            $slug === '' ? 'адрес пуст' : '/' . ltrim($slug, '/') . '/',
+            'Транслит фразы должен быть в адресе страницы: /kak-vybrat-knigu/.'
+        );
+
+        $checks[] = $this->check(
+            'keyphrase_in_intro',
+            $this->containsKeyphrase($this->firstParagraph($content), $keyphrase) ? self::GOOD : self::BAD,
+            'Ключ в первом абзаце',
+            $words > 0 ? 'первый абзац' : 'текста нет',
+            'Первое предложение должно содержать фразу и отвечать на вопрос читателя.'
+        );
+
+        $checks[] = $this->check(
+            'keyphrase_density',
+            $this->densityStatus($density, $keyphrase),
+            'Плотность фразы',
+            $keyphrase === '' ? '—' : $this->formatNumber($density) . ' %',
+            'Норма от ' . self::DENSITY_MIN . ' до ' . self::DENSITY_MAX . ' %: без набора ключей.'
+        );
+
+        $checks[] = $this->check(
+            'title_length',
+            $this->rangeStatus(mb_strlen($effectiveTitle), self::TITLE_MIN, self::TITLE_MAX, 10, 5),
+            'Длина заголовка',
+            mb_strlen($effectiveTitle) . ' / ' . self::TITLE_MAX . ' симв.',
+            'Уложите заголовок в ' . self::TITLE_MIN . '–' . self::TITLE_MAX . ' символов: длинный обрежется.'
+        );
+
+        $checks[] = $this->check(
+            'description_length',
+            $this->rangeStatus(mb_strlen($description), self::DESCRIPTION_MIN, self::DESCRIPTION_MAX, 20, 10),
+            'Длина описания',
+            mb_strlen($description) . ' / ' . self::DESCRIPTION_MAX . ' симв.',
+            'Описание ' . self::DESCRIPTION_MIN . '–' . self::DESCRIPTION_MAX . ' символов: ключ и польза.'
+        );
+
+        $h1Count = $this->countHeadings($headings, 1);
+
+        $checks[] = $this->check(
+            'headings_h1',
+            $h1Count === 0 ? self::GOOD : self::BAD,
+            'Заголовок H1',
+            'в тексте H1: ' . $h1Count,
+            'Название записи уже выводится как H1 — внутри текста H1 не нужен.'
+        );
+
+        $checks[] = $this->check(
+            'headings_levels',
+            $this->levelsStatus($headings),
+            'Порядок заголовков',
+            $this->levelsLabel($headings),
+            'Уровни не пропускаются: после H2 идёт H3, а не H4.'
+        );
+
+        $checks[] = $this->check(
+            'headings_frequency',
+            $this->subheadingStatus($words, $headings),
+            'Подзаголовки',
+            $words > 0 ? $this->formatNumber($words / max(1, count($headings))) . ' слов на подзаголовок' : '—',
+            'Подзаголовок нужен примерно каждые ' . self::SUBHEADING_WORDS . ' слов: текст легче сканировать.'
+        );
+
+        $checks[] = $this->check(
+            'sentence_length',
+            $this->sentenceStatus($sentences),
+            'Длина предложений',
+            $this->longSentenceLabel($sentences),
+            'Держите предложения короче ' . self::LONG_SENTENCE_WORDS . ' слов: без «паровозов».'
+        );
+
+        $checks[] = $this->check(
+            'passive_voice',
+            $this->passiveStatus($sentences),
+            'Пассивный залог',
+            $this->passiveLabel($sentences),
+            'Пассив — меньше 10 %: «книга выдаётся» лучше заменить на «мы выдаём».'
+        );
+
+        $checks[] = $this->check(
+            'transition_words',
+            $this->transitionStatus($sentences),
+            'Переходные слова',
+            $this->transitionLabel($sentences),
+            'Связки (однако, поэтому, например) — не меньше 30 % предложений.'
+        );
+
+        $checks[] = $this->check(
+            'internal_links',
+            $links['internal'] > 0 ? self::GOOD : self::BAD,
+            'Внутренние ссылки',
+            $links['internal'] . ' шт.',
+            'Поставьте ссылку на услугу, раздел или другую запись сайта.'
+        );
+
+        $checks[] = $this->check(
+            'external_links',
+            $links['external'] > 0 ? self::GOOD : self::OK,
+            'Внешние ссылки',
+            $links['external'] . ' шт.',
+            'Если тема требует подтверждений — сошлитесь на авторитетный источник.'
+        );
+
+        $checks[] = $this->check(
+            'image_alt',
+            $images['missing'] === 0 ? self::GOOD : self::BAD,
+            'Alt у картинок',
+            $images['total'] === 0 ? 'картинок нет' : 'без alt: ' . $images['missing'],
+            'Опишите картинку словами: alt читают поисковик и скринридер.'
+        );
+
+        $checks[] = $this->check(
+            'paragraph_length',
+            $this->paragraphStatus($content),
+            'Длина абзацев',
+            $this->paragraphLabel($content),
+            'Один абзац — одна мысль, до ' . self::LONG_PARAGRAPH_WORDS . ' слов.'
+        );
+
+        // Текст не заполнен (новый черновик или страница из блоков):
+        // проверки содержимого не приговариваются, а честно помечаются как «нет данных».
+        // Если в тексте есть разметка (картинки, ссылки, подзаголовки), проверки работают.
+        $hasMarkup = $headings
+            || ($links['internal'] + $links['external']) > 0
+            || $images['total'] > 0;
+
+        if ($words === 0 && !$hasMarkup) {
+            $contentChecks = [
+                'keyphrase_in_intro', 'keyphrase_density', 'headings_h1', 'headings_levels',
+                'headings_frequency', 'sentence_length', 'passive_voice', 'transition_words',
+                'internal_links', 'external_links', 'image_alt', 'paragraph_length',
+            ];
+
+            foreach ($checks as &$item) {
+                if (in_array($item['id'], $contentChecks, true)) {
+                    $item['status'] = self::OK;
+                    $item['value'] = 'текста нет';
+                }
+            }
+            unset($item);
+        }
+
+        $bad = 0;
+        $warnings = 0;
+        foreach ($checks as $item) {
+            if ($item['status'] === self::BAD) {
+                $bad++;
+            }
+            elseif ($item['status'] === self::OK) {
+                $warnings++;
+            }
+        }
+
+        if ($bad === 0 && $warnings <= 2) {
+            $status = self::GOOD;
+        }
+        elseif ($bad <= 2) {
+            $status = self::OK;
+        }
+        else {
+            $status = self::BAD;
+        }
+
+        return [
+            'status' => $status,
+            'label' => $this->statusLabel($status),
+            'checks' => $checks,
+            'stats' => [
+                'words' => $words,
+                'sentences' => count($sentences),
+                'headings' => count($headings),
+                'minutes' => max(1, (int) ceil($words / 180)),
+                'density' => round($density, 2),
+                'bad' => $bad,
+                'warnings' => $warnings,
+            ],
+        ];
+    }
+
+    /**
+     * statusLabel — человеческая подпись светофора.
+     */
+    public function statusLabel(string $status): string
+    {
+        if ($status === self::GOOD) {
+            return 'Хорошо';
+        }
+
+        if ($status === self::OK) {
+            return 'Можно лучше';
+        }
+
+        return 'Нужно доработать';
+    }
+
+    /**
+     * check собирает одну строку анализа.
+     *
+     * @return array<string, string>
+     */
+    protected function check(string $id, string $status, string $title, string $value, string $hint): array
+    {
+        return [
+            'id' => $id,
+            'status' => $status,
+            'title' => $title,
+            'value' => $value,
+            'hint' => $hint,
+        ];
+    }
+
+    /**
+     * plainText превращает HTML редактора в текст для подсчётов.
+     */
+    protected function plainText(string $html): string
+    {
+        $text = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', ' ', $html);
+        $text = preg_replace('/<\/(p|div|li|tr|h[1-6]|blockquote|section|article)>/i', "\n\n", (string) $text);
+        $text = preg_replace('/<br\s*\/?>/i', "\n", (string) $text);
+        $text = strip_tags((string) $text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace("\u{00A0}", ' ', $text);
+        $text = preg_replace('/[ \t]+/u', ' ', $text);
+        $text = preg_replace('/\n[ \t]+/u', "\n", (string) $text);
+        $text = preg_replace('/\n{3,}/u', "\n\n", (string) $text);
+
+        return trim((string) $text);
+    }
+
+    /**
+     * wordCount — число слов в тексте.
+     */
+    protected function wordCount(string $text): int
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return 0;
+        }
+
+        return count(preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+    }
+
+    /**
+     * sentences — предложения текста.
+     *
+     * @return array<int, string>
+     */
+    protected function sentences(string $text): array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return [];
+        }
+
+        $parts = preg_split('/(?<=[.!?…])\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_filter($parts, function ($part) {
+            return trim((string) $part) !== '';
+        }));
+    }
+
+    /**
+     * headings — заголовки H1–H6 в порядке появления.
+     *
+     * @return array<int, array{level: int, text: string}>
+     */
+    protected function headings(string $html): array
+    {
+        if (!preg_match_all('/<h([1-6])\b[^>]*>(.*?)<\/h\1>/is', $html, $matches, PREG_SET_ORDER)) {
+            return [];
+        }
+
+        $headings = [];
+        foreach ($matches as $match) {
+            $headings[] = [
+                'level' => (int) $match[1],
+                'text' => $this->plainText($match[2]),
+            ];
+        }
+
+        return $headings;
+    }
+
+    /**
+     * countHeadings — сколько заголовков заданного уровня.
+     *
+     * @param  array<int, array{level: int, text: string}>  $headings
+     */
+    protected function countHeadings(array $headings, int $level): int
+    {
+        return count(array_filter($headings, function ($heading) use ($level) {
+            return $heading['level'] === $level;
+        }));
+    }
+
+    /**
+     * firstParagraph — первый абзац текста.
+     */
+    protected function firstParagraph(string $html): string
+    {
+        if (preg_match('/<p\b[^>]*>(.*?)<\/p>/is', $html, $match)) {
+            return $this->plainText($match[1]);
+        }
+
+        $parts = preg_split('/\n{2,}/u', $this->plainText($html)) ?: [];
+
+        return trim((string) ($parts[0] ?? ''));
+    }
+
+    /**
+     * links — внутренние и внешние ссылки.
+     *
+     * @return array{internal: int, external: int}
+     */
+    protected function links(string $html): array
+    {
+        $internal = 0;
+        $external = 0;
+
+        if (preg_match_all('/<a\b[^>]*href\s*=\s*["\']([^"\']+)["\']/i', $html, $matches)) {
+            foreach ($matches[1] as $href) {
+                $href = trim(html_entity_decode((string) $href, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+                if ($href === '' || str_starts_with($href, '#')) {
+                    continue;
+                }
+
+                if (preg_match('/^(mailto:|tel:|javascript:)/i', $href)) {
+                    continue;
+                }
+
+                if (preg_match('#^(https?:)?//#i', $href)) {
+                    if (preg_match('#^https?://#i', $href)) {
+                        $external++;
+                    }
+                    continue;
+                }
+
+                $internal++;
+            }
+        }
+
+        return ['internal' => $internal, 'external' => $external];
+    }
+
+    /**
+     * images — сколько картинок и у скольких нет alt.
+     *
+     * @return array{total: int, missing: int}
+     */
+    protected function images(string $html): array
+    {
+        $total = preg_match_all('/<img\b[^>]*>/i', $html) ?: 0;
+        $missing = 0;
+
+        if ($total > 0 && preg_match_all('/<img\b[^>]*>/i', $html, $matches)) {
+            foreach ($matches[0] as $tag) {
+                $alt = '';
+                if (preg_match('/\balt\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $tag, $altMatch)) {
+                    $alt = trim(html_entity_decode($altMatch[2] !== '' ? $altMatch[2] : ($altMatch[3] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                }
+
+                if ($alt === '') {
+                    $missing++;
+                }
+            }
+        }
+
+        return ['total' => (int) $total, 'missing' => $missing];
+    }
+
+    /**
+     * density — плотность ключевой фразы в процентах.
+     */
+    protected function density(string $plain, string $keyphrase): float
+    {
+        $words = $this->wordCount($plain);
+        $pattern = $this->phrasePattern($keyphrase);
+
+        if ($words === 0 || $pattern === '') {
+            return 0.0;
+        }
+
+        $occurrences = preg_match_all('/' . $pattern . '/u', $this->normalize($plain)) ?: 0;
+        $phraseWords = $this->wordCount($keyphrase);
+
+        return ($occurrences * $phraseWords / $words) * 100;
+    }
+
+    /**
+     * containsKeyphrase — входит ли фраза в текст с учётом регистра и ё.
+     */
+    protected function containsKeyphrase(string $haystack, string $keyphrase): bool
+    {
+        $pattern = $this->phrasePattern($keyphrase);
+        if ($pattern === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/' . $pattern . '/u', $this->normalize($haystack));
+    }
+
+    /**
+     * slugContainsKeyphrase — есть ли в адресе транслит всех слов фразы.
+     */
+    protected function slugContainsKeyphrase(string $slug, string $keyphrase): bool
+    {
+        $slug = mb_strtolower(trim($slug));
+        $words = preg_split('/\s+/u', $this->normalize($keyphrase), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if ($slug === '' || !$words) {
+            return false;
+        }
+
+        foreach ($words as $word) {
+            $pattern = $this->translitPattern($word);
+            if ($pattern === '') {
+                continue;
+            }
+
+            if (!preg_match('/(?:^|-)' . $pattern . '(?:-|$)/u', $slug)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * phrasePattern — регулярное выражение фразы (слова через пробел или дефис).
+     */
+    protected function phrasePattern(string $keyphrase): string
+    {
+        $words = preg_split('/\s+/u', $this->normalize($keyphrase), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (!$words) {
+            return '';
+        }
+
+        return implode('[\s\-]+', array_map(function ($word) {
+            return preg_quote($word, '/');
+        }, $words));
+    }
+
+    /**
+     * translitPattern — шаблон латиницы для русского слова.
+     *
+     * Каждая буква даёт класс возможных вариантов транслита: адрес мог
+     * собираться разными инструментами (ж → zh или j, х → h или kh).
+     */
+    protected function translitPattern(string $word): string
+    {
+        $map = [
+            'а' => 'a', 'б' => 'b', 'в' => 'v', 'г' => 'g', 'д' => 'd', 'е' => 'e',
+            'ё' => '(?:e|yo)', 'ж' => '(?:zh|j)', 'з' => 'z', 'и' => 'i',
+            'й' => '(?:y|i|j)', 'к' => 'k', 'л' => 'l', 'м' => 'm', 'н' => 'n',
+            'о' => 'o', 'п' => 'p', 'р' => 'r', 'с' => 's', 'т' => 't', 'у' => 'u',
+            'ф' => 'f', 'х' => '(?:h|kh)', 'ц' => '(?:c|ts)', 'ч' => 'ch',
+            'ш' => 'sh', 'щ' => '(?:sch|shch)', 'ъ' => '', 'ы' => '(?:y|i)',
+            'ь' => '', 'э' => 'e', 'ю' => '(?:yu|iu|u)', 'я' => '(?:ya|ia)',
+        ];
+
+        $pattern = '';
+        foreach (preg_split('//u', $word, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $letter) {
+            if (isset($map[$letter])) {
+                $pattern .= $map[$letter];
+                continue;
+            }
+
+            if (preg_match('/^[a-z0-9]$/', $letter)) {
+                $pattern .= $letter;
+                continue;
+            }
+
+            return '';
+        }
+
+        return $pattern;
+    }
+
+    /**
+     * normalize — нижний регистр и ё → е.
+     */
+    protected function normalize(string $text): string
+    {
+        return mb_strtolower(str_replace(['ё', 'Ё'], ['е', 'е'], $text));
+    }
+
+    /**
+     * densityStatus — светофор плотности.
+     */
+    protected function densityStatus(float $density, string $keyphrase): string
+    {
+        if ($keyphrase === '') {
+            return self::OK;
+        }
+
+        if ($density <= 0) {
+            return self::BAD;
+        }
+
+        if ($density >= self::DENSITY_MIN && $density <= self::DENSITY_MAX) {
+            return self::GOOD;
+        }
+
+        if ($density >= self::DENSITY_MIN / 2 && $density <= self::DENSITY_MAX * 2) {
+            return self::OK;
+        }
+
+        return self::BAD;
+    }
+
+    /**
+     * rangeStatus — светофор для длины: в норме, рядом, далеко.
+     */
+    protected function rangeStatus(int $length, int $min, int $max, int $soft, int $tolerance): string
+    {
+        if ($length === 0) {
+            return self::BAD;
+        }
+
+        if ($length >= $min && $length <= $max) {
+            return self::GOOD;
+        }
+
+        if ($length >= max(1, $min - $soft) && $length <= $max + $tolerance) {
+            return self::OK;
+        }
+
+        return self::BAD;
+    }
+
+    /**
+     * levelsStatus — светофор порядка заголовков.
+     *
+     * @param  array<int, array{level: int, text: string}>  $headings
+     */
+    protected function levelsStatus(array $headings): string
+    {
+        $previous = 1;
+
+        foreach ($headings as $heading) {
+            if ($heading['level'] > $previous + 1) {
+                return self::BAD;
+            }
+
+            $previous = $heading['level'];
+        }
+
+        return self::GOOD;
+    }
+
+    /**
+     * levelsLabel — какие уровни реально использованы.
+     *
+     * @param  array<int, array{level: int, text: string}>  $headings
+     */
+    protected function levelsLabel(array $headings): string
+    {
+        if (!$headings) {
+            return 'подзаголовков нет';
+        }
+
+        $levels = array_values(array_unique(array_map(function ($heading) {
+            return $heading['level'];
+        }, $headings)));
+        sort($levels);
+
+        return 'H' . implode(', H', $levels);
+    }
+
+    /**
+     * subheadingStatus — светофор частоты подзаголовков.
+     *
+     * @param  array<int, array{level: int, text: string}>  $headings
+     */
+    protected function subheadingStatus(int $words, array $headings): string
+    {
+        if ($words === 0) {
+            return self::OK;
+        }
+
+        if (!$headings) {
+            return $words > self::SUBHEADING_WORDS ? self::BAD : self::OK;
+        }
+
+        $perHeading = $words / count($headings);
+
+        if ($perHeading <= self::SUBHEADING_WORDS) {
+            return self::GOOD;
+        }
+
+        return $perHeading <= self::SUBHEADING_WORDS * 1.5 ? self::OK : self::BAD;
+    }
+
+    /**
+     * sentenceStatus — светофор длинных предложений.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function sentenceStatus(array $sentences): string
+    {
+        $total = count($sentences);
+        if ($total === 0) {
+            return self::OK;
+        }
+
+        $long = 0;
+        foreach ($sentences as $sentence) {
+            if ($this->wordCount($sentence) > self::LONG_SENTENCE_WORDS) {
+                $long++;
+            }
+        }
+
+        $percent = $long / $total * 100;
+
+        if ($percent <= 25) {
+            return self::GOOD;
+        }
+
+        return $percent <= 40 ? self::OK : self::BAD;
+    }
+
+    /**
+     * longSentenceLabel — сколько предложений длиннее нормы.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function longSentenceLabel(array $sentences): string
+    {
+        $long = 0;
+        foreach ($sentences as $sentence) {
+            if ($this->wordCount($sentence) > self::LONG_SENTENCE_WORDS) {
+                $long++;
+            }
+        }
+
+        return $long . ' из ' . count($sentences);
+    }
+
+    /**
+     * passiveStatus — светофор пассива.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function passiveStatus(array $sentences): string
+    {
+        $total = count($sentences);
+        if ($total === 0) {
+            return self::OK;
+        }
+
+        $percent = $this->passiveCount($sentences) / $total * 100;
+
+        if ($percent < 10) {
+            return self::GOOD;
+        }
+
+        return $percent < 20 ? self::OK : self::BAD;
+    }
+
+    /**
+     * passiveLabel — подпись проверки пассива.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function passiveLabel(array $sentences): string
+    {
+        $total = count($sentences);
+        if ($total === 0) {
+            return '—';
+        }
+
+        return $this->passiveCount($sentences) . ' из ' . $total;
+    }
+
+    /**
+     * passiveCount — сколько предложений содержит маркер пассива.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function passiveCount(array $sentences): int
+    {
+        $count = 0;
+        foreach ($sentences as $sentence) {
+            $normalized = $this->normalize($sentence);
+            foreach ($this->passiveMarkers as $marker) {
+                if (preg_match('/\b' . preg_quote($marker, '/') . '\b/u', $normalized)) {
+                    $count++;
+                    break;
+                }
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * transitionStatus — светофор переходных слов.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function transitionStatus(array $sentences): string
+    {
+        $total = count($sentences);
+        if ($total === 0) {
+            return self::OK;
+        }
+
+        $percent = $this->transitionCount($sentences) / $total * 100;
+
+        if ($percent >= 30) {
+            return self::GOOD;
+        }
+
+        return $percent >= 20 ? self::OK : self::BAD;
+    }
+
+    /**
+     * transitionLabel — подпись проверки переходных слов.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function transitionLabel(array $sentences): string
+    {
+        $total = count($sentences);
+        if ($total === 0) {
+            return '—';
+        }
+
+        return $this->transitionCount($sentences) . ' из ' . $total;
+    }
+
+    /**
+     * transitionCount — сколько предложений начинается со связки.
+     *
+     * @param  array<int, string>  $sentences
+     */
+    protected function transitionCount(array $sentences): int
+    {
+        $count = 0;
+        foreach ($sentences as $sentence) {
+            $normalized = ltrim($this->normalize($sentence));
+            foreach ($this->transitionWords as $word) {
+                if (str_starts_with($normalized, $word)) {
+                    $count++;
+                    break;
+                }
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * paragraphStatus — светофор длины абзацев.
+     */
+    protected function paragraphStatus(string $html): string
+    {
+        $longest = $this->longestParagraph($html);
+
+        if ($longest === 0) {
+            return self::OK;
+        }
+
+        if ($longest <= self::LONG_PARAGRAPH_WORDS) {
+            return self::GOOD;
+        }
+
+        return $longest <= self::LONG_PARAGRAPH_WORDS * 2 ? self::OK : self::BAD;
+    }
+
+    /**
+     * paragraphLabel — подпись проверки абзацев.
+     */
+    protected function paragraphLabel(string $html): string
+    {
+        $longest = $this->longestParagraph($html);
+
+        return $longest === 0 ? '—' : 'самый длинный: ' . $longest . ' слов';
+    }
+
+    /**
+     * longestParagraph — сколько слов в самом длинном абзаце.
+     */
+    protected function longestParagraph(string $html): int
+    {
+        if (!preg_match_all('/<p\b[^>]*>(.*?)<\/p>/is', $html, $matches)) {
+            return $this->wordCount($this->plainText($html));
+        }
+
+        $longest = 0;
+        foreach ($matches[1] as $paragraph) {
+            $longest = max($longest, $this->wordCount($this->plainText($paragraph)));
+        }
+
+        return $longest;
+    }
+
+    /**
+     * formatNumber — число без хвоста .0.
+     */
+    protected function formatNumber(float $value): string
+    {
+        $rounded = round($value, 2);
+        if ($rounded == (int) $rounded) {
+            return (string) (int) $rounded;
+        }
+
+        return rtrim(rtrim(number_format($rounded, 2, ',', ''), '0'), ',');
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Sitemap.php =====
+
+<?php namespace Elv\Site\Classes;
+
+/**
+ * Sitemap — карта сайта для поисковых систем (`/sitemap.xml`).
+ *
+ * Список адресов собирается из того же источника, что и страницы: статические
+ * разделы — фиксированный перечень страниц темы (`PAGES`), детальные — записи
+ * Tailor через `Content::records()`, то есть ровно те, что тема умеет показать.
+ * Поэтому в карту не попадают ни удалённые, ни отключённые записи, ни
+ * шаблоны детальных страниц (`*-detail`), которые адресами не являются.
+ *
+ * Закрытые в robots.txt адреса (`/auth/`, `/personal/`, `/search/`) в карту не
+ * кладутся: директива Disallow и запись в sitemap противоречат друг другу,
+ * поисковик сообщает об этом как об ошибке.
+ */
+class Sitemap
+{
+    /**
+     * SECTIONS — префикс адреса => handle Tailor-записей.
+     */
+    public const SECTIONS = [
+        'books' => 'Elv\Book',
+        'printing' => 'Elv\Printing',
+        'news' => 'Elv\News',
+        'services' => 'Elv\Service',
+        'events' => 'Elv\Event',
+        'collections' => 'Elv\Collection',
+        'blog' => 'Elv\Post',
+    ];
+
+    /**
+     * PAGES — статические страницы темы: адрес, файл, вес и частота обновления.
+     *
+     * Перечень сверяется с `themes/elv/pages/*.htm` тестом
+     * `tests/SeoTest.php`: новая страница без строки здесь роняет тест, а не
+     * молча выпадает из индекса.
+     */
+    public const PAGES = [
+        '/' => ['page' => 'index', 'priority' => '1.0', 'changefreq' => 'daily'],
+        '/books/' => ['page' => 'books', 'priority' => '0.8', 'changefreq' => 'weekly'],
+        '/printing/' => ['page' => 'printing', 'priority' => '0.8', 'changefreq' => 'weekly'],
+        '/news/' => ['page' => 'news', 'priority' => '0.8', 'changefreq' => 'weekly'],
+        '/services/' => ['page' => 'services', 'priority' => '0.8', 'changefreq' => 'weekly'],
+        '/events/' => ['page' => 'events', 'priority' => '0.8', 'changefreq' => 'weekly'],
+        '/collections/' => ['page' => 'collections', 'priority' => '0.7', 'changefreq' => 'weekly'],
+        '/blog/' => ['page' => 'blog', 'priority' => '0.7', 'changefreq' => 'weekly'],
+        '/contacts/' => ['page' => 'contacts', 'priority' => '0.7', 'changefreq' => 'monthly'],
+        '/about/' => ['page' => 'about', 'priority' => '0.6', 'changefreq' => 'monthly'],
+        '/feedback/' => ['page' => 'feedback', 'priority' => '0.5', 'changefreq' => 'monthly'],
+        '/subscribe/' => ['page' => 'subscribe', 'priority' => '0.4', 'changefreq' => 'monthly'],
+        '/rules/' => ['page' => 'rules', 'priority' => '0.3', 'changefreq' => 'monthly'],
+        '/privacy/' => ['page' => 'privacy', 'priority' => '0.3', 'changefreq' => 'monthly'],
+        '/terms/' => ['page' => 'terms', 'priority' => '0.3', 'changefreq' => 'monthly'],
+        '/sitemap/' => ['page' => 'sitemap', 'priority' => '0.3', 'changefreq' => 'monthly'],
+    ];
+
+    /**
+     * CLOSED — адреса, закрытые в robots.txt: в карту не попадают.
+     */
+    public const CLOSED = ['/auth/', '/personal/', '/search/'];
+
+    /**
+     * DETAIL_PRIORITY — вес детальных страниц.
+     */
+    public const DETAIL_PRIORITY = '0.6';
+
+    /**
+     * urls отдаёт адреса с датой изменения: `[['loc' => '/news/x/', 'lastmod' => 'Y-m-d', ...]]`.
+     *
+     * @return array<int, array{loc: string, lastmod: string, changefreq: string, priority: string}>
+     */
+    public static function urls(): array
+    {
+        $urls = [];
+
+        foreach (static::PAGES as $loc => $config) {
+            $urls[] = [
+                'loc' => (string) $loc,
+                'lastmod' => static::pageLastmod($config['page'], $loc),
+                'changefreq' => $config['changefreq'],
+                'priority' => $config['priority'],
+            ];
+        }
+
+        foreach (static::SECTIONS as $prefix => $handle) {
+            foreach (Content::records($handle) as $record) {
+                $slug = trim((string) $record->slug);
+                if ($slug === '') {
+                    continue;
+                }
+
+                $urls[] = [
+                    'loc' => '/' . $prefix . '/' . $slug . '/',
+                    'lastmod' => static::recordLastmod($record),
+                    'changefreq' => 'weekly',
+                    'priority' => static::DETAIL_PRIORITY,
+                ];
+            }
+        }
+
+        foreach (PageBuilder::pages() as $page) {
+            $urls[] = [
+                'loc' => '/' . $page['slug'] . '/',
+                'lastmod' => $page['lastmod'],
+                'changefreq' => 'monthly',
+                'priority' => static::DETAIL_PRIORITY,
+            ];
+        }
+
+        usort($urls, function (array $left, array $right) {
+            return strcmp($left['loc'], $right['loc']);
+        });
+
+        return $urls;
+    }
+
+    /**
+     * xml собирает готовый документ карты сайта.
+     */
+    public static function xml(string $baseUrl): string
+    {
+        $base = rtrim($baseUrl, '/');
+
+        $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $out .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+        foreach (static::urls() as $url) {
+            $out .= "  <url>\n";
+            $out .= '    <loc>' . static::escape($base . $url['loc']) . "</loc>\n";
+            $out .= '    <lastmod>' . static::escape($url['lastmod']) . "</lastmod>\n";
+            $out .= '    <changefreq>' . $url['changefreq'] . "</changefreq>\n";
+            $out .= '    <priority>' . $url['priority'] . "</priority>\n";
+            $out .= "  </url>\n";
+        }
+
+        $out .= '</urlset>' . "\n";
+
+        return $out;
+    }
+
+    /**
+     * knownPaths отдаёт статические адреса без записей — для проверок и 301.
+     *
+     * @return array<int, string>
+     */
+    public static function knownPaths(): array
+    {
+        return array_keys(static::PAGES);
+    }
+
+    /**
+     * pageLastmod — дата изменения страницы темы.
+     *
+     * У списков берётся свежая запись (её правка меняет содержимое страницы),
+     * у текстовых страниц — время правки файла страницы: другого источника
+     * изменения у них нет.
+     */
+    protected static function pageLastmod(string $page, string $loc): string
+    {
+        $latest = '';
+
+        foreach (static::SECTIONS as $prefix => $handle) {
+            if ($loc === '/' . $prefix . '/' || $loc === '/') {
+                $candidate = static::sectionLastmod($handle);
+                if ($candidate > $latest) {
+                    $latest = $candidate;
+                }
+            }
+        }
+
+        if ($latest !== '') {
+            return $latest;
+        }
+
+        $file = static::themePath('pages/' . $page . '.htm');
+
+        if ($file !== null && is_file($file)) {
+            return date('Y-m-d', (int) filemtime($file));
+        }
+
+        return date('Y-m-d');
+    }
+
+    /**
+     * sectionLastmod — дата самой свежей записи раздела.
+     */
+    protected static function sectionLastmod(string $handle): string
+    {
+        $latest = '';
+
+        foreach (Content::records($handle) as $record) {
+            $candidate = static::recordLastmod($record);
+            if ($candidate > $latest) {
+                $latest = $candidate;
+            }
+        }
+
+        return $latest;
+    }
+
+    /**
+     * recordLastmod — дата изменения записи.
+     */
+    protected static function recordLastmod($record): string
+    {
+        $updated = $record->updated_at ?: $record->created_at;
+
+        return $updated ? $updated->format('Y-m-d') : date('Y-m-d');
+    }
+
+    /**
+     * themePath — путь внутри активной темы.
+     */
+    protected static function themePath(string $relative): ?string
+    {
+        $theme = \Cms\Classes\Theme::getActiveTheme();
+
+        return $theme ? rtrim($theme->getPath(), '/\\') . '/' . ltrim($relative, '/') : null;
+    }
+
+    /**
+     * escape — экранирование для XML.
+     */
+    protected static function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Pwa.php =====
+
+<?php namespace Elv\Site\Classes;
+
+use Cms\Classes\Theme;
+
+/**
+ * Pwa — оболочка прогрессивного веб-приложения.
+ *
+ * Файлы лежат в теме (`themes/elv/assets/pwa/`), а отдаются с корня
+ * (`/manifest.webmanifest`, `/sw.js`, `/offline.html`): service worker
+ * с корня управляет всем сайтом, а из папки темы его область ограничилась бы
+ * `/themes/elv/`. Поэтому маршруты, а не статика.
+ *
+ * `sw.js` — шаблон: `Pwa::serviceWorker()` подставляет VERSION (хеш времени
+ * правки файлов оболочки) и SHELL (список кеша). Один источник — `SHELL`
+ * в этом классе, поэтому список не расходится с тем, что реально кешируется.
+ */
+class Pwa
+{
+    /**
+     * SHELL — файлы оболочки, которые service worker кладёт в кеш.
+     */
+    public const SHELL = [
+        '/offline.html',
+        '/manifest.webmanifest',
+        '/themes/elv/assets/vendor/bootstrap.bundle.min.js',
+        '/themes/elv/assets/js/script.js',
+        '/themes/elv/assets/js/pwa.js',
+        '/themes/elv/assets/icons/icon-192.png',
+        '/themes/elv/assets/icons/icon-512.png',
+        '/themes/elv/assets/icons/icon-maskable-512.png',
+        '/themes/elv/assets/icons/icon.svg',
+    ];
+
+    /**
+     * manifest отдаёт Web App Manifest.
+     */
+    public static function manifest(): string
+    {
+        return str_replace(
+            ['__BRAND__', '__DESCRIPTION__'],
+            [Brand::get('name'), Brand::get('description')],
+            (string) file_get_contents(static::themeFile('assets/pwa/manifest.webmanifest'))
+        );
+    }
+
+    /**
+     * offline отдаёт страницу «нет подключения».
+     */
+    public static function offline(): string
+    {
+        return (string) file_get_contents(static::themeFile('assets/pwa/offline.html'));
+    }
+
+    /**
+     * serviceWorker отдаёт sw.js с подставленными версией и списком оболочки.
+     */
+    public static function serviceWorker(): string
+    {
+        $template = (string) file_get_contents(static::themeFile('assets/pwa/sw.js'));
+
+        return str_replace(
+            ['__VERSION__', '__SHELL__', '__BRAND__'],
+            [static::version(), (string) json_encode(static::SHELL, JSON_UNESCAPED_SLASHES), Brand::get('name')],
+            $template
+        );
+    }
+
+    /**
+     * version — хеш времени правки файлов оболочки.
+     *
+     * Меняется вместе с ассетом, поэтому кеш обновляется без ручного
+     * поднятия номера. Список можно передать в тесте.
+     *
+     * @param  array<int, string>|null  $shell
+     */
+    public static function version(?array $shell = null): string
+    {
+        $parts = [];
+
+        foreach ($shell ?? static::SHELL as $url) {
+            $file = static::pathFor($url);
+
+            $parts[] = $url . ':' . ($file !== null && is_file($file) ? (int) filemtime($file) : 0);
+        }
+
+        return substr(sha1(implode('|', $parts)), 0, 8);
+    }
+
+    /**
+     * pathFor — путь на диске для адреса оболочки.
+     */
+    public static function pathFor(string $url): ?string
+    {
+        if ($url === '/offline.html') {
+            return static::themePath('assets/pwa/offline.html');
+        }
+
+        if ($url === '/manifest.webmanifest') {
+            return static::themePath('assets/pwa/manifest.webmanifest');
+        }
+
+        if (str_starts_with($url, '/themes/')) {
+            return base_path(ltrim($url, '/'));
+        }
+
+        return null;
+    }
+
+    /**
+     * themeFile — существующий файл темы или исключение.
+     */
+    protected static function themeFile(string $relative): string
+    {
+        $path = static::themePath($relative);
+
+        if ($path === null || !is_file($path)) {
+            throw new \RuntimeException('PWA: нет файла темы ' . $relative);
+        }
+
+        return $path;
+    }
+
+    /**
+     * themePath — путь внутри активной темы.
+     */
+    protected static function themePath(string $relative): ?string
+    {
+        $theme = Theme::getActiveTheme();
+
+        return $theme ? rtrim($theme->getPath(), '/\\') . '/' . ltrim($relative, '/') : null;
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/SeoController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Response;
+use Elv\Site\Classes\Rss;
+use Elv\Site\Classes\Seo;
+use Elv\Site\Classes\Sitemap;
+
+/**
+ * SeoController — служебные SEO-адреса: карта сайта и robots.txt.
+ *
+ * Оба файла генерируются, а не лежат в `public/`: адрес сайта появляется
+ * только на M17, а директива `Sitemap` и `<loc>` с чужим доменом уводят
+ * поисковики на чужой сайт. Домен берётся из запроса — как в источнике
+ * (`sitemap.php`).
+ */
+class SeoController
+{
+    /**
+     * sitemap отдаёт `/sitemap.xml`.
+     */
+    public function sitemap(): Response
+    {
+        return response(Sitemap::xml(url('/')), 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * rss отдаёт `/rss.xml` — лента новостей.
+     */
+    public function rss(): Response
+    {
+        return response(Rss::xml(url('/')), 200, [
+            'Content-Type' => 'application/rss+xml; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * blogRss отдаёт `/blog/rss.xml` — лента статей.
+     */
+    public function blogRss(): Response
+    {
+        return response(
+            Rss::xml(
+                url('/'),
+                'Elv\Post',
+                '/blog/',
+                '/blog/rss.xml',
+                Seo::siteName() . ' — блог',
+                'Статьи о книгах, печати и подарках.'
+            ),
+            200,
+            ['Content-Type' => 'application/rss+xml; charset=UTF-8']
+        );
+    }
+
+    /**
+     * robots отдаёт `/robots.txt`.
+     */
+    public function robots(): Response
+    {
+        return response(Seo::robots(url('/sitemap.xml')), 200, [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+        ]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/PwaController.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Illuminate\Http\Response;
+use Elv\Site\Classes\Pwa;
+
+/**
+ * PwaController — оболочка приложения с корня сайта.
+ *
+ * Service worker обязан жить в корне: иначе его область — только папка,
+ * из которой он загружен (`/themes/elv/`). Manifest и офлайн-страница
+ * отдаются там же по тем же причинам: адреса предсказуемы, а файлы остаются
+ * в теме рядом с ассетами.
+ */
+class PwaController
+{
+    /**
+     * manifest отдаёт `/manifest.webmanifest`.
+     */
+    public function manifest(): Response
+    {
+        return response(Pwa::manifest(), 200, [
+            'Content-Type' => 'application/manifest+json; charset=UTF-8',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
+    /**
+     * serviceWorker отдаёт `/sw.js` без долгого кеша.
+     */
+    public function serviceWorker(): Response
+    {
+        return response(Pwa::serviceWorker(), 200, [
+            'Content-Type' => 'application/javascript; charset=UTF-8',
+            'Cache-Control' => 'no-cache',
+            'Service-Worker-Allowed' => '/',
+        ]);
+    }
+
+    /**
+     * offline отдаёт `/offline.html`.
+     */
+    public function offline(): Response
+    {
+        return response(Pwa::offline(), 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/LegacyRedirect.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Closure;
+use Illuminate\Http\Request;
+use Elv\Site\Classes\Sitemap;
+
+/**
+ * LegacyRedirect — 301 со старых адресов 1С-Битрикс на новые.
+ *
+ * Старое ядро отдавало разделы через файлы, а детальные страницы — параметром:
+ * `/news/detail.php?CODE=slug`, `/about/index.php`, `/index.php`, `/sitemap.php`.
+ * Внешние ссылки и закладки на эти адреса не должны превращаться в 404 после
+ * переезда, поэтому каждый старый вид получает постоянный редирект на новый.
+ *
+ * Параметры запроса, кроме `CODE`, сохраняются (`utm_source` и прочие метки —
+ * рабочая часть ссылки). Неизвестные пути не трогаются: их отдаёт CMS.
+ */
+class LegacyRedirect
+{
+    /**
+     * INDEX_PAGES — разделы, у которых в источнике был `index.php`.
+     */
+    public const INDEX_PAGES = [
+        'about',
+        'auth',
+        'books',
+        'collections',
+        'contacts',
+        'events',
+        'feedback',
+        'news',
+        'personal',
+        'printing',
+        'privacy',
+        'rules',
+        'search',
+        'services',
+        'sitemap',
+        'subscribe',
+        'terms',
+    ];
+
+    /**
+     * handle — проверяет адрес и отдаёт 301 или пропускает запрос дальше.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
+     */
+    public function handle(Request $request, Closure $next)
+    {
+        if (!$request->isMethod('GET') && !$request->isMethod('HEAD')) {
+            return $next($request);
+        }
+
+        $target = $this->target($this->rawPath($request), $request);
+
+        if ($target === null) {
+            return $next($request);
+        }
+
+        return redirect()->to($target, 301);
+    }
+
+    /**
+     * rawPath — путь из REQUEST_URI, а не из `path()` (см. `RequestPath`).
+     */
+    protected function rawPath(Request $request): string
+    {
+        return RequestPath::from($request);
+    }
+
+    /**
+     * target — новый адрес для старого пути или null, если путь не старый.
+     */
+    protected function target(string $path, Request $request): ?string
+    {
+        $host = $request->getSchemeAndHttpHost();
+
+        if ($path === '/index.php') {
+            return $this->withQuery($host . '/', $request, ['CODE']);
+        }
+
+        if ($path === '/sitemap.php') {
+            return $host . '/sitemap.xml';
+        }
+
+        if (preg_match('#^/([a-z0-9-]+)/index\.php$#', $path, $matches)
+            && in_array($matches[1], static::INDEX_PAGES, true)
+        ) {
+            return $this->withQuery($host . '/' . $matches[1] . '/', $request, ['CODE']);
+        }
+
+        if (preg_match('#^/([a-z0-9-]+)/detail\.php$#', $path, $matches)
+            && array_key_exists($matches[1], Sitemap::SECTIONS)
+        ) {
+            $prefix = $matches[1];
+            $slug = trim((string) $request->query('CODE', ''));
+
+            if ($slug === '' || !preg_match('/^[a-z0-9-]+$/', $slug)) {
+                return $this->withQuery($host . '/' . $prefix . '/', $request, ['CODE']);
+            }
+
+            return $this->withQuery($host . '/' . $prefix . '/' . $slug . '/', $request, ['CODE']);
+        }
+
+        return null;
+    }
+
+    /**
+     * withQuery переносит остальные параметры запроса в новый адрес.
+     *
+     * @param  array<int, string>  $drop
+     */
+    protected function withQuery(string $target, Request $request, array $drop = []): string
+    {
+        $query = array_diff_key($request->query(), array_flip($drop));
+        $query = array_filter($query, function ($value) {
+            return $value !== null && $value !== '';
+        });
+
+        if (!$query) {
+            return $target;
+        }
+
+        return $target . '?' . http_build_query($query);
+    }
+}
+
+===== FILE: plugins/elv/site/classes/Http/ManagedRedirect.php =====
+
+<?php namespace Elv\Site\Classes\Http;
+
+use Closure;
+use Elv\Site\Models\Redirect;
+use Illuminate\Http\Request;
+
+/**
+ * ManagedRedirect — редиректы из админки (`elv_redirects`).
+ *
+ * Идёт после `LegacyRedirect`: сначала отдаются старые адреса Битрикса из
+ * хардкод-карты, затем то, что редактор завёл руками. Неизвестный путь
+ * пропускается к CMS, а недоступная база не превращает сайт в 500 — редирект
+ * это удобство, а не условие работы страницы.
+ */
+class ManagedRedirect
+{
+    public function handle(Request $request, Closure $next)
+    {
+        if (!$request->isMethod('GET') && !$request->isMethod('HEAD')) {
+            return $next($request);
+        }
+
+        try {
+            $redirect = Redirect::findForPath(RequestPath::from($request));
+        }
+        catch (\Throwable $e) {
+            return $next($request);
+        }
+
+        if ($redirect === null) {
+            return $next($request);
+        }
+
+        Redirect::registerHit($redirect['id']);
+
+        return redirect()->to(
+            $this->target($redirect['to_path'], $request),
+            $redirect['status_code']
+        );
+    }
+
+    /**
+     * target — новый адрес с параметрами исходного запроса.
+     *
+     * Метки (`utm_*`, `yclid`) — рабочая часть внешней ссылки, терять их нельзя.
+     */
+    protected function target(string $to, Request $request): string
+    {
+        $base = preg_match('#^https?://#i', $to)
+            ? $to
+            : $request->getSchemeAndHttpHost() . $to;
+
+        $query = array_filter($request->query(), function ($value) {
+            return $value !== null && $value !== '';
+        });
+
+        if (!$query) {
+            return $base;
+        }
+
+        return $base . (str_contains($base, '?') ? '&' : '?') . http_build_query($query);
+    }
+}
+
+===== FILE: plugins/elv/site/models/Redirect.php =====
+
+<?php namespace Elv\Site\Models;
+
+use Cache;
+use DB;
+use October\Rain\Database\Model;
+use October\Rain\Database\Traits\Validation;
+
+/**
+ * Redirect — редирект, который редактор заводит в админке.
+ *
+ * Хардкод-карта старых адресов 1С-Битрикс живёт в `Classes\Http\LegacyRedirect`,
+ * а эта модель закрывает то, что появляется после: переименованная страница,
+ * склеенный раздел, старая ссылка из письма. Адрес хранения — `elv_redirects`,
+ * отдача — `Classes\Http\ManagedRedirect`.
+ */
+class Redirect extends Model
+{
+    use Validation;
+
+    public $table = 'elv_redirects';
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'status_code' => 'integer',
+        'is_enabled' => 'boolean',
+        'hit_count' => 'integer',
+        'last_hit_at' => 'datetime',
+    ];
+
+    public $attributes = [
+        'status_code' => 301,
+        'is_enabled' => true,
+        'hit_count' => 0,
+    ];
+
+    public $rules = [
+        'from_path' => [
+            'required',
+            'string',
+            'max:255',
+            'regex:/^\/\S*$/',
+            'not_in:/',
+            'different:to_path',
+            'unique:elv_redirects,from_path',
+        ],
+        'to_path' => [
+            'required',
+            'string',
+            'max:255',
+            'regex:/^(?:\/|https?:\/\/)\S*$/i',
+        ],
+        'status_code' => ['required', 'integer', 'in:301,302,307,308'],
+        'is_enabled' => ['boolean'],
+        'hit_count' => ['integer', 'min:0'],
+    ];
+
+    public $customMessages = [
+        'from_path.required' => 'Укажите старый адрес.',
+        'from_path.regex' => 'Адрес начинается со слэша: /news/old-page.',
+        'from_path.not_in' => 'Главную страницу перенаправлять нельзя: получится петля.',
+        'from_path.different' => 'Старый и новый адрес совпадают.',
+        'from_path.unique' => 'Такой редирект уже есть.',
+        'to_path.required' => 'Укажите новый адрес.',
+        'to_path.regex' => 'Новый адрес — путь (/news/new-page) или ссылка https://…',
+        'status_code.in' => 'Код ответа — 301, 302, 307 или 308.',
+    ];
+
+    public const CACHE_TTL = 600;
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::saved(function (self $redirect) {
+            $redirect->forgetCache();
+            $redirect->forgetCache($redirect->getOriginal('from_path'));
+        });
+
+        static::deleted(function (self $redirect) {
+            $redirect->forgetCache();
+        });
+    }
+
+    /**
+     * setFromPathAttribute — адрес приводится к виду до проверки правил.
+     *
+     * Так `news/old/`, `/news/old?utm=1` и `/news//old` — один и тот же ключ,
+     * и уникальность ловит дубль, а не создаёт второй.
+     */
+    public function setFromPathAttribute($value)
+    {
+        $this->attributes['from_path'] = self::normalizePath((string) $value);
+    }
+
+    public function setToPathAttribute($value)
+    {
+        $value = trim((string) $value);
+
+        $this->attributes['to_path'] = preg_match('#^https?://#i', $value)
+            ? $value
+            : self::normalizePath($value);
+    }
+
+    /**
+     * normalizePath — `/news//old/?utm=1` → `/news/old`.
+     */
+    public static function normalizePath(string $path): string
+    {
+        $path = trim($path);
+
+        if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $path) && !preg_match('#^/#', $path)) {
+            return $path;
+        }
+
+        $path = preg_split('/[?#]/', $path, 2)[0] ?? '';
+        $path = preg_replace('#/+#', '/', '/' . ltrim($path, '/'));
+        $path = rtrim((string) $path, '/');
+
+        return $path === '' ? '/' : $path;
+    }
+
+    public static function cacheKey(string $path): string
+    {
+        return 'elv.redirect.' . md5($path);
+    }
+
+    /**
+     * findForPath — включённый редирект для пути, из кеша или из базы.
+     *
+     * @return array{id: int, to_path: string, status_code: int}|null
+     */
+    public static function findForPath(string $path): ?array
+    {
+        $path = self::normalizePath($path);
+
+        if ($path === '/') {
+            return null;
+        }
+
+        $row = Cache::remember(self::cacheKey($path), self::CACHE_TTL, function () use ($path) {
+            $redirect = static::query()
+                ->where('from_path', $path)
+                ->where('is_enabled', 1)
+                ->first(['id', 'to_path', 'status_code']);
+
+            if (!$redirect) {
+                return null;
+            }
+
+            return [
+                'id' => (int) $redirect->getKey(),
+                'to_path' => (string) $redirect->to_path,
+                'status_code' => (int) $redirect->status_code,
+            ];
+        });
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * registerHit — счётчик срабатываний; ошибка записи не ломает редирект.
+     */
+    public static function registerHit(int $id): void
+    {
+        try {
+            static::query()->whereKey($id)->update([
+                'hit_count' => DB::raw('hit_count + 1'),
+                'last_hit_at' => now(),
+            ]);
+        }
+        catch (\Throwable $e) {
+            // Счётчик — украшение списка, а не часть редиректа.
+        }
+    }
+
+    protected function forgetCache(?string $path = null): void
+    {
+        $path = $path !== null && $path !== '' ? $path : (string) $this->getAttribute('from_path');
+
+        if ($path === '') {
+            return;
+        }
+
+        Cache::forget(self::cacheKey($path));
+    }
+}
+
+===== FILE: themes/elv/layouts/default.htm =====
+
+description = "Основной макет сайта: шапка, подвал и встроенный CSS"
+==
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1220">
+    <link rel="manifest" href="{{ url('/manifest.webmanifest') }}">
+
+    <title>{{ elv_brand_text(this.page.seo_title ?: this.page.title) }}</title>
+    {% if this.page.seo_description %}
+        <meta name="description" content="{{ this.page.seo_description }}">
+    {% endif %}
+    {% if this.page.seo_robots %}
+        <meta name="robots" content="{{ this.page.seo_robots }}">
+    {% endif %}
+    {% for seo_verification_name, seo_verification_code in elv_seo_verification() %}
+        <meta name="{{ seo_verification_name }}" content="{{ seo_verification_code }}">
+    {% endfor %}
+    <link rel="canonical" href="{{ elv_canonical() }}">
+    <link rel="alternate" type="application/rss+xml" title="Новости — {{ elv_brand('name') }}" href="{{ url('/rss.xml') }}">
+    <script type="application/ld+json">{{ elv_jsonld(this.page)|raw }}</script>
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ elv_brand('name') }}">
+    <meta property="og:title" content="{{ elv_brand_text(this.page.seo_title ?: this.page.title) }}">
+    {% if this.page.seo_description %}
+        <meta property="og:description" content="{{ this.page.seo_description }}">
+    {% endif %}
+    <meta property="og:url" content="{{ elv_canonical() }}">
+    {% set elv_og_image = elv_seo_image(this.page) %}
+    <meta property="og:image" content="{{ elv_og_image }}">
+    <meta property="og:locale" content="ru_RU">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ elv_brand_text(this.page.seo_title ?: this.page.title) }}">
+    {% if this.page.seo_description %}
+        <meta name="twitter:description" content="{{ this.page.seo_description }}">
+    {% endif %}
+    <meta name="twitter:image" content="{{ elv_og_image }}">
+
+    <link rel="icon" href="{{ 'assets/icons/icon.svg'|theme }}" type="image/svg+xml">
+    <link rel="icon" href="{{ 'assets/icons/favicon-32.png'|theme }}" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="{{ 'assets/icons/apple-touch-icon.png'|theme }}" sizes="180x180">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="{{ elv_brand('name') }}">
+
+    {% if this.page.id == 'index' %}
+        <link rel="preload" as="image" type="image/avif" fetchpriority="high" imagesizes="100vw" imagesrcset="{{ 'assets/images/hero-1-480.avif'|theme }} 480w, {{ 'assets/images/hero-1-768.avif'|theme }} 768w, {{ 'assets/images/hero-1-960.avif'|theme }} 960w, {{ 'assets/images/hero-1.avif'|theme }} 1200w">
+    {% endif %}
+
+    <style data-elv-css="bootstrap">{{ elv_css('assets/vendor/bootstrap.min.css')|raw }}</style>
+    <style data-elv-css="styles">{{ elv_css('assets/css/styles.css')|raw }}</style>
+</head>
+<body>
+{% partial 'sprite' %}
+{% partial 'header' %}
+
+{% page %}
+
+{% partial 'footer' %}
+
+<script src="{{ 'assets/vendor/bootstrap.bundle.min.js'|theme }}"></script>
+<script src="{{ 'assets/js/script.js'|theme }}"></script>
+<script src="{{ 'assets/js/pwa.js'|theme }}" defer></script>
+</body>
+</html>
+
+===== FILE: themes/elv/assets/pwa/sw.js =====
+
+/*!
+ * Service worker приложения.
+ *
+ * Стратегия:
+ *  - оболочка (CSS/JS/иконки/manifest/offline) — cache-first, обновляется
+ *    при смене VERSION;
+ *  - переходы между страницами — network-first, офлайн отдаётся offline.html;
+ *  - HTML-страницы не кешируются: на сайте есть авторизация и персональные
+ *    данные, показывать чужой или устаревший ответ из кеша нельзя;
+ *  - запросы в админку и служебные пути не перехватываются.
+ *
+ * VERSION и SHELL подставляет PwaController: версия — хеш времени правки
+ * файлов оболочки, поэтому кеш обновляется сам, когда меняется ассет.
+ */
+
+const VERSION = '__VERSION__';
+const SHELL = __SHELL__;
+const SHELL_CACHE = `elv-shell-${VERSION}`;
+const OFFLINE_URL = '/offline.html';
+
+const STATIC_RE = /\.(?:css|js|mjs|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|otf|webmanifest)$/i;
+
+self.addEventListener('install', (event) => {
+    event.waitUntil((async () => {
+        const cache = await caches.open(SHELL_CACHE);
+        // addAll падает целиком из-за одного 404 — кладём по одному.
+        await Promise.all(SHELL.map(async (url) => {
+            try {
+                await cache.add(new Request(url, { cache: 'reload' }));
+            } catch (error) {
+                // Файл мог не попасть в сборку — установка из-за этого не отменяется.
+            }
+        }));
+        await self.skipWaiting();
+    })());
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil((async () => {
+        const keys = await caches.keys();
+        await Promise.all(keys
+            .filter((key) => key !== SHELL_CACHE && key.startsWith('elv-'))
+            .map((key) => caches.delete(key)));
+        await self.clients.claim();
+    })());
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+function isSkipped(url) {
+    if (url.pathname.startsWith('/admin/')) return true;
+    if (url.search.toLowerCase().includes('logout')) return true;
+    return false;
+}
+
+async function cacheFirst(request) {
+    const cache = await caches.open(SHELL_CACHE);
+    const cached = await cache.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+
+    try {
+        const response = await fetch(request);
+        if (response && response.ok && response.type === 'basic') {
+            cache.put(request, response.clone());
+        }
+        return response;
+    } catch (error) {
+        return new Response('', { status: 504, statusText: 'Offline' });
+    }
+}
+
+async function networkFirstNavigation(request) {
+    try {
+        return await fetch(request);
+    } catch (error) {
+        const cache = await caches.open(SHELL_CACHE);
+        const offline = await cache.match(OFFLINE_URL);
+        return offline || new Response('<!doctype html><meta charset="utf-8"><title>Нет сети</title><p>Нет подключения к интернету.', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+    }
+}
+
+self.addEventListener('fetch', (event) => {
+    const request = event.request;
+
+    if (request.method !== 'GET') return;
+
+    const url = new URL(request.url);
+    if (url.origin !== self.location.origin) return;
+    if (isSkipped(url)) return;
+
+    if (request.mode === 'navigate') {
+        event.respondWith(networkFirstNavigation(request));
+        return;
+    }
+
+    if (STATIC_RE.test(url.pathname)) {
+        event.respondWith(cacheFirst(request));
+    }
+});
+
+/* ------------------------------------------------------------------
+ * Web Push: уведомления о бронировании.
+ *
+ * Payload: { title, body, url, tag, icon }. Текст приходит готовым:
+ * уведомление показывает система, а не страница.
+ * ------------------------------------------------------------------ */
+
+const NOTIFICATION_ICON = '/themes/elv/assets/icons/icon-192.png';
+
+self.addEventListener('push', (event) => {
+    let payload = {};
+    if (event.data) {
+        try {
+            payload = event.data.json();
+        } catch (error) {
+            payload = { body: event.data.text() };
+        }
+    }
+
+    const title = payload.title || '__BRAND__';
+    const options = {
+        body: payload.body || '',
+        icon: payload.icon || NOTIFICATION_ICON,
+        badge: NOTIFICATION_ICON,
+        tag: payload.tag || 'elv-notification',
+        renotify: true,
+        data: { url: payload.url || '/' }
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const target = new URL(
+        (event.notification.data && event.notification.data.url) || '/',
+        self.location.origin
+    ).href;
+
+    event.waitUntil((async () => {
+        const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clientList) {
+            if (client.url === target && 'focus' in client) {
+                return client.focus();
+            }
+        }
+        if (self.clients.openWindow) {
+            return self.clients.openWindow(target);
+        }
+        return undefined;
+    })());
+});
+
+===== FILE: themes/elv/assets/pwa/manifest.webmanifest =====
+
+{
+  "id": "/",
+  "name": "__BRAND__",
+  "short_name": "__BRAND__",
+  "description": "__DESCRIPTION__",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0b1220",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/themes/elv/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/themes/elv/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/themes/elv/assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/themes/elv/assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Каталог книг",
+      "short_name": "Каталог",
+      "url": "/books/",
+      "icons": [
+        {
+          "src": "/themes/elv/assets/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Афиша событий",
+      "short_name": "Афиша",
+      "url": "/events/",
+      "icons": [
+        {
+          "src": "/themes/elv/assets/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Каталог печатных услуг",
+      "short_name": "Печать",
+      "url": "/printing/",
+      "icons": [
+        {
+          "src": "/themes/elv/assets/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
+
+===== FILE: themes/elv/assets/pwa/offline.html =====
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1220">
+    <meta name="robots" content="noindex">
+    <title>Нет подключения — Сайт</title>
+    <style>
+        :root {
+            --elv-primary: #2563eb;
+            --elv-primary-dark: #1d4ed8;
+            --elv-ink: #0b1220;
+            --elv-muted: #64748b;
+            --elv-line: #e2e8f0;
+            --elv-grad: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 1.5rem;
+            background: #f8fafc;
+            color: var(--elv-ink);
+            font-family: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 34rem;
+            padding: 2.5rem 2rem;
+            border: 1px solid var(--elv-line);
+            border-radius: 1.5rem;
+            background: #fff;
+            box-shadow: 0 24px 60px -32px rgba(15, 23, 42, 0.35);
+            text-align: center;
+        }
+
+        .mark {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 1.25rem;
+            border-radius: 1.25rem;
+            background-image: var(--elv-grad);
+            display: grid;
+            place-items: center;
+            color: #fff;
+        }
+
+        h1 {
+            margin: 0 0 0.75rem;
+            font-size: clamp(1.4rem, 4vw, 1.85rem);
+            line-height: 1.25;
+        }
+
+        p {
+            margin: 0 0 1rem;
+            color: var(--elv-muted);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0 1.25rem;
+            border: 1px solid transparent;
+            border-radius: 0.75rem;
+            font: inherit;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn--primary {
+            background-image: var(--elv-grad);
+            color: #fff;
+            box-shadow: 0 16px 32px -16px rgba(37, 99, 235, 0.8);
+        }
+
+        .btn--ghost {
+            border-color: var(--elv-line);
+            background: #fff;
+            color: var(--elv-ink);
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+
+        .hint {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--elv-muted);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .btn { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <span class="mark" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 7v14"/>
+                <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3Z"/>
+            </svg>
+        </span>
+
+        <h1>Нет подключения к интернету</h1>
+        <p>
+            Страница не загрузилась, потому что устройство офлайн.
+            Проверьте сеть и попробуйте снова — открытые ранее разделы
+            останутся доступны.
+        </p>
+
+        <div class="actions">
+            <a class="btn btn--primary" href="">Обновить</a>
+            <a class="btn btn--ghost" href="/">На главную</a>
+        </div>
+
+        <p class="hint">
+            Проверьте соединение и обновите страницу.
+        </p>
+    </main>
+</body>
+</html>

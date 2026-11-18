@@ -1,0 +1,507 @@
+# Конфигурация: пакеты, тема, плагин, окружение
+
+Срез: 18.11.2026, коммит `b87cecd`.
+
+Пути — от корня репозитория; содержимое файлов не переписано.
+
+===== FILE: composer.json =====
+
+{
+    "name": "october/october",
+    "description": "Built using October CMS: The Laravel-Based CMS Engineered For Simplicity",
+    "type": "project",
+    "homepage": "https://octobercms.com",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "october/rain": "^4.4",
+        "laravel/framework": "^12.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5|^9.0",
+        "squizlabs/php_codesniffer": "^3.11"
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ],
+        "post-autoload-dump": [
+            "System\\Console\\ComposerScript::postAutoloadDump"
+        ],
+        "post-update-cmd": [
+            "System\\Console\\ComposerScript::postUpdateCmd"
+        ],
+        "pre-package-uninstall": [
+            "System\\Console\\ComposerScript::prePackageUninstall"
+        ],
+        "test": [
+            "phpunit --stop-on-failure"
+        ],
+        "lint": [
+            "phpcs"
+        ]
+    },
+    "config": {
+        "preferred-install": "dist",
+        "allow-plugins": {
+            "composer/installers": true
+        },
+        "policy": {
+            "advisories": {
+                "block": false,
+                "audit": "report"
+            },
+            "abandoned": {
+                "block": false,
+                "audit": "report"
+            },
+            "malware": {
+                "block": true,
+                "audit": "report"
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "System\\Console\\": "modules/system/console"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
+
+===== FILE: package.json =====
+
+{
+    "name": "octobercms",
+    "homepage": "https://octobercms.com/",
+    "description": "October CMS is a self-hosted CMS platform based on the Laravel PHP Framework.",
+    "scripts": {
+        "dev": "npm run development",
+        "development": "mix",
+        "watch": "mix watch",
+        "watch-poll": "mix watch -- --watch-options-poll=1000",
+        "hot": "mix watch --hot",
+        "prod": "npm run production",
+        "production": "mix --production",
+        "build": "npm run production"
+    },
+    "devDependencies": {
+        "babel-plugin-module-resolver": "^4.1.0",
+        "laravel-mix": "^6.0.39",
+        "less": "^4.1.2",
+        "less-loader": "^10.2.0",
+        "sass": "^1.45.0",
+        "sass-loader": "^12.1.0"
+    },
+    "dependencies": {
+        "@phosphor-icons/web": "^2.1.2",
+        "@popperjs/core": "^2.11.7",
+        "bluebird": "^3.7.2",
+        "bootstrap": "^5.3.3",
+        "bootstrap-icons": "^1.10",
+        "chart.js": "^4.3.2",
+        "chartjs-adapter-moment": "^1.0.1",
+        "dropzone": "^6.0.0-beta.2",
+        "emmet-monaco-es": "^5.3",
+        "jquery": "^3.6.0",
+        "js-cookie": "^3.0.1",
+        "moment": "^2.30.1",
+        "moment-timezone": "^0.5.46",
+        "monaco-editor": "^0.46.0",
+        "monaco-yaml": "^5.1.1",
+        "popper.js": "^1.16.1",
+        "sortablejs": "^1.15.0",
+        "vue": "^2.6.14",
+        "vue-router": "^3.5.3"
+    }
+}
+
+===== FILE: themes/elv/composer.json =====
+
+{
+    "name": "elv/elv-theme",
+    "type": "october-theme",
+    "description": "Универсальная тема: услуги, каталог, события, брони и заказы; контент из Tailor-записей.",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2"
+    }
+}
+
+===== FILE: themes/elv/theme.yaml =====
+
+name: 'Универсальный шаблон'
+code: elv
+authorCode: elv
+description: 'Универсальная тема: услуги, каталог, события, брони и заказы; контент из Tailor-записей.'
+author: ELV
+homepage: 'https://elv-studio.by'
+form:
+    fields:
+        meta_title:
+            label: 'Заголовок для поисковиков'
+            commentAbove: 'Подставляется в <title>. Пусто — берётся заголовок страницы.'
+            type: text
+            span: left
+        meta_description:
+            label: 'Описание для поисковиков'
+            type: textarea
+            size: small
+        seo_separator:
+            label: 'Разделитель в заголовке'
+            commentAbove: 'Между частями шаблона: «Новости — Ваша организация».'
+            type: text
+            default: '—'
+            span: left
+        seo_default_image:
+            label: 'Картинка для соцсетей'
+            commentAbove: 'Полный адрес или путь от корня. Пусто — картинка темы hero-1.jpg.'
+            type: text
+            span: right
+        seo_title_template:
+            label: 'Шаблон заголовка записи'
+            commentAbove: 'Переменные: {title}, {section}, {brand}, {separator}, {year}.'
+            comment: 'Пусто — «{title} {separator} {brand}».'
+            type: textarea
+            size: small
+            default: '{title} {separator} {brand}'
+        seo_description_template:
+            label: 'Шаблон описания записи'
+            commentAbove: 'Переменные: {description}, {section}, {brand}, {year}.'
+            comment: 'Пусто — описание записи как есть, обрезка по словам до 160 знаков.'
+            type: textarea
+            size: small
+        seo_verify_google:
+            label: 'Google: код подтверждения'
+            commentAbove: 'Значение meta google-site-verification. Пусто — тег не выводится.'
+            type: text
+            span: left
+        seo_verify_yandex:
+            label: 'Яндекс: код подтверждения'
+            commentAbove: 'Значение meta yandex-verification.'
+            type: text
+            span: right
+        seo_verify_bing:
+            label: 'Bing: код подтверждения'
+            commentAbove: 'Значение meta msvalidate.01.'
+            type: text
+            span: left
+        seo_index_service_pages:
+            label: 'Индексировать служебные страницы'
+            commentAbove: 'Поиск, вход и личный кабинет. По умолчанию закрыты в robots.txt.'
+            type: switch
+            default: false
+        brand_name:
+            label: 'Название организации'
+            commentAbove: 'Шапка, подвал, <title>, письма и микроразметка.'
+            type: text
+            default: 'ELV'
+            span: left
+        brand_tagline:
+            label: 'Подпись под названием'
+            type: text
+            default: 'Центр услуг'
+            span: right
+        brand_legal_name:
+            label: 'Юридическое наименование'
+            commentAbove: 'Для реквизитов и микроразметки.'
+            type: text
+            default: 'ELV'
+            span: left
+        brand_kind:
+            label: 'Тип организации'
+            commentAbove: 'Строка над заголовком на главной: «Организация · Город».'
+            type: text
+            default: 'Организация'
+            span: right
+        brand_description:
+            label: 'Описание для микроразметки'
+            type: textarea
+            size: small
+            default: 'Сайт организации: услуги, события и контакты.'
+        brand_phone:
+            label: 'Телефон'
+            type: text
+            default: '+375 (00) 000-00-00'
+            span: left
+        brand_email:
+            label: 'E-mail'
+            type: text
+            default: 'info@example.com'
+            span: right
+        brand_postal_code:
+            label: 'Индекс'
+            type: text
+            default: '000000'
+            span: left
+        brand_city:
+            label: 'Город'
+            type: text
+            default: 'Город'
+            span: right
+        brand_street:
+            label: 'Улица и дом'
+            type: text
+            default: 'ул. Примерная, 1'
+        brand_country:
+            label: 'Код страны'
+            commentAbove: 'Двухбуквенный код для schema.org, например BY.'
+            type: text
+            default: 'BY'
+            span: left
+        brand_hours:
+            label: 'Часы работы'
+            type: text
+            default: 'Ежедневно 10:00–22:00'
+            span: right
+        brand_opens:
+            label: 'Открытие'
+            type: text
+            default: '10:00'
+            span: left
+        brand_closes:
+            label: 'Закрытие'
+            type: text
+            default: '22:00'
+            span: right
+        brand_schema_type:
+            label: 'Тип в микроразметке'
+            commentAbove: 'Organization — универсально; Library, Store, LocalBusiness — если подходит.'
+            type: dropdown
+            default: Organization
+            options:
+                Organization: Organization
+                LocalBusiness: LocalBusiness
+                Library: Library
+                Store: Store
+        brand_social_telegram:
+            label: 'Telegram'
+            commentAbove: 'Полная ссылка, например https://t.me/your_channel. Пусто — кнопка скрыта.'
+            type: text
+            span: left
+        brand_social_whatsapp:
+            label: 'WhatsApp'
+            commentAbove: 'Номер в международном формате. Пусто — кнопка скрыта.'
+            type: text
+            span: right
+        brand_social_vk:
+            label: 'ВКонтакте'
+            type: text
+            span: right
+        brand_social_youtube:
+            label: 'YouTube'
+            type: text
+
+===== FILE: themes/elv/version.yaml =====
+
+1.0.0: 'Первая версия универсального шаблона: тема elv и плагин Elv\Site'
+
+===== FILE: plugins/elv/site/composer.json =====
+
+{
+    "name": "elv/site-plugin",
+    "type": "october-plugin",
+    "description": "Универсальный сайт: контент, заявки, слоты услуг, поиск.",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2"
+    }
+}
+
+===== FILE: plugins/elv/site/updates/version.yaml =====
+
+1.0.1: Первая версия плагина ELV Site
+1.0.2:
+    - Eloquent-таблицы заявок, броней, заказов, слотов и подписчиков
+    - create_elv_requests_table.php
+    - create_elv_bookings_table.php
+    - create_elv_orders_table.php
+    - create_elv_slots_table.php
+    - create_elv_subscribers_table.php
+1.1.0: 'Хелперы темы: адаптивные картинки, инлайн CSS, подписи свойств, карта занятых слотов'
+2.0.0:
+    - 'Переименование плагина и темы: Elv\Site, themes/elv, таблицы elv_*'
+    - rename_legacy_tables_to_elv.php
+2.1.0:
+    - 'Редиректы из админки: таблица elv_redirects'
+    - create_elv_redirects_table.php
+2.2.0: 'Переименование плагина: Elv\Library → Elv\Site; тексты без «библиотеки», вкладки настроек «Сайт»'
+
+===== FILE: .env.example =====
+
+# Шаблон окружения. Копируется в .env, который в git не попадает.
+# Значения — локальные, для машины разработчика (Laragon, PHP 8.3.30,
+# MySQL 8.4.3). Секреты (SMTP, VAPID, токен бота) добавляются на этапах 5–7
+# и только в .env, не здесь.
+
+APP_NAME="ELV"
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost:8080
+APP_LOCALE=ru
+
+ACTIVE_THEME=elv
+BACKEND_URI=/admin
+BACKEND_TURBO_ROUTER=false
+CMS_ROUTE_CACHE=false
+CMS_ASSET_CACHE=false
+CMS_SAFE_MODE=false
+LINK_POLICY=detect
+DEFAULT_FILE_MASK=775
+DEFAULT_FOLDER_MASK=775
+LOG_DEPRECATIONS=false
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=elv_october
+DB_USERNAME=root
+DB_PASSWORD=
+
+LOG_CHANNEL=single
+BROADCAST_DRIVER=log
+CACHE_STORE=file
+QUEUE_CONNECTION=database
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+# SMTP у владельца нет: письма пишутся в storage/logs/laravel.log.
+# Код обязан работать с реальным SMTP без правок — меняется только это значение.
+MAIL_MAILER=log
+MAIL_HOST=
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS=noreply@elv.local
+MAIL_FROM_NAME="${APP_NAME}"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+
+# Web Push (этап 7): ключи генерирует tools/gen-vapid.php, в репозиторий не попадают.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=
+
+# REST для внешней записи (этап 7): Bearer-токен, не заглушка из источника.
+BOOKING_API_TOKEN=
+
+===== FILE: phpunit.elv.xml =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit backupGlobals="false"
+         backupStaticAttributes="false"
+         bootstrap="modules/system/tests/bootstrap.php"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false"
+>
+    <testsuites>
+        <testsuite name="ELV Site Plugin Test Suite">
+            <directory>./plugins/elv/site/tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="APP_ENV" value="testing" />
+        <env name="APP_LOCALE" value="en" />
+        <env name="CACHE_DRIVER" value="array" />
+        <env name="CACHE_STORE" value="array" />
+        <env name="SESSION_DRIVER" value="array" />
+        <env name="ACTIVE_THEME" value="test" />
+        <env name="CMS_SAFE_MODE" value="false" />
+        <env name="CMS_TWIG_CACHE" value="false" />
+        <env name="ENABLE_CSRF" value="false" />
+        <env name="DB_CONNECTION" value="sqlite" />
+        <env name="DB_DATABASE" value=":memory:" />
+    </php>
+</phpunit>
+
+===== FILE: nginx.conf =====
+
+## Сжатие и кеш: то, что больше всего влияет на LCP
+#
+# Без этого документа 188 КБ уезжают несжатыми (Lighthouse: Performance 83),
+# а статика перезапрашивается на каждом переходе. Бюджет: HTML 188 КБ → 34 КБ,
+# script.js 74 КБ → 17 КБ. Заголовки `Cache-Control` для ассетов темы добавляет
+# еще и middleware плагина (Elv\Site\Classes\Http\CompressResponse) — на случай
+# хостинга без nginx; здесь дублируется то, что обязан делать периметр.
+
+gzip on;
+gzip_comp_level 6;
+gzip_min_length 1024;
+gzip_vary on;
+gzip_proxied any;
+gzip_types
+    text/plain
+    text/css
+    text/xml
+    text/javascript
+    application/javascript
+    application/json
+    application/xml
+    application/rss+xml
+    application/manifest+json
+    image/svg+xml;
+
+## Заголовки безопасности: то, что одинаково для всех ответов.
+#
+# Статику отдаёт nginx, и PHP-мидлвар до неё не доходит, поэтому набор
+# дублируется здесь. Три заголовка приложение тоже ставит (для shared-хостинга
+# и `php artisan serve`), поэтому в FastCGI-блоке они скрываются — иначе
+# браузер получит два значения одного заголовка.
+#
+# CSP и X-Frame-Options сюда НЕ дублируются: в CSP одноразовый nonce на каждый
+# ответ, а X-Frame-Options зависит от пути (фронт DENY, админка SAMEORIGIN).
+# Оба ставит `Elv\Site\Classes\Http\SecurityHeaders`.
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+location / {
+    # Let October CMS handle everything by default.
+    # The path not resolved by October CMS router will return October CMS's 404 page.
+    # Everything that does not match with the allowlist below will fall into this.
+    rewrite ^/.*$ /index.php last;
+}
+
+# Pass the PHP scripts to FastCGI server
+location ~ ^/index.php {
+    # Write your FPM configuration here
+
+    # Приложение ставит эти же заголовки само; скрываем дубли, nginx добавит
+    # свои из блока выше. CSP и X-Frame-Options остаются от PHP.
+    fastcgi_hide_header X-Content-Type-Options;
+    fastcgi_hide_header Referrer-Policy;
+    fastcgi_hide_header Permissions-Policy;
+}
+
+# Allowlist
+location ~ ^/(favicon\.ico|sitemap\.xml|robots\.txt|humans\.txt) { try_files $uri /index.php; }
+
+# Block all .dotfiles except well-known
+location ~ /\.(?!well-known).* { deny all; }
+
+## Static Files
+location ~ ^/storage/app/(uploads/public|media|resources) { try_files $uri 404; expires 7d; }
+location ~ ^/storage/temp/public { try_files $uri 404; }
+location ~ ^/modules/.*/(assets|resources) { try_files $uri 404; expires 1y; }
+location ~ ^/modules/.*/(behaviors|widgets|formwidgets|reportwidgets)/.*/(assets|resources) { try_files $uri 404; expires 1y; }
+location ~ ^/plugins/.*/.*/(assets|resources) { try_files $uri 404; expires 1y; }
+location ~ ^/plugins/.*/.*/(behaviors|reportwidgets|formwidgets|widgets)/.*/(assets|resources) { try_files $uri 404; expires 1y; }
+location ~ ^/themes/.*/(?:assets|resources) { try_files $uri 404; expires 1y; }
