@@ -7,6 +7,23 @@
 
 ---
 
+(Stage 45.6 — 19.11.2026) — **Поле Website репозитория переключено с витрины на демо.**
+
+- GitHub API `PATCH /repos/elips0675-web/OctoberCMS` с
+  `{"homepage":"https://octobercms.vercel.app/"}`: было
+  `https://elvstudio.vercel.app`; перепроверка `GET` вернула
+  `https://octobercms.vercel.app/`. Токен брался из `git credential fill`
+  и в вывод не печатался.
+- Сам адрес при этом по-прежнему `404 DEPLOYMENT_NOT_FOUND`: поле Website
+  теперь ведёт на демо, но открывается оно только после снятия Deployment
+  Protection и повышения деплоя до Production (Stage 45.4–45.5). Оговорка
+  записана в `README.md:30-38` и в бэклоге.
+- `README.md:30-38` — «Website указывает на демо, но адрес отдаёт 404».
+- `Что доделать.txt:67-92` (M17) — то же плюс «About уже переключён, осталось,
+  чтобы адрес открывался».
+- `docs/vercel-demo.md:69-73` — шаг «вписать адрес» переписан: Website уже
+  переключён, после `200` пересобрать снимок и убрать оговорку про 404.
+
 (Stage 45.5 — 19.11.2026) — **`tools/vercel-demo.mjs`: демо открывается одной командой (нужен токен).**
 
 - `tools/vercel-demo.mjs` — четыре шага по API вместо кликов:

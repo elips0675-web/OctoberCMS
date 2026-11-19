@@ -28,13 +28,14 @@
 Формы, брони и заказы в снимке отключены плашкой и скриптом.
 
 `vercel.json` задаёт `outputDirectory: demo-static`. Проект на Vercel создан
-(`vadims-projects-74cb21aa/octobercms`), но 19.11.2026 публичной ссылки у
-шаблона **нет**: домен проекта отвечает `DEPLOYMENT_NOT_FOUND` (деплой не
-повышен до Production), а алиас ветки закрыт Vercel Authentication — снаружи
-это `302` на `vercel.com/sso-api`. Что нажать, чтобы демо открывалось без
-входа: `docs/vercel-demo.md` (Settings → Deployment Protection → Vercel
-Authentication → **Disabled**; Deployments → **Promote to Production**), либо
-автоматически — `node tools/vercel-demo.mjs` с `VERCEL_TOKEN` в окружении.
+(`vadims-projects-74cb21aa/octobercms`), и поле **Website** этого репозитория
+указывает на `https://octobercms.vercel.app/`, но 19.11.2026 адрес отдаёт
+`404 DEPLOYMENT_NOT_FOUND`: у проекта нет продакшен-деплоя, а алиас ветки
+закрыт Vercel Authentication — снаружи это `302` на `vercel.com/sso-api`. Что
+нажать, чтобы демо открывалось без входа: `docs/vercel-demo.md` (Settings →
+Deployment Protection → Vercel Authentication → **Disabled**; Deployments →
+**Promote to Production**), либо автоматически —
+`node tools/vercel-demo.mjs` с `VERCEL_TOKEN` в окружении.
 
 Витрина Elv Kit на October CMS (тема `elv-studio`) — https://elvstudio.vercel.app,
 открывается без входа и регистрации.

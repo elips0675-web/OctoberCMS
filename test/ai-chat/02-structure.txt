@@ -1,6 +1,6 @@
 # Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
 
-Срез: 19.11.2026, коммит `0374b15`.
+Срез: 19.11.2026, коммит `723428b`.
 
 Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
 `docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
@@ -19,7 +19,7 @@
 - `AGENTS.md` (18.0 КБ)
 - `CHANGELOG.md` (26.1 КБ)
 - `LICENSE.md` (26.3 КБ)
-- `README.md` (11.4 КБ)
+- `README.md` (11.5 КБ)
 - `artisan` (1.6 КБ)
 - `composer.json` (1.8 КБ)
 - `index.php` (1.2 КБ)
@@ -31,8 +31,8 @@
 - `project-context.md` (14.8 КБ)
 - `server.php` (1.3 КБ)
 - `vercel.json` (0.7 КБ)
-- `Что доделать.txt` (94.7 КБ)
-- `Что сделано.txt` (218.8 КБ)
+- `Что доделать.txt` (95.2 КБ)
+- `Что сделано.txt` (224.4 КБ)
 - `запуск.bat` (4.6 КБ)
 
 ## .devcontainer
@@ -584,6 +584,7 @@
 - `roadmap.md` (48.6 КБ)
 - `security-performance.md` (10.6 КБ)
 - `theme-universality.md` (10.7 КБ)
+- `vercel-demo.md` (6.2 КБ)
 
 ## docs/archive
 
@@ -975,4 +976,5 @@
 - `import-preview-pages.mjs` (6.5 КБ)
 - `purge-css.mjs` (10.6 КБ)
 - `serve-static.php` (2.8 КБ)
+- `vercel-demo.mjs` (5.5 КБ)
 

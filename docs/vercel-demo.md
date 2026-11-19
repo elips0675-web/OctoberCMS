@@ -66,8 +66,11 @@ curl.exe -sS -o NUL -w "%{http_code}`n" https://octobercms-vadims-projects-74cb2
    node tools/check-static-demo.mjs --origin=https://octobercms-vadims-projects-74cb21aa.vercel.app
    ```
 
-2. Вписать адрес в `README.md` (раздел «Демо») и в поле **Website** репозитория
-   на GitHub вместо витрины `https://elvstudio.vercel.app`.
+2. В `README.md` (раздел «Демо») уже записано, что публичного адреса нет;
+   поле **Website** репозитория на GitHub переключено на
+   `https://octobercms.vercel.app/` (19.11.2026, было — витрина
+   `https://elvstudio.vercel.app`). После того как адрес начнёт отвечать `200`,
+   пересобрать снимок и убрать из README оговорку про 404.
 
 ## Если нужен свой домен
 

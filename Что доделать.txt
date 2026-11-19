@@ -68,7 +68,9 @@ cron `schedule:run` включён (`elv:health-report` и `elv:slots-generate`)
 исполняется, поэтому продаётся статический снимок `demo-static/` (Stage 44,
 110 страниц, формы отключены). Проект уже создан (19.11.2026):
 `vercel.com/vadims-projects-74cb21aa/octobercms`, репозиторий подключён,
-`vercel.json` задаёт `outputDirectory: demo-static`.
+`vercel.json` задаёт `outputDirectory: demo-static`, а поле **Website**
+репозитория на GitHub указывает на `https://octobercms.vercel.app/` (было —
+витрина `https://elvstudio.vercel.app`).
 
 **Демо закрыто входом через Vercel** (проверено снаружи, без авторизации
 19.11.2026): алиас ветки `octobercms-git-main-vadims-projects-74cb21aa.vercel.app`
@@ -87,7 +89,8 @@ Authentication → Disabled** и **Deployments → ⋯ → Promote to Production
 отключены…», canonical указывает на домен демо (пересборка
 `php tools/export-static.php --origin=https://<домен>` + `node
 tools/check-static-demo.mjs --origin=…`), ссылка вписана в `README.md` и в
-GitHub About.
+GitHub About — About уже переключён на `https://octobercms.vercel.app/`
+(19.11.2026), осталось, чтобы этот адрес открывался.
 
 ### P0-6. Демо-контакты, соцсети и реквизиты
 
