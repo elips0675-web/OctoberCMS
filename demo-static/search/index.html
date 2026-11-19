@@ -499,6 +499,12 @@
     };
 
     document.addEventListener('submit', function (event) {
+        var form = event.target;
+
+        if (form && form.closest && form.closest('#elvChat')) {
+            return;
+        }
+
         event.preventDefault();
         event.stopImmediatePropagation();
         note('Формы отключены в статической демо-версии. Рабочая версия — на PHP-хостинге.');
@@ -508,13 +514,6 @@
         var node = event.target instanceof Element ? event.target : null;
 
         if (!node) {
-            return;
-        }
-
-        if (node.closest('[data-chat-open]')) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            note('Консультант доступен в полной версии на PHP-хостинге.');
             return;
         }
 
