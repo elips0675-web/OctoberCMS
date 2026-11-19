@@ -78,7 +78,9 @@ Authentication); домены `octobercms.vercel.app` и
 то есть деплой не повышен до Production. Оба переключателя живут в настройках
 проекта, а не в репозитории: **Settings → Deployment Protection → Vercel
 Authentication → Disabled** и **Deployments → ⋯ → Promote to Production**.
-Пошагово и проверка — `docs/vercel-demo.md`.
+Пошагово и проверка — `docs/vercel-demo.md`; те же шаги одной командой —
+`node tools/vercel-demo.mjs` (нужен `VERCEL_TOKEN`, без него выходит с кодом 2
+и ничего не меняет).
 
 Приёмка демо: адрес открывается без входа (`curl` → `200`, заголовка
 `x-vercel-error` нет), на каждой странице плашка «Формы

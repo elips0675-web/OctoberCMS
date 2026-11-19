@@ -33,7 +33,8 @@
 повышен до Production), а алиас ветки закрыт Vercel Authentication — снаружи
 это `302` на `vercel.com/sso-api`. Что нажать, чтобы демо открывалось без
 входа: `docs/vercel-demo.md` (Settings → Deployment Protection → Vercel
-Authentication → **Disabled**; Deployments → **Promote to Production**).
+Authentication → **Disabled**; Deployments → **Promote to Production**), либо
+автоматически — `node tools/vercel-demo.mjs` с `VERCEL_TOKEN` в окружении.
 
 Витрина Elv Kit на October CMS (тема `elv-studio`) — https://elvstudio.vercel.app,
 открывается без входа и регистрации.

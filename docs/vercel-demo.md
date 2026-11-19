@@ -75,7 +75,22 @@ curl.exe -sS -o NUL -w "%{http_code}`n" https://octobercms-vadims-projects-74cb2
 прописать `CNAME demo → cname.vercel-dns.com`; сертификат Let's Encrypt Vercel
 выпускает сам. После привязки — та же пересборка с `--origin=https://demo.elv.studio`.
 
-## Вместо кликов: API
+## Вместо кликов: один скрипт
+
+`tools/vercel-demo.mjs` делает то же по API: снимает Vercel Authentication и
+пароль, повышает последний готовый деплой до Production, привязывает
+`octobercms.vercel.app` и проверяет адрес снаружи.
+
+```powershell
+$env:VERCEL_TOKEN = "<токен>"      # https://vercel.com/account/tokens
+node tools/vercel-demo.mjs
+```
+
+Без токена скрипт выходит с кодом 2 и ничего не меняет; токен не печатается и
+не сохраняется. Код возврата `0` — демо открылось (`200`, без
+`x-vercel-error`).
+
+## Ручные запросы (если нужен контроль по шагам)
 
 Если у владельца есть токен (`vercel.com/account/tokens`), защиту и продакшен
 можно переключить без интерфейса:
