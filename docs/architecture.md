@@ -218,7 +218,7 @@ M17, а `Sitemap:`/`<loc>` с чужим доменом уводят поиск�
 
 ### 6.3. Админка
 
-| Раздел (меню «Библиотека») | Контроллер (`plugins/elv/site/controllers`) | Право |
+| Раздел (меню «Контент», `Plugin.php:64`) | Контроллер (`plugins/elv/site/controllers`) | Право |
 |---|---|---|
 | Обращения | `Requests.php` — `elv/site/requests` | `elv.site.requests` |
 | Брони | `Bookings.php` — `elv/site/bookings` | `elv.site.bookings` |

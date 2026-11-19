@@ -10,7 +10,7 @@ set "URL=http://%HOST%:%PORT%/"
 set "ADMIN=%URL%admin"
 
 echo.
-echo === Библиотека 2026 на October CMS ===
+echo === ELV — универсальный шаблон на October CMS ===
 echo Каталог: %CD%
 echo.
 

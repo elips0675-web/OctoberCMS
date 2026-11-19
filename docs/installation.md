@@ -75,7 +75,7 @@ php artisan october:about            # версия
 `create-project` генерирует `.env` и `APP_KEY` сам. Правки под проект:
 
 ```
-APP_NAME="Библиотека 2026"
+APP_NAME="ELV"
 APP_URL=http://localhost:8080
 APP_LOCALE=ru
 DB_CONNECTION=mysql
@@ -95,7 +95,7 @@ ACTIVE_THEME=elv
 
 `APP_NAME` — не только имя проекта: из него берётся название в шапке админки
 (`config/backend.php:47`, `brand.app_name`) и в `<title>`. Поэтому оно
-человеческое («Библиотека 2026»), а не аббревиатура. Проверка —
+человеческое («ELV»), а не аббревиатура. Проверка —
 `node tools/check-admin-brand.mjs`.
 
 ## 5. Команды, которых нет в 4.x
@@ -148,7 +148,7 @@ PHP 8.3 (в PATH или в `C:\laragon\bin\php`), проверяет порт 33
 
 ```powershell
 php artisan october:admin `
-  --first-name="Администратор" --last-name="Библиотека" `
+  --first-name="Администратор" --last-name="Сайт" `
   --email="admin@elv.local" --login="admin" `
   --password="<пароль>" --password-confirmation="<пароль>" `
   --default --no-interaction
