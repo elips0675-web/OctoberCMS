@@ -108,10 +108,11 @@
 robots, RSS, PWA, 13,6 МБ). Сборка — `php tools/export-static.php --origin=…`
 с живого `serve`, гейт — `node tools/check-static-demo.mjs`, хостинг —
 `vercel.json` (`outputDirectory: demo-static`). Формы, брони и заказы в снимке
-отключены плашкой и скриптом. Деплоя пока нет: репозиторий импортирует
-владелец (vercel.com/new, Framework Preset **Other**, Build Command пустой), до
-импорта `https://octobercms.vercel.app` отдаёт 404, а Website в GitHub ведёт на
-витрину `https://elvstudio.vercel.app` (пункт M17 бэклога).
+отключены плашкой и скриптом. Проект на Vercel создан
+(`vadims-projects-74cb21aa/octobercms`), но **демо закрыто входом**: алиас
+ветки отвечает `302` на `vercel.com/sso-api` (Deployment Protection), а домены
+проекта — `404 DEPLOYMENT_NOT_FOUND` (деплой не повышен до Production). Лечится
+двумя переключателями в настройках проекта, не в коде: `docs/vercel-demo.md`.
 
 ## 5. Контент и данные
 
@@ -228,4 +229,4 @@ node tools/check-clean-tree.mjs                            # дерево чис
 | `docs/qa-checklist.md` | что проверять перед релизом |
 | `Что сделано.txt` | журнал этапов (Stage 45 — страница услуги: заголовок и описание по центру, без кнопки «Предложить фото»; Stage 45.1–45.2 — документы и бэклог сверены с кодом) |
 | `Что доделать.txt` | открытый бэклог (55 пунктов) |
-| `test/ai-chat/` | код для AI-чата: 8 срезов + `ALL-IN-ONE.txt` (410 КБ) + `build.mjs` |
+| `test/ai-chat/` | код для AI-чата: 8 срезов + `ALL-IN-ONE.txt` (415 КБ) + `build.mjs` |

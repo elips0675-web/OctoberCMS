@@ -365,6 +365,7 @@ sizes.push(slice("08-checks-docs.txt", "Гейты, статическая де�
   "tools/check-static-demo.mjs",
   "tools/export-static.php",
   "vercel.json",
+  "docs/vercel-demo.md",
   "docs/architecture.md",
 ]));
 

@@ -50,6 +50,7 @@
 |---|---|
 | `qa-checklist.md` | приёмка этапов: 110 URL, Lighthouse, тесты, гонка слота, контракты API |
 | `../demo-static/` | статическая демо-копия сайта для Vercel: 110 страниц + `404.html`, sitemap, robots, RSS, PWA; сборка — `tools/export-static.php`, гейт — `tools/check-static-demo.mjs`, конфиг — `../vercel.json` |
+| `vercel-demo.md` | публичное демо на Vercel: почему просит вход, какие два переключателя снять (Deployment Protection, Promote to Production), проверка `curl`, пересборка под домен |
 | `roadmap.md` | внешняя оценка: что принято, отложено и отклонено, и где оценка разошлась с кодом |
 
 ### Архив

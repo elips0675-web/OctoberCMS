@@ -7,6 +7,39 @@
 
 ---
 
+(Stage 45.4 — 19.11.2026) — **Почему демо на Vercel просит вход: зафиксировано и описано пошагово.**
+
+- Проверено снаружи без авторизации (19.11.2026): алиас
+  `octobercms-git-main-vadims-projects-74cb21aa.vercel.app` → `302` на
+  `vercel.com/sso-api` + `Set-Cookie: _vercel_sso_nonce` (Deployment Protection =
+  Vercel Authentication); `octobercms.vercel.app` и
+  `octobercms-vadims-projects-74cb21aa.vercel.app` → `404`
+  `X-Vercel-Error: DEPLOYMENT_NOT_FOUND` (деплой не повышен до Production).
+  Репозиторий при этом публичный (`api.github.com/repos/elips0675-web/OctoberCMS`
+  → `private: false`), то есть защита включена настройкой проекта, а не
+  видимостью кода.
+- Новый `docs/vercel-demo.md` — что нажать: Settings → Deployment Protection →
+  Vercel Authentication → **Disabled**; Deployments → ⋯ → **Promote to
+  Production**; проверка тремя `curl` (ожидается `200`, без `x-vercel-error`);
+  пересборка снимка под домен демо; свой домен (`CNAME cname.vercel-dns.com`);
+  API-вариант (`PATCH /v9/projects/{id}` с `ssoProtection: null`, затем
+  `POST /v10/projects/{id}/promote/{deploymentId}`) — на случай, если токен
+  передадут вместо кликов.
+- `README.md:30-36` — раздел «Демо» переписан по факту: проект создан, но
+  открытой ссылки нет, причины (защита + отсутствие продакшена) и ссылка на
+  `docs/vercel-demo.md`.
+- `docs/README.md:52-53` — в карту документов добавлен `vercel-demo.md`.
+- `Что доделать.txt:67-84` (M17) — блок про демо переписан: точные адреса,
+  `302`/`404` с заголовками, два переключателя, приёмка через `curl` (`200`,
+  без `x-vercel-error`).
+- `test/Для анализа.txt:111-116` — то же в срезе для аудита;
+  `test/ai-chat/build.mjs` — `docs/vercel-demo.md` добавлен в срез 08;
+  пересборка: `08-checks-docs.txt` 116,4 → 118,9 КБ, `ALL-IN-ONE.txt` 409,5 →
+  414,8 КБ (в `test/README.md` и срезе — «415 КБ»).
+- Ограничение: переключатели Vercel живут в аккаунте владельца; без токена
+  (`VERCEL_TOKEN` в окружении нет, `.vercel/project.json` нет, CLI не
+  установлен) из репозитория их не снять — это внешний шаг, а не код.
+
 (Stage 45.3 — 19.11.2026) — **Срез `test/` приведён к HEAD: Stage 45.2, деплой демо, Lighthouse, P2-42/43.**
 
 - `test/Для анализа.txt:6-7` — шапка: HEAD `3014988`, Stage 45.2 (было Stage 45

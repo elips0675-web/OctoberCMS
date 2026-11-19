@@ -66,13 +66,22 @@ cron `schedule:run` включён (`elv:health-report` и `elv:slots-generate`)
 
 Отдельно от хостинга сайта — **публичное демо шаблона**: PHP на Vercel не
 исполняется, поэтому продаётся статический снимок `demo-static/` (Stage 44,
-110 страниц, формы отключены). Репозиторий импортирует владелец
-(vercel.com/new → `elips0675-web/OctoberCMS`, Framework Preset **Other**,
-Build Command пустой — `vercel.json` уже задаёт `outputDirectory: demo-static`).
-До импорта `https://octobercms.vercel.app` отдаёт 404, а поле Website в GitHub
-ведёт на витрину `elvstudio.vercel.app`.
+110 страниц, формы отключены). Проект уже создан (19.11.2026):
+`vercel.com/vadims-projects-74cb21aa/octobercms`, репозиторий подключён,
+`vercel.json` задаёт `outputDirectory: demo-static`.
 
-Приёмка демо: адрес открывается без входа, на каждой странице плашка «Формы
+**Демо закрыто входом через Vercel** (проверено снаружи, без авторизации
+19.11.2026): алиас ветки `octobercms-git-main-vadims-projects-74cb21aa.vercel.app`
+отвечает `302` на `vercel.com/sso-api` — это Deployment Protection (Vercel
+Authentication); домены `octobercms.vercel.app` и
+`octobercms-vadims-projects-74cb21aa.vercel.app` — `404 DEPLOYMENT_NOT_FOUND`,
+то есть деплой не повышен до Production. Оба переключателя живут в настройках
+проекта, а не в репозитории: **Settings → Deployment Protection → Vercel
+Authentication → Disabled** и **Deployments → ⋯ → Promote to Production**.
+Пошагово и проверка — `docs/vercel-demo.md`.
+
+Приёмка демо: адрес открывается без входа (`curl` → `200`, заголовка
+`x-vercel-error` нет), на каждой странице плашка «Формы
 отключены…», canonical указывает на домен демо (пересборка
 `php tools/export-static.php --origin=https://<домен>` + `node
 tools/check-static-demo.mjs --origin=…`), ссылка вписана в `README.md` и в

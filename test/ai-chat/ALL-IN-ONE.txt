@@ -1,6 +1,6 @@
 # October CMS — ALL-IN-ONE для AI-анализа
 
-Дата: 19.11.2026. Коммит: `3014988`. Репозиторий: https://github.com/elips0675-web/OctoberCMS
+Дата: 19.11.2026. Коммит: `0374b15`. Репозиторий: https://github.com/elips0675-web/OctoberCMS
 
 Внутри: контекст, структура, конфигурация, ядро плагина и периметр, контент и конструктор страниц, формы/брони/подписка, SEO и PWA, гейты и архитектура. Файлы разделены заголовками, чтобы можно было цитировать.
 
@@ -20,7 +20,7 @@
 
 # October CMS: шаблон `elv` и плагин `Elv\Site` — срез для AI-анализа
 
-Дата среза: 19.11.2026. Коммит: `3014988`.
+Дата среза: 19.11.2026. Коммит: `0374b15`.
 Репозиторий: https://github.com/elips0675-web/OctoberCMS
 
 ## Что это за проект
@@ -197,7 +197,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 
 # Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
 `docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
@@ -216,7 +216,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `AGENTS.md` (18.0 КБ)
 - `CHANGELOG.md` (26.1 КБ)
 - `LICENSE.md` (26.3 КБ)
-- `README.md` (11.1 КБ)
+- `README.md` (11.4 КБ)
 - `artisan` (1.6 КБ)
 - `composer.json` (1.8 КБ)
 - `index.php` (1.2 КБ)
@@ -228,8 +228,8 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `project-context.md` (14.8 КБ)
 - `server.php` (1.3 КБ)
 - `vercel.json` (0.7 КБ)
-- `Что доделать.txt` (94.0 КБ)
-- `Что сделано.txt` (216.8 КБ)
+- `Что доделать.txt` (94.7 КБ)
+- `Что сделано.txt` (218.8 КБ)
 - `запуск.bat` (4.6 КБ)
 
 ## .devcontainer
@@ -767,7 +767,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 
 ## docs
 
-- `README.md` (5.5 КБ)
+- `README.md` (5.8 КБ)
 - `architecture.md` (26.4 КБ)
 - `content.md` (6.5 КБ)
 - `db.md` (18.8 КБ)
@@ -1041,7 +1041,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 ## test
 
 - `README.md` (3.3 КБ)
-- `Для анализа.txt` (17.3 КБ)
+- `Для анализа.txt` (17.4 КБ)
 
 ## tests
 
@@ -1179,7 +1179,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 
 # Конфигурация: пакеты, тема, плагин, окружение
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -1691,7 +1691,7 @@ location ~ ^/themes/.*/(?:assets|resources) { try_files $uri 404; expires 1y; }
 
 # Плагин: точка входа, маршруты, периметр, health
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -2466,7 +2466,7 @@ class HealthController
 
 # Контент: Tailor-записи, конструктор страниц, метки, медиа, блог
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -4283,7 +4283,7 @@ function onStart()
 
 # Формы, брони, заказы, подписка, модели и письма
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -5868,7 +5868,7 @@ class SubscriptionConfirmation extends Mailable
 
 # SEO, микроразметка, карта сайта, редиректы и PWA
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -9119,7 +9119,7 @@ self.addEventListener('notificationclick', (event) => {
 
 # Гейты, статическая демо-копия и архитектура: что проверяется и как устроено
 
-Срез: 19.11.2026, коммит `3014988`.
+Срез: 19.11.2026, коммит `0374b15`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -11630,6 +11630,109 @@ exit(count($failed) || count($missing) ? 1 : 0);
     }
   ]
 }
+
+===== FILE: docs/vercel-demo.md =====
+
+# Публичное демо на Vercel — что нажать
+
+Демо шаблона — статический снимок `demo-static/` (110 страниц, формы отключены),
+его отдаёт Vercel по `vercel.json:2` (`outputDirectory: demo-static`).
+Проект уже создан: `https://vercel.com/vadims-projects-74cb21aa/octobercms`,
+репозиторий подключён — `https://github.com/elips0675-web/OctoberCMS`.
+
+## Почему просит войти через Google
+
+Проверено 19.11.2026 снаружи, без авторизации:
+
+```text
+https://octobercms-git-main-vadims-projects-74cb21aa.vercel.app
+  → 302 Location: https://vercel.com/sso-api?url=…&nonce=…
+  → Set-Cookie: _vercel_sso_nonce=…
+
+https://octobercms.vercel.app
+  → 404 X-Vercel-Error: DEPLOYMENT_NOT_FOUND
+
+https://octobercms-vadims-projects-74cb21aa.vercel.app
+  → 404 X-Vercel-Error: DEPLOYMENT_NOT_FOUND
+```
+
+Два независимых факта:
+
+1. **Deployment Protection = Vercel Authentication** (это и есть «вход гугла»).
+   Редирект на `sso-api` — его подпись; страница защищена целиком, поэтому её
+   видит только владелец аккаунта Vercel.
+2. **Продакшен-деплоя нет**: домен проекта `*.vercel.app` отвечает
+   `DEPLOYMENT_NOT_FOUND`, значит деплой не повышен до Production — живой
+   только алиас ветки `git-main`.
+
+Правки в репозитории этого не лечат: защита и повышение деплоя живут
+в настройках проекта Vercel, а не в `vercel.json` (такой опции в схеме нет).
+
+## Два действия владельца (≈2 минуты)
+
+1. **Снять защиту.** Проект `octobercms` → **Settings** → **Deployment
+   Protection** → **Vercel Authentication**: выбрать **Disabled** → **Save**.
+   Заодно проверить, что не включены `Password Protection` и `Trusted IPs`.
+2. **Повысить деплой до продакшена.** **Deployments** → у свежей записи со
+   статусом **Ready** меню **⋯** → **Promote to Production**.
+   После этого появляется домен `https://octobercms-vadims-projects-74cb21aa.vercel.app`.
+
+Если в проекте нет ни одного успешного деплоя — **Deployments** → **Redeploy**
+у последнего коммита `main` (сборка идёт по `vercel.json`, Framework Preset
+**Other**, Build Command пустой).
+
+## Проверка
+
+```powershell
+curl.exe -sS -o NUL -w "%{http_code}`n" https://octobercms-vadims-projects-74cb21aa.vercel.app/
+curl.exe -sS -o NUL -w "%{http_code}`n" https://octobercms-vadims-projects-74cb21aa.vercel.app/services/
+curl.exe -sS -o NUL -w "%{http_code}`n" https://octobercms-vadims-projects-74cb21aa.vercel.app/services/sauna/
+```
+
+Ожидается `200` на всех трёх и отсутствие заголовка `x-vercel-error`.
+Редирект `302` на `vercel.com/sso-api` = защита ещё включена.
+
+## После публикации
+
+1. Пересобрать снимок под домен демо (canonical, sitemap, RSS):
+
+   ```powershell
+   php tools/export-static.php --origin=https://octobercms-vadims-projects-74cb21aa.vercel.app
+   node tools/check-static-demo.mjs --origin=https://octobercms-vadims-projects-74cb21aa.vercel.app
+   ```
+
+2. Вписать адрес в `README.md` (раздел «Демо») и в поле **Website** репозитория
+   на GitHub вместо витрины `https://elvstudio.vercel.app`.
+
+## Если нужен свой домен
+
+**Settings** → **Domains** → **Add** (например `demo.elv.studio`), в DNS
+прописать `CNAME demo → cname.vercel-dns.com`; сертификат Let's Encrypt Vercel
+выпускает сам. После привязки — та же пересборка с `--origin=https://demo.elv.studio`.
+
+## Вместо кликов: API
+
+Если у владельца есть токен (`vercel.com/account/tokens`), защиту и продакшен
+можно переключить без интерфейса:
+
+```powershell
+$token = "<токен>"
+$project = "octobercms"
+
+# 1. снять Vercel Authentication (ssoProtection = null)
+curl.exe -sS -X PATCH "https://api.vercel.com/v9/projects/$project" `
+  -H "Authorization: Bearer $token" -H "Content-Type: application/json" `
+  -d "{\"ssoProtection\":null,\"passwordProtection\":null}"
+
+# 2. узнать последний деплой и повысить его
+curl.exe -sS "https://api.vercel.com/v6/deployments?projectId=$project&limit=1" `
+  -H "Authorization: Bearer $token"
+curl.exe -sS -X POST "https://api.vercel.com/v10/projects/$project/promote/<deploymentId>" `
+  -H "Authorization: Bearer $token"
+```
+
+Токен в репозиторий и в переписку не попадает: он нужен только для этих двух
+запросов и удаляется из переменной сессии после.
 
 ===== FILE: docs/architecture.md =====
 
