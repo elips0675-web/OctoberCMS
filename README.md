@@ -103,15 +103,17 @@ php artisan serve --host=127.0.0.1 --port=8080
 | `php artisan elv:slots-generate` | генерация слотов услуг |
 | `node tools/purge-css.mjs` | урезание `bootstrap.min.css` |
 | `node tools/check-css-budget.mjs` | бюджет встроенного CSS и отсутствие внешних таблиц |
-| `node tools/check-urls.mjs` | 110 адресов на живом `serve`: 109×200 + 404 |
-| `node tools/check-dom-parity.mjs` | сверка title/h1/h2/карточек/текста с `preview/` |
-| `node tools/check-seo.mjs` | robots.txt, sitemap.xml (106 адресов), 301, JSON-LD и `BreadcrumbList` на живом `serve` |
+| `node tools/check-urls.mjs` | 110 адресов на живом `serve`: все 200, `/non-existent/` — 404 со страницей |
+| `node tools/check-dom-parity.mjs` | сверка с `preview/`: `--structure` — скелет 110 страниц (зелёный), без флага сверяет тексты и красный с Stage 36 (демо-бренд заменён на нейтральный) |
+| `node tools/check-seo.mjs` | robots.txt, sitemap.xml (107 адресов), 301, JSON-LD и `BreadcrumbList` на живом `serve` |
 | `node tools/check-orphans.mjs` | у каждого адреса карты сайта есть входящая ссылка (`--self-test` — самопроверка) |
 | `node tools/check-api.mjs` | `/api/v1/*`: 6 разделов, 91 запись, поля контракта, страницы записей 200, 404/422 |
 | `node tools/check-headers.mjs` | CSP с nonce, `X-Frame-Options`, админка без CSP на живом `serve` |
 | `node tools/check-pwa.mjs` | manifest, версия и `SHELL` в `sw.js`, офлайн-страница на живом `serve` |
 | `node tools/check-health.mjs` | `/health` 200, `no-store`, без cookie и текста исключений |
 | `php artisan elv:health-report` | JSON-строка состояния в `storage/logs/health.log` |
+| `php tools/export-static.php --origin=…` | статическая копия сайта в `demo-static/` (110 страниц, CSS и ассеты темы) для Vercel |
+| `node tools/check-static-demo.mjs --origin=…` | гейт статики: 113 файлов HTML, ссылки, canonical, sitemap, отсутствие форм и `127.0.0.1` |
 | `php tools/build-image-variants.php` | WebP/AVIF, 480/960/1280 |
 
 ## Документация

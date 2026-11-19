@@ -1,6 +1,6 @@
 # Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
 `docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
@@ -15,10 +15,11 @@
 - `.gitignore` (2.7 КБ)
 - `.htaccess` (2.4 КБ)
 - `.jshintrc` (0.1 КБ)
+- `.vercelignore` (0.1 КБ)
 - `AGENTS.md` (18.0 КБ)
 - `CHANGELOG.md` (26.1 КБ)
 - `LICENSE.md` (26.3 КБ)
-- `README.md` (9.2 КБ)
+- `README.md` (10.9 КБ)
 - `artisan` (1.6 КБ)
 - `composer.json` (1.8 КБ)
 - `index.php` (1.2 КБ)
@@ -29,8 +30,9 @@
 - `phpunit.xml` (1.4 КБ)
 - `project-context.md` (14.8 КБ)
 - `server.php` (1.3 КБ)
-- `Что доделать.txt` (88.3 КБ)
-- `Что сделано.txt` (205.0 КБ)
+- `vercel.json` (0.7 КБ)
+- `Что доделать.txt` (89.5 КБ)
+- `Что сделано.txt` (211.3 КБ)
 - `запуск.bat` (4.6 КБ)
 
 ## .devcontainer
@@ -85,19 +87,500 @@
 - `system.php` (6.5 КБ)
 - `view.php` (1.0 КБ)
 
+## demo-static
+
+- `404.html` (37.7 КБ)
+- `index.html` (84.1 КБ)
+- `manifest.webmanifest` (1.9 КБ)
+- `offline.html` (4.2 КБ)
+- `robots.txt` (0.4 КБ)
+- `rss.xml` (6.0 КБ)
+- `sitemap.xml` (19.5 КБ)
+- `sw.js` (5.9 КБ)
+
+## demo-static/about
+
+- `index.html` (43.3 КБ)
+
+## demo-static/auth
+
+- `index.html` (39.1 КБ)
+
+## demo-static/blog
+
+- `index.html` (37.6 КБ)
+- `rss.xml` (0.5 КБ)
+
+## demo-static/books
+
+- `index.html` (62.1 КБ)
+
+## demo-static/books/aromatizator-v-mashinu-kniga
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/bloknot-zametki
+
+- `index.html` (42.2 КБ)
+
+## demo-static/books/brelok-gerb
+
+- `index.html` (42.1 КБ)
+
+## demo-static/books/brelok-kniga
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/brelok-sova
+
+- `index.html` (42.3 КБ)
+
+## demo-static/books/chaynaya-para-minsk
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/derzhatel-telefona-v-mashinu
+
+- `index.html` (42.6 КБ)
+
+## demo-static/books/ezhednevnik-plany
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/farforovaya-statuetka-sova
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/farforovaya-tarelka-biblioteka
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/futbolka-chitayu
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/hudi-biblioteka
+
+- `index.html` (42.3 КБ)
+
+## demo-static/books/kepka-chitayu
+
+- `index.html` (42.1 КБ)
+
+## demo-static/books/kruzhka-biblioteka
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/magnit-kniga-luchshiy-podarok
+
+- `index.html` (42.6 КБ)
+
+## demo-static/books/magnit-minsk
+
+- `index.html` (42.1 КБ)
+
+## demo-static/books/magnit-ramka-dlya-foto
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/nabor-gelevyh-ruchek
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/nabor-karandashey
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/nabor-otkrytok-minsk
+
+- `index.html` (42.3 КБ)
+
+## demo-static/books/ruchka-biblioteka
+
+- `index.html` (42.2 КБ)
+
+## demo-static/books/shopper-biblioteka
+
+- `index.html` (42.2 КБ)
+
+## demo-static/books/termokruzhka-chitay
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/zont-chitalnyy-zal
+
+- `index.html` (42.3 КБ)
+
+## demo-static/collections
+
+- `index.html` (42.1 КБ)
+
+## demo-static/collections/nabor-chitayu
+
+- `index.html` (37.8 КБ)
+
+## demo-static/collections/nabor-dlya-detey
+
+- `index.html` (37.9 КБ)
+
+## demo-static/collections/nabor-dlya-doma
+
+- `index.html` (37.9 КБ)
+
+## demo-static/collections/nabor-dlya-kolleg
+
+- `index.html` (38.1 КБ)
+
+## demo-static/collections/nabor-dlya-puteshestviy
+
+- `index.html` (38.1 КБ)
+
+## demo-static/collections/nabor-na-pamyat-o-minske
+
+- `index.html` (37.9 КБ)
+
+## demo-static/contacts
+
+- `index.html` (42.1 КБ)
+
+## demo-static/events
+
+- `index.html` (52.4 КБ)
+
+## demo-static/events/detskiy-klub-sovenok
+
+- `index.html` (40.9 КБ)
+
+## demo-static/events/ekskursiya-fond-redkih-knig
+
+- `index.html` (41.2 КБ)
+
+## demo-static/events/igroteka-nastolnyh-igr
+
+- `index.html` (41.1 КБ)
+
+## demo-static/events/lekciya-kak-chitat-sovremennuyu-prozu
+
+- `index.html` (41.3 КБ)
+
+## demo-static/events/master-klass-neyroseti
+
+- `index.html` (41.3 КБ)
+
+## demo-static/events/poeticheskiy-vecher-osen
+
+- `index.html` (41.0 КБ)
+
+## demo-static/feedback
+
+- `index.html` (42.0 КБ)
+
+## demo-static/news
+
+- `index.html` (54.0 КБ)
+
+## demo-static/news/biblionoch-2026-itogi
+
+- `index.html` (40.5 КБ)
+
+## demo-static/news/bronirovanie-peregovornyh
+
+- `index.html` (40.7 КБ)
+
+## demo-static/news/cifrovoy-chitalnyy-zal
+
+- `index.html` (40.8 КБ)
+
+## demo-static/news/detskaya-masterskaya-nabor
+
+- `index.html` (40.6 КБ)
+
+## demo-static/news/kak-zapisatsya-v-biblioteku
+
+- `index.html` (40.5 КБ)
+
+## demo-static/news/kovorking-novye-mesta
+
+- `index.html` (40.9 КБ)
+
+## demo-static/news/lektoriy-chitaem-vmeste-dekabr
+
+- `index.html` (41.1 КБ)
+
+## demo-static/news/novye-postupleniya-noyabr
+
+- `index.html` (40.9 КБ)
+
+## demo-static/news/podkast-mezhdu-strok-sezon-2
+
+- `index.html` (40.7 КБ)
+
+## demo-static/news/redkie-izdaniya-ocifrovany
+
+- `index.html` (40.6 КБ)
+
+## demo-static/personal
+
+- `index.html` (3.7 КБ)
+
+## demo-static/printing
+
+- `index.html` (99.6 КБ)
+
+## demo-static/printing/beydzhi
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/blanki-i-firmyennye-formy
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/bloknoty-i-ezhednevniki
+
+- `index.html` (38.5 КБ)
+
+## demo-static/printing/breloki
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/broshyury-i-buklety
+
+- `index.html` (39.2 КБ)
+
+## demo-static/printing/chertezhi-i-plakaty
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/flazhki-i-vympely
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/fleshki-s-logo
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/foto-bolshogo-formata
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/foto-magnity
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/foto-na-akrile
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/fotoknigi
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/fotokollazhi
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/fotopechat
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/futbolki
+
+- `index.html` (39.1 КБ)
+
+## demo-static/printing/kalendari
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/konverty-s-logotipom
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/kruzhki
+
+- `index.html` (39.2 КБ)
+
+## demo-static/printing/magnity
+
+- `index.html` (38.1 КБ)
+
+## demo-static/printing/nakleyki-i-stikery
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/otkrytki-i-priglasheniya
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/papki-firmyennye
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/pazly-s-foto
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/pechat-dokumentov
+
+- `index.html` (39.3 КБ)
+
+## demo-static/printing/pechat-kvadratnyh-foto
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/pechat-na-holste
+
+- `index.html` (39.2 КБ)
+
+## demo-static/printing/pechat-na-paketah
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/pechat-panoramnyh-foto
+
+- `index.html` (38.5 КБ)
+
+## demo-static/printing/pechati-i-shtampy
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/pereplyot-i-laminirovanie
+
+- `index.html` (38.6 КБ)
+
+## demo-static/printing/prezentatsii
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/ruchki-s-logo
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/shirokiy-format
+
+- `index.html` (39.1 КБ)
+
+## demo-static/printing/skanirovanie
+
+- `index.html` (39.4 КБ)
+
+## demo-static/printing/tsenniki-i-yarlyki
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/vizitki
+
+- `index.html` (39.0 КБ)
+
+## demo-static/printing/znachki-i-piny
+
+- `index.html` (38.2 КБ)
+
+## demo-static/privacy
+
+- `index.html` (40.4 КБ)
+
+## demo-static/rules
+
+- `index.html` (39.6 КБ)
+
+## demo-static/search
+
+- `index.html` (38.4 КБ)
+
+## demo-static/services
+
+- `index.html` (74.2 КБ)
+
+## demo-static/services/cafe
+
+- `index.html` (55.4 КБ)
+
+## demo-static/services/concert-hall
+
+- `index.html` (55.7 КБ)
+
+## demo-static/services/coworking
+
+- `index.html` (56.2 КБ)
+
+## demo-static/services/gym
+
+- `index.html` (56.1 КБ)
+
+## demo-static/services/kids-zone
+
+- `index.html` (55.8 КБ)
+
+## demo-static/services/lecture-hall
+
+- `index.html` (55.6 КБ)
+
+## demo-static/services/observation-deck
+
+- `index.html` (56.1 КБ)
+
+## demo-static/services/sauna
+
+- `index.html` (56.0 КБ)
+
+## demo-static/sitemap
+
+- `index.html` (39.8 КБ)
+
+## demo-static/subscribe
+
+- `index.html` (39.2 КБ)
+
+## demo-static/terms
+
+- `index.html` (39.5 КБ)
+
+## demo-static/themes/elv/assets/css
+
+- `static-bootstrap.css` (51.6 КБ)
+- `static-styles.css` (56.4 КБ)
+- `styles.css` (83.0 КБ)
+
+## demo-static/themes/elv/assets/icons
+
+- `icon.svg` (0.6 КБ)
+- … 5 ассетов, 0.1 МБ
+
+## demo-static/themes/elv/assets/images
+
+- `avatar-tatyana.svg` (3.5 КБ)
+- … 165 ассетов, 8.2 МБ
+
+## demo-static/themes/elv/assets/js
+
+- `consent.js` (2.7 КБ)
+- `push.js` (7.3 КБ)
+- `pwa.js` (0.8 КБ)
+- `script.js` (73.2 КБ)
+
+## demo-static/themes/elv/assets/pwa
+
+- `manifest.webmanifest` (1.8 КБ)
+- `offline.html` (4.2 КБ)
+- `sw.js` (5.6 КБ)
+
+## demo-static/themes/elv/assets/vendor
+
+- `bootstrap.bundle.min.js` (78.8 КБ)
+
 ## docs
 
-- `README.md` (5.2 КБ)
+- `README.md` (5.5 КБ)
 - `architecture.md` (26.4 КБ)
 - `content.md` (6.5 КБ)
 - `db.md` (18.8 КБ)
-- `design-system.md` (3.6 КБ)
+- `design-system.md` (5.0 КБ)
 - `free-plan.md` (10.0 КБ)
 - `installation.md` (14.0 КБ)
 - `monetization.md` (22.2 КБ)
 - `october-integration.md` (13.8 КБ)
 - `plugins.md` (13.7 КБ)
-- `qa-checklist.md` (14.3 КБ)
+- `qa-checklist.md` (16.8 КБ)
 - `roadmap.md` (48.6 КБ)
 - `security-performance.md` (10.6 КБ)
 - `theme-universality.md` (10.7 КБ)
@@ -361,7 +844,7 @@
 ## test
 
 - `README.md` (3.3 КБ)
-- `Для анализа.txt` (14.8 КБ)
+- `Для анализа.txt` (15.8 КБ)
 
 ## tests
 
@@ -438,7 +921,7 @@
 - `privacy.htm` (4.2 КБ)
 - `rules.htm` (3.5 КБ)
 - `search.htm` (2.3 КБ)
-- `services-detail.htm` (12.1 КБ)
+- `services-detail.htm` (11.8 КБ)
 - `services.htm` (4.9 КБ)
 - `sitemap.htm` (3.7 КБ)
 - `subscribe.htm` (3.0 КБ)
@@ -485,8 +968,10 @@
 - `check-package.mjs` (8.6 КБ)
 - `check-pwa.mjs` (7.0 КБ)
 - `check-seo.mjs` (18.6 КБ)
+- `check-static-demo.mjs` (6.2 КБ)
 - `check-urls.mjs` (7.1 КБ)
 - `css-size.php` (1.1 КБ)
+- `export-static.php` (14.0 КБ)
 - `import-preview-pages.mjs` (6.5 КБ)
 - `purge-css.mjs` (10.6 КБ)
 - `serve-static.php` (2.8 КБ)

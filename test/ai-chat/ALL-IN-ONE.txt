@@ -1,6 +1,6 @@
 # October CMS — ALL-IN-ONE для AI-анализа
 
-Дата: 18.11.2026. Коммит: `b87cecd`. Репозиторий: https://github.com/elips0675-web/OctoberCMS
+Дата: 19.11.2026. Коммит: `3f07fcf`. Репозиторий: https://github.com/elips0675-web/OctoberCMS
 
 Внутри: контекст, структура, конфигурация, ядро плагина и периметр, контент и конструктор страниц, формы/брони/подписка, SEO и PWA, гейты и архитектура. Файлы разделены заголовками, чтобы можно было цитировать.
 
@@ -20,7 +20,7 @@
 
 # October CMS: шаблон `elv` и плагин `Elv\Site` — срез для AI-анализа
 
-Дата среза: 18.11.2026. Коммит: `b87cecd`.
+Дата среза: 19.11.2026. Коммит: `3f07fcf`.
 Репозиторий: https://github.com/elips0675-web/OctoberCMS
 
 ## Что это за проект
@@ -132,7 +132,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - **Медиа.** `Media::picture()` отдаёт `<picture>` с avif/webp/jpg и размерами,
   `Media::inlineCss()` вкладывает CSS в HTML, поэтому внешнего CSS нет.
 
-## Чем это проверено (на 18.11.2026)
+## Чем это проверено (на 19.11.2026)
 
 - PHPUnit: **305 тестов, 1086 проверок** (`phpunit.elv.xml`, 21 файл в
   `plugins/elv/site/tests`), реальная БД.
@@ -197,7 +197,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 
 # Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
 `docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
@@ -212,10 +212,11 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `.gitignore` (2.7 КБ)
 - `.htaccess` (2.4 КБ)
 - `.jshintrc` (0.1 КБ)
+- `.vercelignore` (0.1 КБ)
 - `AGENTS.md` (18.0 КБ)
 - `CHANGELOG.md` (26.1 КБ)
 - `LICENSE.md` (26.3 КБ)
-- `README.md` (9.2 КБ)
+- `README.md` (10.9 КБ)
 - `artisan` (1.6 КБ)
 - `composer.json` (1.8 КБ)
 - `index.php` (1.2 КБ)
@@ -226,8 +227,9 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `phpunit.xml` (1.4 КБ)
 - `project-context.md` (14.8 КБ)
 - `server.php` (1.3 КБ)
-- `Что доделать.txt` (88.3 КБ)
-- `Что сделано.txt` (205.0 КБ)
+- `vercel.json` (0.7 КБ)
+- `Что доделать.txt` (89.5 КБ)
+- `Что сделано.txt` (211.3 КБ)
 - `запуск.bat` (4.6 КБ)
 
 ## .devcontainer
@@ -282,19 +284,500 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `system.php` (6.5 КБ)
 - `view.php` (1.0 КБ)
 
+## demo-static
+
+- `404.html` (37.7 КБ)
+- `index.html` (84.1 КБ)
+- `manifest.webmanifest` (1.9 КБ)
+- `offline.html` (4.2 КБ)
+- `robots.txt` (0.4 КБ)
+- `rss.xml` (6.0 КБ)
+- `sitemap.xml` (19.5 КБ)
+- `sw.js` (5.9 КБ)
+
+## demo-static/about
+
+- `index.html` (43.3 КБ)
+
+## demo-static/auth
+
+- `index.html` (39.1 КБ)
+
+## demo-static/blog
+
+- `index.html` (37.6 КБ)
+- `rss.xml` (0.5 КБ)
+
+## demo-static/books
+
+- `index.html` (62.1 КБ)
+
+## demo-static/books/aromatizator-v-mashinu-kniga
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/bloknot-zametki
+
+- `index.html` (42.2 КБ)
+
+## demo-static/books/brelok-gerb
+
+- `index.html` (42.1 КБ)
+
+## demo-static/books/brelok-kniga
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/brelok-sova
+
+- `index.html` (42.3 КБ)
+
+## demo-static/books/chaynaya-para-minsk
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/derzhatel-telefona-v-mashinu
+
+- `index.html` (42.6 КБ)
+
+## demo-static/books/ezhednevnik-plany
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/farforovaya-statuetka-sova
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/farforovaya-tarelka-biblioteka
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/futbolka-chitayu
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/hudi-biblioteka
+
+- `index.html` (42.3 КБ)
+
+## demo-static/books/kepka-chitayu
+
+- `index.html` (42.1 КБ)
+
+## demo-static/books/kruzhka-biblioteka
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/magnit-kniga-luchshiy-podarok
+
+- `index.html` (42.6 КБ)
+
+## demo-static/books/magnit-minsk
+
+- `index.html` (42.1 КБ)
+
+## demo-static/books/magnit-ramka-dlya-foto
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/nabor-gelevyh-ruchek
+
+- `index.html` (42.4 КБ)
+
+## demo-static/books/nabor-karandashey
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/nabor-otkrytok-minsk
+
+- `index.html` (42.3 КБ)
+
+## demo-static/books/ruchka-biblioteka
+
+- `index.html` (42.2 КБ)
+
+## demo-static/books/shopper-biblioteka
+
+- `index.html` (42.2 КБ)
+
+## demo-static/books/termokruzhka-chitay
+
+- `index.html` (42.5 КБ)
+
+## demo-static/books/zont-chitalnyy-zal
+
+- `index.html` (42.3 КБ)
+
+## demo-static/collections
+
+- `index.html` (42.1 КБ)
+
+## demo-static/collections/nabor-chitayu
+
+- `index.html` (37.8 КБ)
+
+## demo-static/collections/nabor-dlya-detey
+
+- `index.html` (37.9 КБ)
+
+## demo-static/collections/nabor-dlya-doma
+
+- `index.html` (37.9 КБ)
+
+## demo-static/collections/nabor-dlya-kolleg
+
+- `index.html` (38.1 КБ)
+
+## demo-static/collections/nabor-dlya-puteshestviy
+
+- `index.html` (38.1 КБ)
+
+## demo-static/collections/nabor-na-pamyat-o-minske
+
+- `index.html` (37.9 КБ)
+
+## demo-static/contacts
+
+- `index.html` (42.1 КБ)
+
+## demo-static/events
+
+- `index.html` (52.4 КБ)
+
+## demo-static/events/detskiy-klub-sovenok
+
+- `index.html` (40.9 КБ)
+
+## demo-static/events/ekskursiya-fond-redkih-knig
+
+- `index.html` (41.2 КБ)
+
+## demo-static/events/igroteka-nastolnyh-igr
+
+- `index.html` (41.1 КБ)
+
+## demo-static/events/lekciya-kak-chitat-sovremennuyu-prozu
+
+- `index.html` (41.3 КБ)
+
+## demo-static/events/master-klass-neyroseti
+
+- `index.html` (41.3 КБ)
+
+## demo-static/events/poeticheskiy-vecher-osen
+
+- `index.html` (41.0 КБ)
+
+## demo-static/feedback
+
+- `index.html` (42.0 КБ)
+
+## demo-static/news
+
+- `index.html` (54.0 КБ)
+
+## demo-static/news/biblionoch-2026-itogi
+
+- `index.html` (40.5 КБ)
+
+## demo-static/news/bronirovanie-peregovornyh
+
+- `index.html` (40.7 КБ)
+
+## demo-static/news/cifrovoy-chitalnyy-zal
+
+- `index.html` (40.8 КБ)
+
+## demo-static/news/detskaya-masterskaya-nabor
+
+- `index.html` (40.6 КБ)
+
+## demo-static/news/kak-zapisatsya-v-biblioteku
+
+- `index.html` (40.5 КБ)
+
+## demo-static/news/kovorking-novye-mesta
+
+- `index.html` (40.9 КБ)
+
+## demo-static/news/lektoriy-chitaem-vmeste-dekabr
+
+- `index.html` (41.1 КБ)
+
+## demo-static/news/novye-postupleniya-noyabr
+
+- `index.html` (40.9 КБ)
+
+## demo-static/news/podkast-mezhdu-strok-sezon-2
+
+- `index.html` (40.7 КБ)
+
+## demo-static/news/redkie-izdaniya-ocifrovany
+
+- `index.html` (40.6 КБ)
+
+## demo-static/personal
+
+- `index.html` (3.7 КБ)
+
+## demo-static/printing
+
+- `index.html` (99.6 КБ)
+
+## demo-static/printing/beydzhi
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/blanki-i-firmyennye-formy
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/bloknoty-i-ezhednevniki
+
+- `index.html` (38.5 КБ)
+
+## demo-static/printing/breloki
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/broshyury-i-buklety
+
+- `index.html` (39.2 КБ)
+
+## demo-static/printing/chertezhi-i-plakaty
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/flazhki-i-vympely
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/fleshki-s-logo
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/foto-bolshogo-formata
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/foto-magnity
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/foto-na-akrile
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/fotoknigi
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/fotokollazhi
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/fotopechat
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/futbolki
+
+- `index.html` (39.1 КБ)
+
+## demo-static/printing/kalendari
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/konverty-s-logotipom
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/kruzhki
+
+- `index.html` (39.2 КБ)
+
+## demo-static/printing/magnity
+
+- `index.html` (38.1 КБ)
+
+## demo-static/printing/nakleyki-i-stikery
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/otkrytki-i-priglasheniya
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/papki-firmyennye
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/pazly-s-foto
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/pechat-dokumentov
+
+- `index.html` (39.3 КБ)
+
+## demo-static/printing/pechat-kvadratnyh-foto
+
+- `index.html` (38.2 КБ)
+
+## demo-static/printing/pechat-na-holste
+
+- `index.html` (39.2 КБ)
+
+## demo-static/printing/pechat-na-paketah
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/pechat-panoramnyh-foto
+
+- `index.html` (38.5 КБ)
+
+## demo-static/printing/pechati-i-shtampy
+
+- `index.html` (38.4 КБ)
+
+## demo-static/printing/pereplyot-i-laminirovanie
+
+- `index.html` (38.6 КБ)
+
+## demo-static/printing/prezentatsii
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/ruchki-s-logo
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/shirokiy-format
+
+- `index.html` (39.1 КБ)
+
+## demo-static/printing/skanirovanie
+
+- `index.html` (39.4 КБ)
+
+## demo-static/printing/tsenniki-i-yarlyki
+
+- `index.html` (38.3 КБ)
+
+## demo-static/printing/vizitki
+
+- `index.html` (39.0 КБ)
+
+## demo-static/printing/znachki-i-piny
+
+- `index.html` (38.2 КБ)
+
+## demo-static/privacy
+
+- `index.html` (40.4 КБ)
+
+## demo-static/rules
+
+- `index.html` (39.6 КБ)
+
+## demo-static/search
+
+- `index.html` (38.4 КБ)
+
+## demo-static/services
+
+- `index.html` (74.2 КБ)
+
+## demo-static/services/cafe
+
+- `index.html` (55.4 КБ)
+
+## demo-static/services/concert-hall
+
+- `index.html` (55.7 КБ)
+
+## demo-static/services/coworking
+
+- `index.html` (56.2 КБ)
+
+## demo-static/services/gym
+
+- `index.html` (56.1 КБ)
+
+## demo-static/services/kids-zone
+
+- `index.html` (55.8 КБ)
+
+## demo-static/services/lecture-hall
+
+- `index.html` (55.6 КБ)
+
+## demo-static/services/observation-deck
+
+- `index.html` (56.1 КБ)
+
+## demo-static/services/sauna
+
+- `index.html` (56.0 КБ)
+
+## demo-static/sitemap
+
+- `index.html` (39.8 КБ)
+
+## demo-static/subscribe
+
+- `index.html` (39.2 КБ)
+
+## demo-static/terms
+
+- `index.html` (39.5 КБ)
+
+## demo-static/themes/elv/assets/css
+
+- `static-bootstrap.css` (51.6 КБ)
+- `static-styles.css` (56.4 КБ)
+- `styles.css` (83.0 КБ)
+
+## demo-static/themes/elv/assets/icons
+
+- `icon.svg` (0.6 КБ)
+- … 5 ассетов, 0.1 МБ
+
+## demo-static/themes/elv/assets/images
+
+- `avatar-tatyana.svg` (3.5 КБ)
+- … 165 ассетов, 8.2 МБ
+
+## demo-static/themes/elv/assets/js
+
+- `consent.js` (2.7 КБ)
+- `push.js` (7.3 КБ)
+- `pwa.js` (0.8 КБ)
+- `script.js` (73.2 КБ)
+
+## demo-static/themes/elv/assets/pwa
+
+- `manifest.webmanifest` (1.8 КБ)
+- `offline.html` (4.2 КБ)
+- `sw.js` (5.6 КБ)
+
+## demo-static/themes/elv/assets/vendor
+
+- `bootstrap.bundle.min.js` (78.8 КБ)
+
 ## docs
 
-- `README.md` (5.2 КБ)
+- `README.md` (5.5 КБ)
 - `architecture.md` (26.4 КБ)
 - `content.md` (6.5 КБ)
 - `db.md` (18.8 КБ)
-- `design-system.md` (3.6 КБ)
+- `design-system.md` (5.0 КБ)
 - `free-plan.md` (10.0 КБ)
 - `installation.md` (14.0 КБ)
 - `monetization.md` (22.2 КБ)
 - `october-integration.md` (13.8 КБ)
 - `plugins.md` (13.7 КБ)
-- `qa-checklist.md` (14.3 КБ)
+- `qa-checklist.md` (16.8 КБ)
 - `roadmap.md` (48.6 КБ)
 - `security-performance.md` (10.6 КБ)
 - `theme-universality.md` (10.7 КБ)
@@ -558,7 +1041,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 ## test
 
 - `README.md` (3.3 КБ)
-- `Для анализа.txt` (14.8 КБ)
+- `Для анализа.txt` (15.8 КБ)
 
 ## tests
 
@@ -635,7 +1118,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `privacy.htm` (4.2 КБ)
 - `rules.htm` (3.5 КБ)
 - `search.htm` (2.3 КБ)
-- `services-detail.htm` (12.1 КБ)
+- `services-detail.htm` (11.8 КБ)
 - `services.htm` (4.9 КБ)
 - `sitemap.htm` (3.7 КБ)
 - `subscribe.htm` (3.0 КБ)
@@ -682,8 +1165,10 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - `check-package.mjs` (8.6 КБ)
 - `check-pwa.mjs` (7.0 КБ)
 - `check-seo.mjs` (18.6 КБ)
+- `check-static-demo.mjs` (6.2 КБ)
 - `check-urls.mjs` (7.1 КБ)
 - `css-size.php` (1.1 КБ)
+- `export-static.php` (14.0 КБ)
 - `import-preview-pages.mjs` (6.5 КБ)
 - `purge-css.mjs` (10.6 КБ)
 - `serve-static.php` (2.8 КБ)
@@ -694,7 +1179,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 
 # Конфигурация: пакеты, тема, плагин, окружение
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -1206,7 +1691,7 @@ location ~ ^/themes/.*/(?:assets|resources) { try_files $uri 404; expires 1y; }
 
 # Плагин: точка входа, маршруты, периметр, health
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -1981,7 +2466,7 @@ class HealthController
 
 # Контент: Tailor-записи, конструктор страниц, метки, медиа, блог
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -3798,7 +4283,7 @@ function onStart()
 
 # Формы, брони, заказы, подписка, модели и письма
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -5383,7 +5868,7 @@ class SubscriptionConfirmation extends Mailable
 
 # SEO, микроразметка, карта сайта, редиректы и PWA
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -8632,9 +9117,9 @@ self.addEventListener('notificationclick', (event) => {
 08-checks-docs.txt
 ==============================================================================
 
-# Гейты и архитектура: что проверяется и как устроено
+# Гейты, статическая демо-копия и архитектура: что проверяется и как устроено
 
-Срез: 18.11.2026, коммит `b87cecd`.
+Срез: 19.11.2026, коммит `3f07fcf`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -10497,6 +10982,654 @@ function main() {
 }
 
 main();
+
+===== FILE: tools/check-static-demo.mjs =====
+
+#!/usr/bin/env node
+/**
+ * check-static-demo — проверка статической демо-копии для Vercel.
+ *
+ * Статика собирается `tools/export-static.php` с живого October. Гейт отвечает
+ * на вопросы, которые видит посетитель: страницы на месте, внутренние ссылки
+ * не ведут в пустоту, локальный адрес не утёк, демо-плашка и отключение форм
+ * есть на каждой странице, canonical и sitemap смотрят на боевой домен.
+ *
+ *   node tools/check-static-demo.mjs [--origin=https://octobercms.vercel.app]
+ *
+ * Требует собранный `demo-static/`.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const demo = path.join(root, 'demo-static');
+const originArg = process.argv.find((arg) => arg.startsWith('--origin='));
+const origin = (originArg ? originArg.slice('--origin='.length) : 'https://octobercms.vercel.app').replace(/\/$/, '');
+
+const failures = [];
+const notes = [];
+
+const walk = (dir) => {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...walk(full));
+    } else if (entry.isFile()) {
+      files.push(full);
+    }
+  }
+
+  return files;
+};
+
+if (!fs.existsSync(demo) || !fs.statSync(demo).isDirectory()) {
+  console.error('FAIL: нет каталога demo-static — сначала php tools/export-static.php');
+  process.exit(1);
+}
+
+const files = walk(demo);
+const htmlFiles = files.filter((file) => file.endsWith('.html'));
+
+if (htmlFiles.length < 110) {
+  failures.push(`страниц ${htmlFiles.length}, ожидалось не меньше 110`);
+}
+
+const relative = (file) => path.relative(demo, file).split(path.sep).join('/');
+
+const resolveTarget = (pathname) => {
+  const clean = decodeURIComponent(pathname.split('#')[0].split('?')[0]);
+
+  if (clean === '' || clean === '/') {
+    return path.join(demo, 'index.html');
+  }
+
+  const base = path.join(demo, clean.replace(/^\//, ''));
+
+  if (path.extname(clean)) {
+    return base;
+  }
+
+  return path.join(base, 'index.html');
+};
+
+const isExternal = (url) => /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url);
+
+let links = 0;
+let assets = 0;
+let cssLinks = 0;
+
+const systemPages = new Set(['offline.html', 'themes/elv/assets/pwa/offline.html']);
+
+for (const file of htmlFiles) {
+  const html = fs.readFileSync(file, 'utf8');
+  const name = relative(file);
+  const system = systemPages.has(name);
+
+  if (!system && !html.includes('id="elv-demo-bar"')) {
+    failures.push(`${name}: нет плашки демо-версии`);
+  }
+
+  if (!system && !html.includes('ELV_STATIC_DEMO')) {
+    failures.push(`${name}: нет скрипта отключения форм`);
+  }
+
+  if (/127\.0\.0\.1|localhost:8080/i.test(html)) {
+    failures.push(`${name}: остался локальный адрес`);
+  }
+
+  if (/data-elv-css="/i.test(html)) {
+    failures.push(`${name}: инлайн CSS не вынесен в файл`);
+  }
+
+  const canonical = /<link rel="canonical" href="([^"]+)"/i.exec(html);
+
+  if (!system && !canonical) {
+    failures.push(`${name}: нет canonical`);
+  } else if (canonical && !canonical[1].startsWith(origin + '/')) {
+    failures.push(`${name}: canonical ${canonical[1]} не на ${origin}`);
+  }
+
+  for (const match of html.matchAll(/\b(?:href|src|poster)="([^"]+)"/gi)) {
+    const url = match[1].trim();
+
+    if (url === '' || url.startsWith('#') || isExternal(url) || url.startsWith('data:')) {
+      continue;
+    }
+
+    if (url.startsWith('/themes/') || /\.(?:css|js|svg|png|jpe?g|webp|avif|ico|woff2?)$/i.test(url)) {
+      assets++;
+    } else {
+      links++;
+    }
+
+    if (url.startsWith('/themes/elv/assets/css/static-')) {
+      cssLinks++;
+    }
+
+    const target = resolveTarget(url);
+
+    if (!fs.existsSync(target)) {
+      failures.push(`${name}: ссылка ${url} не имеет файла (${relative(target)})`);
+    }
+  }
+}
+
+if (cssLinks === 0) {
+  failures.push('нет ссылок на вынесенный CSS — вёрстка будет без стилей');
+}
+
+for (const name of ['sitemap.xml', 'robots.txt', 'rss.xml', 'blog/rss.xml', 'manifest.webmanifest', 'sw.js', 'offline.html', '404.html']) {
+  if (!fs.existsSync(path.join(demo, name))) {
+    failures.push(`нет ${name}`);
+  }
+}
+
+for (const file of files.filter((item) => /\.(?:xml|txt|json|js)$/.test(item))) {
+  const body = fs.readFileSync(file, 'utf8');
+
+  if (/127\.0\.0\.1|localhost:8080/i.test(body)) {
+    failures.push(`${relative(file)}: остался локальный адрес`);
+  }
+}
+
+const sitemap = fs.readFileSync(path.join(demo, 'sitemap.xml'), 'utf8');
+const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+
+if (locs.length < 100) {
+  failures.push(`sitemap: адресов ${locs.length}, ожидалось не меньше 100`);
+}
+
+for (const loc of locs) {
+  if (!loc.startsWith(origin + '/')) {
+    failures.push(`sitemap: ${loc} не на ${origin}`);
+    break;
+  }
+}
+
+const robots = fs.readFileSync(path.join(demo, 'robots.txt'), 'utf8');
+
+if (!robots.includes(origin + '/sitemap.xml')) {
+  failures.push('robots.txt: нет Sitemap на боевой домен');
+}
+
+const bytes = files.reduce((sum, file) => sum + fs.statSync(file).size, 0);
+notes.push(`страниц: ${htmlFiles.length}, файлов: ${files.length}, объём: ${(bytes / 1048576).toFixed(1)} МБ`);
+notes.push(`внутренних ссылок: ${links}, ассетов: ${assets}, ссылок на вынесенный CSS: ${cssLinks}`);
+
+console.log(notes.join('\n'));
+
+if (failures.length) {
+  console.error('FAIL: ' + failures.length + ' проблем(ы)');
+  for (const failure of failures.slice(0, 40)) {
+    console.error('  - ' + failure);
+  }
+  if (failures.length > 40) {
+    console.error('  ... ещё ' + (failures.length - 40));
+  }
+  process.exit(1);
+}
+
+console.log('OK: статическая демо-копия целая, форм и локальных адресов нет');
+
+===== FILE: tools/export-static.php =====
+
+<?php
+
+/**
+ * export-static — статическая демо-копия шаблона для Vercel.
+ *
+ * Vercel не исполняет PHP, поэтому October CMS там отдаётся файлом: команда
+ * снимает готовый HTML с локального сервера, переписывает базовый адрес,
+ * отключает формы и складывает страницы в demo-static/<path>/index.html.
+ *
+ * Запуск: php tools/export-static.php --origin=https://octobercms.vercel.app
+ * Нужен поднятый сервер: php artisan serve --port=8080 --host=127.0.0.1
+ */
+
+$options = getopt('', ['base::', 'origin::', 'out::', 'stable!', 'manifest::']);
+
+$stable = ($options['stable'] ?? true) !== false;
+
+$base = rtrim($options['base'] ?? 'http://127.0.0.1:8080', '/');
+$origin = rtrim($options['origin'] ?? 'https://octobercms.vercel.app', '/');
+$out = rtrim($options['out'] ?? dirname(__DIR__) . '/demo-static', '/\\');
+
+function staticFetch(string $url): array
+{
+    $handle = curl_init($url);
+    curl_setopt_array($handle, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 3,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_USERAGENT => 'ElvThemeStaticExport/1.0',
+    ]);
+
+    $body = curl_exec($handle);
+    $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+    $error = curl_error($handle);
+    curl_close($handle);
+
+    if ($body === false) {
+        fwrite(STDERR, 'fetch failed: ' . $url . ' — ' . $error . PHP_EOL);
+
+        return [0, ''];
+    }
+
+    return [$status, (string) $body];
+}
+
+function staticRemove(string $directory): void
+{
+    if (!is_dir($directory)) {
+        return;
+    }
+
+    $items = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+
+    foreach ($items as $item) {
+        $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+    }
+
+    rmdir($directory);
+}
+
+function staticCopy(string $source, string $target): void
+{
+    if (!is_dir($source)) {
+        return;
+    }
+
+    if (!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) {
+        throw new RuntimeException('cannot create ' . $target);
+    }
+
+    $items = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($source, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+
+    foreach ($items as $item) {
+        $destination = $target . '/' . $items->getSubPathname();
+
+        if ($item->isDir()) {
+            if (!is_dir($destination)) {
+                mkdir($destination, 0775, true);
+            }
+
+            continue;
+        }
+
+        copy($item->getPathname(), $destination);
+    }
+}
+
+function staticPagePath(string $out, string $path): string
+{
+    return $path === '/'
+        ? $out . '/index.html'
+        : ($path === '/404' ? $out . '/404.html' : $out . '/' . trim($path, '/') . '/index.html');
+}
+
+function staticFinalize(string $html, string $base, string $origin, string $inject): string
+{
+    $html = str_replace($base, $origin, $html);
+    $quoted = preg_quote($origin, '~');
+    $html = (string) preg_replace('~(\b(?:href|src|action|poster|content)=")' . $quoted . '/~i', '$1/', $html);
+    $html = (string) preg_replace('~(\b(?:href|src|action|poster)=")' . $quoted . '"~i', '$1/"', $html);
+    $html = (string) preg_replace('~(<link rel="canonical" href=")/~i', '$1' . $origin . '/', $html);
+    $html = (string) preg_replace('~(<meta property="og:url" content=")/~i', '$1' . $origin . '/', $html);
+
+    $bar = '<div id="elv-demo-bar" role="status">Статическая демо-версия шаблона ELV на October CMS: формы, брони и заказы отключены. Рабочая версия — на PHP-хостинге.</div>';
+
+    if (!str_contains($html, 'elv-demo-bar')) {
+        $html = (string) preg_replace('~(<body[^>]*>)~i', '$1' . $bar, $html, 1);
+    }
+
+    return str_replace('</body>', $inject . '</body>', $html);
+}
+
+function staticStable(string $html): string
+{
+    $html = (string) preg_replace('~\bnonce="[^"]*"~i', 'nonce="static-demo"', $html);
+    $html = (string) preg_replace('~(<meta name="csrf-token" content=")[^"]*(")~i', '$1static-demo$2', $html);
+    $html = (string) preg_replace('~(<input type="hidden" name="_token" value=")[^"]*(")~i', '$1static-demo$2', $html);
+
+    return $html;
+}
+
+function staticWrite(string $out, string $path, string $html, bool $stable = true): void
+{
+    $file = staticPagePath($out, $path);
+
+    if (!is_dir(dirname($file))) {
+        mkdir(dirname($file), 0775, true);
+    }
+
+    file_put_contents($file, $stable ? staticStable($html) : $html);
+}
+
+/**
+ * staticInlineCss выносит одинаковые инлайн-блоки CSS в файлы.
+ *
+ * Тема вкладывает `bootstrap` и `styles` в каждую страницу (по ~110 КБ),
+ * из-за чего статическая копия из 113 страниц весит 16 МБ. Если содержимое
+ * блока совпадает на всех страницах, оно пишется один раз в
+ * `themes/elv/assets/css/`, а `<style>` заменяется на `<link>`.
+ */
+function staticInlineCss(string $out): void
+{
+    $pages = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($out, FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+        if ($file->isFile() && $file->getExtension() === 'html') {
+            $pages[] = $file->getPathname();
+        }
+    }
+
+    $variants = [];
+    $content = [];
+
+    foreach ($pages as $page) {
+        $html = (string) file_get_contents($page);
+        preg_match_all('~<style data-elv-css="([a-z0-9-]+)"[^>]*>([\s\S]*?)</style>~i', $html, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $variants[$match[1]][md5($match[2])] = true;
+            $content[$match[1]][md5($match[2])] = $match[2];
+        }
+    }
+
+    $target = $out . '/themes/elv/assets/css';
+
+    if (!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) {
+        throw new RuntimeException('cannot create ' . $target);
+    }
+
+    $saved = 0;
+
+    foreach ($variants as $name => $hashes) {
+        if (count($hashes) !== 1) {
+            fwrite(STDERR, 'css: у блока "' . $name . '" разное содержимое на страницах — оставлен инлайн' . PHP_EOL);
+            continue;
+        }
+
+        $hash = array_key_first($hashes);
+        $css = (string) $content[$name][$hash];
+        $file = $target . '/static-' . $name . '.css';
+        file_put_contents($file, $css);
+        $saved += (strlen($css) - 80) * count($pages);
+
+        foreach ($pages as $page) {
+            $html = (string) file_get_contents($page);
+            $html = (string) preg_replace(
+                '~<style data-elv-css="' . preg_quote($name, '~') . '"[^>]*>[\s\S]*?</style>~i',
+                '<link rel="stylesheet" href="/themes/elv/assets/css/static-' . $name . '.css">',
+                $html
+            );
+            file_put_contents($page, $html);
+        }
+
+        echo 'css: static-' . $name . '.css (' . strlen($css) . ' байт)' . PHP_EOL;
+    }
+
+    echo 'css saved: ' . round($saved / 1048576, 1) . ' МБ' . PHP_EOL;
+}
+
+$style = '<style>'
+    . '#elv-demo-bar{position:relative;z-index:80;background:#0b1220;color:#dfe6f5;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:9px 16px;text-align:center}'
+    . '#elv-static-note{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);background:#0b1220;color:#fff;padding:12px 18px;border-radius:12px;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:200;max-width:90vw;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35)}'
+    . '#elv-static-note.is-visible{opacity:1;transform:translateX(-50%) translateY(0)}'
+    . '</style>';
+
+$script = <<<'HTML'
+<script>
+(function () {
+    window.ELV_STATIC_DEMO = true;
+
+    var note = function (text) {
+        var box = document.getElementById('elv-static-note');
+
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'elv-static-note';
+            box.setAttribute('role', 'status');
+            document.body.appendChild(box);
+        }
+
+        box.textContent = text;
+        box.classList.add('is-visible');
+        window.clearTimeout(box.elvTimer);
+        box.elvTimer = window.setTimeout(function () {
+            box.classList.remove('is-visible');
+        }, 6000);
+    };
+
+    document.addEventListener('submit', function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        note('Формы отключены в статической демо-версии. Рабочая версия — на PHP-хостинге.');
+    }, true);
+
+    document.addEventListener('click', function (event) {
+        var node = event.target instanceof Element ? event.target : null;
+
+        if (!node) {
+            return;
+        }
+
+        if (node.closest('[data-chat-open]')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            note('Консультант доступен в полной версии на PHP-хостинге.');
+            return;
+        }
+
+        if (node.closest('a[href*="/subscribe/confirm/"], a[href*="/unsubscribe/"]')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            note('Подтверждение подписки работает только в полной версии.');
+        }
+    }, true);
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (items) {
+            items.forEach(function (item) { item.unregister(); });
+        });
+    }
+})();
+</script>
+HTML;
+
+$inject = $style . $script;
+
+staticRemove($out);
+mkdir($out, 0775, true);
+
+$rootPages = [
+    '/', '/books/', '/printing/', '/news/', '/services/', '/events/', '/collections/',
+    '/about/', '/auth/', '/contacts/', '/feedback/', '/personal/', '/privacy/',
+    '/rules/', '/search/', '/sitemap/', '/subscribe/', '/terms/', '/blog/',
+];
+
+[, $sitemap] = staticFetch($base . '/sitemap.xml');
+preg_match_all('~<loc>([^<]+)</loc>~', $sitemap, $matches);
+
+$paths = [];
+
+foreach ($matches[1] ?? [] as $loc) {
+    $path = (string) parse_url(html_entity_decode($loc, ENT_QUOTES | ENT_XML1), PHP_URL_PATH);
+
+    if ($path === '' || str_starts_with($path, '/admin') || str_starts_with($path, '/api/')) {
+        continue;
+    }
+
+    $paths[rtrim($path, '/') ?: '/'] = true;
+}
+
+foreach ($rootPages as $path) {
+    $paths[rtrim($path, '/') ?: '/'] = true;
+}
+
+ksort($paths);
+
+$pages = 0;
+$failed = [];
+
+foreach (array_keys($paths) as $path) {
+    $url = $base . ($path === '/' ? '/' : $path . '/');
+    [$status, $html] = staticFetch($url);
+
+    if ($status !== 200 || $html === '') {
+        $failed[] = $path . ' (' . $status . ')';
+        continue;
+    }
+
+    $html = staticFinalize($html, $base, $origin, $inject);
+    staticWrite($out, $path, $html, $stable);
+    $pages++;
+}
+
+[$notFoundStatus, $notFoundHtml] = staticFetch($base . '/non-existent/');
+
+if ($notFoundHtml !== '') {
+    file_put_contents(
+        $out . '/404.html',
+        staticStable(staticFinalize($notFoundHtml, $base, $origin, $inject))
+    );
+    echo 'page: 404.html (' . $notFoundStatus . ')' . PHP_EOL;
+} else {
+    fwrite(STDERR, 'skip: 404' . PHP_EOL);
+}
+
+foreach (['sitemap.xml', 'robots.txt', 'rss.xml', 'blog/rss.xml', 'manifest.webmanifest', 'sw.js', 'offline.html'] as $name) {
+    [$status, $body] = staticFetch($base . '/' . $name);
+
+    if ($status !== 200 || $body === '') {
+        fwrite(STDERR, 'skip: ' . $name . ' (' . $status . ')' . PHP_EOL);
+        continue;
+    }
+
+    $file = $out . '/' . $name;
+
+    if (!is_dir(dirname($file))) {
+        mkdir(dirname($file), 0775, true);
+    }
+
+    file_put_contents($file, str_replace($base, $origin, $body));
+    echo 'file: ' . $name . PHP_EOL;
+}
+
+staticCopy(dirname(__DIR__) . '/themes/elv/assets', $out . '/themes/elv/assets');
+staticInlineCss($out);
+
+$missing = [];
+$assets = 0;
+
+$iterator = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($out, FilesystemIterator::SKIP_DOTS)
+);
+
+foreach ($iterator as $file) {
+    if (!$file->isFile() || $file->getExtension() !== 'html') {
+        continue;
+    }
+
+    $html = (string) file_get_contents($file->getPathname());
+    $prefixes = [];
+    preg_match_all('~\b(?:href|src|poster)="(/[^"#?]+)"~i', $html, $prefixes);
+
+    foreach ($prefixes[1] ?? [] as $asset) {
+        if ($asset === '/' || is_dir($out . rtrim($asset, '/'))) {
+            continue;
+        }
+
+        if (str_contains($asset, '.') && !is_file($out . $asset)) {
+            $missing[$asset] = true;
+        }
+    }
+
+    $assets += count($prefixes[1] ?? []);
+}
+
+foreach (array_keys($missing) as $asset) {
+    fwrite(STDERR, 'missing asset: ' . $asset . PHP_EOL);
+}
+
+if (!empty($options['manifest'])) {
+    $manifest = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($out, FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+        if (!$file->isFile()) {
+            continue;
+        }
+
+        $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($out) + 1));
+        $manifest[$relative] = hash_file('sha256', $file->getPathname());
+    }
+
+    ksort($manifest);
+
+    $lines = [];
+
+    foreach ($manifest as $relative => $hash) {
+        $lines[] = $hash . '  ' . $relative;
+    }
+
+    file_put_contents($options['manifest'], implode("\n", $lines) . "\n");
+    echo 'manifest: ' . $options['manifest'] . ' (' . count($manifest) . ' файлов)' . PHP_EOL;
+}
+
+echo 'pages: ' . $pages . PHP_EOL;
+echo 'failed: ' . (count($failed) ? implode(', ', $failed) : 'нет') . PHP_EOL;
+echo 'missing assets: ' . (count($missing) ? count($missing) : 'нет') . PHP_EOL;
+echo 'origin: ' . $origin . PHP_EOL;
+echo 'output: ' . $out . PHP_EOL;
+
+exit(count($failed) || count($missing) ? 1 : 0);
+
+===== FILE: vercel.json =====
+
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "demo-static",
+  "trailingSlash": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    },
+    {
+      "source": "/themes/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
 
 ===== FILE: docs/architecture.md =====
 

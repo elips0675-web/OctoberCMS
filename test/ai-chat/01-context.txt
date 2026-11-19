@@ -1,6 +1,6 @@
 # October CMS: шаблон `elv` и плагин `Elv\Site` — срез для AI-анализа
 
-Дата среза: 18.11.2026. Коммит: `b87cecd`.
+Дата среза: 19.11.2026. Коммит: `3f07fcf`.
 Репозиторий: https://github.com/elips0675-web/OctoberCMS
 
 ## Что это за проект
@@ -112,7 +112,7 @@ Middleware подключается в `Plugin::boot()` в порядке:
 - **Медиа.** `Media::picture()` отдаёт `<picture>` с avif/webp/jpg и размерами,
   `Media::inlineCss()` вкладывает CSS в HTML, поэтому внешнего CSS нет.
 
-## Чем это проверено (на 18.11.2026)
+## Чем это проверено (на 19.11.2026)
 
 - PHPUnit: **305 тестов, 1086 проверок** (`phpunit.elv.xml`, 21 файл в
   `plugins/elv/site/tests`), реальная БД.

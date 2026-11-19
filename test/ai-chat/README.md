@@ -1,6 +1,6 @@
 # `test/ai-chat` — снимок кода October CMS для AI-анализа
 
-Дата среза: 18.11.2026. Коммит: `b87cecd`.
+Дата среза: 19.11.2026. Коммит: `3f07fcf`.
 Репозиторий: https://github.com/elips0675-web/OctoberCMS
 
 Набор закрывает пробел «модель не читала код»: раньше внешний аудит просил
@@ -22,7 +22,7 @@
 | `05-content.txt` | `Content.php`, `PageBuilder.php`, `Labels.php`, `FormFields.php`, `Media.php`, `Rss.php`, blueprints блога и `page`, страницы блога и конструктора |
 | `06-forms.txt` | `BookingService`, общий `FormController`, четыре контроллера форм, шесть моделей, письма и их шаблоны |
 | `07-seo-pwa.txt` | `Seo.php`, `SeoAnalyzer.php`, `Sitemap.php`, `Pwa.php`, контроллеры SEO/PWA, редиректы, layout, `sw.js`, манифест, офлайн-страница |
-| `08-checks-docs.txt` | восемь гейтов `tools/check-*.mjs` и `docs/architecture.md` |
+| `08-checks-docs.txt` | девять гейтов `tools/check-*.mjs`, статический экспорт `tools/export-static.php` + `vercel.json` для демо на Vercel, `docs/architecture.md` |
 | `ALL-IN-ONE.txt` | всё перечисленное одним файлом |
 | `README.md` | этот манифест |
 | `build.mjs` | сборка срезов из рабочего дерева (`node test/ai-chat/build.mjs`) |
@@ -39,7 +39,7 @@
 
 Пример запроса про брони:
 
-> Ниже снимок October CMS (18.11.2026). Проверь брони и слоты:
+> Ниже снимок October CMS (19.11.2026). Проверь брони и слоты:
 > `BookingService`, `models/Slot.php`, `BookingController`. Найди, где
 > `taken` может разойтись с числом активных броней, что будет при
 > `capacity > 1`, при отмене и при истёкшем слоте. Дай находки с `file:line`,
@@ -79,4 +79,4 @@ node test/ai-chat/build.mjs
 - Это **снимок**, а не живой код: после правок PHP/JS/YAML его нужно пересобрать;
   дата и коммит — в шапке каждого файла.
 - Код не переписан: пути и содержимое совпадают с рабочим деревом на момент среза.
-- Объём `ALL-IN-ONE.txt` — 380 КБ.
+- Объём `ALL-IN-ONE.txt` — 410 КБ.

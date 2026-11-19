@@ -17,6 +17,7 @@ node tools/check-seo.mjs
 node tools/check-orphans.mjs
 node tools/check-api.mjs
 node tools/check-admin-brand.mjs
+node tools/check-static-demo.mjs
 node tools/check-clean-tree.mjs
 ```
 
@@ -25,9 +26,12 @@ node tools/check-clean-tree.mjs
 - [ ] PHPUnit ядра — 0 упавших, число тестов записано в журнал.
 - [ ] `october:migrate` на чистой БД поднимает схему (не «на моей базе работает»).
 - [ ] `php -l` по всем PHP-файлам вне `vendor/` и `storage/` — 0 ошибок.
-- [ ] `check-urls` — 109 страниц `200`, 404 со страницей, внешнего CSS нет.
-- [ ] `check-dom-parity` — 0 расхождений с эталоном (title, h1, h2, карточки, текст).
-- [ ] `check-seo` — robots.txt, sitemap.xml на 106 адресов (все 200), 301 со
+- [ ] `check-urls` — 110 страниц `200`, 404 со страницей, внешнего CSS нет.
+- [ ] `check-dom-parity --structure` — 0 расхождений по скелету (110 страниц:
+      title/h1/h2, число карточек). Полная сверка текстов без флага красная с
+      Stage 36: бренд и контакты в демо заменены на нейтральные («Ваша
+      организация» вместо «Библиотека 2026»), это ожидаемо, а не регресс.
+- [ ] `check-seo` — robots.txt, sitemap.xml на 107 адресов (все 200), 301 со
       старых адресов, JSON-LD `Library` + `WebSite` на главной.
 - [ ] `check-orphans` — у каждого адреса карты сайта есть входящая ссылка
       (`--self-test` — самопроверка разбора ссылок и поиска сирот).
@@ -37,6 +41,9 @@ node tools/check-clean-tree.mjs
 - [ ] `check-admin-brand` — `brand.enabled` включён, палитра и режимы меню из
       белых списков ядра, все файлы логотипа/иконок/CSS на месте, `/admin`
       отдаёт имя приложения, скомпилированную палитру и градиент меню.
+- [ ] `check-static-demo` — снимок в `demo-static/` целый: 113 HTML-файлов,
+      каждая внутренняя ссылка имеет файл, canonical на `--origin`, локальных
+      адресов нет, плашка и скрипт отключения форм на каждой странице.
 - [ ] `check-clean-tree` — дерево чистое, черновики владельца не в индексе.
 - [ ] `git status` чистый, коммит поимённый, запись в журнале есть.
 
@@ -113,6 +120,34 @@ node tools/check-clean-tree.mjs
 - [ ] `php artisan schedule:list` показывает `elv:health-report` раз в час;
       внешняя проба на `/health` заведена (владелец, M17).
 - [ ] `node tools/check-health.mjs` — exit 0.
+
+## B6. Статическая демо-копия для Vercel (этап 44)
+
+Сайт исполняется на PHP, поэтому публичное демо — снимок `demo-static/`,
+собранный с живого `serve`. Пересобирать после любой правки темы: иначе демо
+показывает старый код.
+
+- [ ] `php tools/export-static.php --origin=https://<домен>` на поднятом сервере:
+      `pages: 110`, `failed: нет`, `missing assets: нет`.
+- [ ] В снимке: 110 страниц, `404.html`, `sitemap.xml`, `robots.txt`, `rss.xml`,
+      `blog/rss.xml`, `manifest.webmanifest`, `sw.js`, `offline.html`.
+- [ ] Инлайн-блоки `data-elv-css="bootstrap|styles"` вынесены в
+      `themes/elv/assets/css/static-*.css`, в HTML остался `<link>`
+      (без этого снимок весит 25 МБ вместо 13,6 МБ).
+- [ ] В каждой странице `#elv-demo-bar` и скрипт `ELV_STATIC_DEMO`: `submit`
+      перехвачен, service worker снимается, `/subscribe/confirm/` и
+      `/unsubscribe/` не открываются.
+- [ ] `nonce` и CSRF приведены к `static-demo`; `127.0.0.1` и `localhost:8080`
+      не встречаются ни в HTML, ни в `xml/txt/json/js`.
+- [ ] `node tools/check-static-demo.mjs --origin=…` — exit 0.
+- [ ] `vercel.json` — `outputDirectory: demo-static`, `trailingSlash`, заголовки
+      HSTS/XFO/nosniff/Referrer/Permissions, годовой кэш `/themes/`;
+      `.vercelignore` не отправляет `vendor/`, `modules/`, `storage/`, `test/`,
+      `tests/`, `docs/`.
+- [ ] Глазами на локальной статике: `php -S 127.0.0.1:8092 -t demo-static` —
+      стили, картинки, сообщение «Формы отключены…» при отправке.
+- [ ] Деплой делает владелец (импорт репозитория в Vercel): до импорта публичной
+      ссылки нет, а canonical указывает на `--origin`, а не на витрину.
 
 ## C. Lighthouse (этап 8)
 

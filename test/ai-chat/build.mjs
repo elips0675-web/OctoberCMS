@@ -353,7 +353,7 @@ sizes.push(slice("07-seo-pwa.txt", "SEO, микроразметка, карта 
 ]));
 
 // 08-checks
-sizes.push(slice("08-checks-docs.txt", "Гейты и архитектура: что проверяется и как устроено", [
+sizes.push(slice("08-checks-docs.txt", "Гейты, статическая демо-копия и архитектура: что проверяется и как устроено", [
   "tools/check-urls.mjs",
   "tools/check-seo.mjs",
   "tools/check-headers.mjs",
@@ -362,6 +362,9 @@ sizes.push(slice("08-checks-docs.txt", "Гейты и архитектура: ч
   "tools/check-orphans.mjs",
   "tools/check-api.mjs",
   "tools/check-package.mjs",
+  "tools/check-static-demo.mjs",
+  "tools/export-static.php",
+  "vercel.json",
   "docs/architecture.md",
 ]));
 
@@ -414,7 +417,7 @@ const manifest = `# \`test/ai-chat\` — снимок кода October CMS дл�
 | \`05-content.txt\` | \`Content.php\`, \`PageBuilder.php\`, \`Labels.php\`, \`FormFields.php\`, \`Media.php\`, \`Rss.php\`, blueprints блога и \`page\`, страницы блога и конструктора |
 | \`06-forms.txt\` | \`BookingService\`, общий \`FormController\`, четыре контроллера форм, шесть моделей, письма и их шаблоны |
 | \`07-seo-pwa.txt\` | \`Seo.php\`, \`SeoAnalyzer.php\`, \`Sitemap.php\`, \`Pwa.php\`, контроллеры SEO/PWA, редиректы, layout, \`sw.js\`, манифест, офлайн-страница |
-| \`08-checks-docs.txt\` | восемь гейтов \`tools/check-*.mjs\` и \`docs/architecture.md\` |
+| \`08-checks-docs.txt\` | девять гейтов \`tools/check-*.mjs\`, статический экспорт \`tools/export-static.php\` + \`vercel.json\` для демо на Vercel, \`docs/architecture.md\` |
 | \`ALL-IN-ONE.txt\` | всё перечисленное одним файлом |
 | \`README.md\` | этот манифест |
 | \`build.mjs\` | сборка срезов из рабочего дерева (\`node test/ai-chat/build.mjs\`) |
