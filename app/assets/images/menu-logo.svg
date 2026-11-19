@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" role="img" aria-label="Библиотека 2026">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" role="img" aria-label="ELV">
     <defs>
         <linearGradient id="nlb-mark" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#2563eb"/>
@@ -8,5 +8,5 @@
     <rect x="2" y="4" width="40" height="40" rx="10" fill="url(#nlb-mark)"/>
     <rect x="12" y="15" width="9" height="18" rx="2.5" fill="#ffffff"/>
     <rect x="24" y="15" width="9" height="18" rx="2.5" fill="#ffffff" fill-opacity="0.65"/>
-    <text x="52" y="32" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff">Библиотека</text>
+    <text x="52" y="32" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff">ELV</text>
 </svg>
