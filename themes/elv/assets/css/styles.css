@@ -3416,9 +3416,11 @@ img {
 
 .service-detail-head {
     display: flex;
-    align-items: flex-start;
-    gap: 1.15rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
     margin-bottom: 1.75rem;
+    text-align: center;
 }
 
 .service-detail-icon {
@@ -3448,10 +3450,10 @@ img {
 }
 
 .service-detail-body {
-    max-width: 78ch;
     font-size: 1.05rem;
     line-height: 1.8;
     color: var(--elv-body);
+    text-align: center;
 }
 
 .service-detail-body p:last-child {
@@ -3586,11 +3588,6 @@ img {
     width: 32px;
     height: 32px;
     opacity: 0.55;
-}
-
-.service-gallery-actions {
-    margin-top: 1.25rem;
-    text-align: center;
 }
 
 /* --- Что входит --------------------------------------------------------- */

@@ -7,6 +7,29 @@
 
 ---
 
+(Stage 45 — 19.11.2026) — **Страница услуги: заголовок и описание по центру, кнопка «Предложить фото» убрана.**
+
+- `themes/elv/assets/css/styles.css:3417-3425` — `.service-detail-head` из ряда
+  «иконка слева + заголовок» стал колонкой по центру: иконка над заголовком,
+  `align-items: center`, `text-align: center`. Действует на все 9 услуг — шаблон
+  один (`themes/elv/pages/services-detail.htm`).
+- `styles.css:3452-3457` — `.service-detail-body`: `text-align: center`, ширина
+  равна ряду карточек (убран `max-width: 78ch`), то есть описание тянется от
+  левого края «Режим работы» до правого края «Контакты» (936px при контейнере
+  960px). Все 8 карточек услуг содержат только `<p>`, списков в телах нет.
+- `themes/elv/pages/services-detail.htm:89-90` — удалён блок
+  `.service-gallery-actions` с кнопкой «Предложить фото» (вела на `/feedback/`);
+  вместе с ним удалено осиротевшее правило `.service-gallery-actions`
+  (`styles.css:3602`). Иконка `#i-plus` осталась в `partials/footer.htm:1` и
+  `partials/sprite.htm:1`.
+- Проверка: `/services/observation-deck/` — заголовок по центру (x=288 при
+  статье 936), описание 936px (рядом карточки 460+460+16), карточек
+  «Режим работы»/«Контакты» текст по центру как и был; `/services/cafe/`,
+  `/coworking/`, `/sauna/` — 200, ошибок консоли нет.
+- `phpunit.elv.xml` — 305 тестов / 1086 проверок; `tools/export-static.php` +
+  `tools/check-static-demo.mjs` — 113 страниц, 5 905 ссылок, **OK**.
+- Не проверено: Lighthouse, вид на реальном телефоне.
+
 (Stage 44 — 18.11.2026) — **Статическая демо-копия шаблона для Vercel.**
 
 - `tools/export-static.php` — снимает живой сайт (`http://127.0.0.1:8080`) в
