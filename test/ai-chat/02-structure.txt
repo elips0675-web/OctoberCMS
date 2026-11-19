@@ -1,6 +1,6 @@
 # Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
 
-Срез: 19.11.2026, коммит `99cee3b`.
+Срез: 19.11.2026, коммит `01492a3`.
 
 Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
 `docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
@@ -19,7 +19,7 @@
 - `AGENTS.md` (18.0 КБ)
 - `CHANGELOG.md` (26.1 КБ)
 - `LICENSE.md` (26.3 КБ)
-- `README.md` (12.2 КБ)
+- `README.md` (12.3 КБ)
 - `artisan` (1.6 КБ)
 - `composer.json` (1.8 КБ)
 - `index.php` (1.2 КБ)
@@ -31,8 +31,8 @@
 - `project-context.md` (14.8 КБ)
 - `server.php` (1.3 КБ)
 - `vercel.json` (0.7 КБ)
-- `Что доделать.txt` (96.1 КБ)
-- `Что сделано.txt` (227.7 КБ)
+- `Что доделать.txt` (96.3 КБ)
+- `Что сделано.txt` (231.3 КБ)
 - `запуск.bat` (4.6 КБ)
 
 ## .devcontainer
@@ -89,8 +89,8 @@
 
 ## demo-static
 
-- `404.html` (37.7 КБ)
-- `index.html` (84.1 КБ)
+- `404.html` (37.6 КБ)
+- `index.html` (83.9 КБ)
 - `manifest.webmanifest` (1.9 КБ)
 - `offline.html` (4.2 КБ)
 - `robots.txt` (0.4 КБ)
@@ -100,440 +100,440 @@
 
 ## demo-static/about
 
-- `index.html` (43.3 КБ)
+- `index.html` (43.2 КБ)
 
 ## demo-static/auth
 
-- `index.html` (39.1 КБ)
+- `index.html` (39.0 КБ)
 
 ## demo-static/blog
 
-- `index.html` (37.6 КБ)
+- `index.html` (37.5 КБ)
 - `rss.xml` (0.5 КБ)
 
 ## demo-static/books
 
-- `index.html` (62.1 КБ)
+- `index.html` (61.9 КБ)
 
 ## demo-static/books/aromatizator-v-mashinu-kniga
 
-- `index.html` (42.5 КБ)
+- `index.html` (42.4 КБ)
 
 ## demo-static/books/bloknot-zametki
 
-- `index.html` (42.2 КБ)
+- `index.html` (42.1 КБ)
 
 ## demo-static/books/brelok-gerb
 
-- `index.html` (42.1 КБ)
+- `index.html` (41.9 КБ)
 
 ## demo-static/books/brelok-kniga
 
-- `index.html` (42.5 КБ)
+- `index.html` (42.3 КБ)
 
 ## demo-static/books/brelok-sova
 
-- `index.html` (42.3 КБ)
+- `index.html` (42.1 КБ)
 
 ## demo-static/books/chaynaya-para-minsk
 
-- `index.html` (42.4 КБ)
+- `index.html` (42.2 КБ)
 
 ## demo-static/books/derzhatel-telefona-v-mashinu
 
-- `index.html` (42.6 КБ)
+- `index.html` (42.5 КБ)
 
 ## demo-static/books/ezhednevnik-plany
 
-- `index.html` (42.5 КБ)
+- `index.html` (42.4 КБ)
 
 ## demo-static/books/farforovaya-statuetka-sova
 
-- `index.html` (42.5 КБ)
+- `index.html` (42.4 КБ)
 
 ## demo-static/books/farforovaya-tarelka-biblioteka
 
-- `index.html` (42.4 КБ)
+- `index.html` (42.3 КБ)
 
 ## demo-static/books/futbolka-chitayu
 
-- `index.html` (42.4 КБ)
+- `index.html` (42.3 КБ)
 
 ## demo-static/books/hudi-biblioteka
 
-- `index.html` (42.3 КБ)
+- `index.html` (42.1 КБ)
 
 ## demo-static/books/kepka-chitayu
 
-- `index.html` (42.1 КБ)
+- `index.html` (42.0 КБ)
 
 ## demo-static/books/kruzhka-biblioteka
 
-- `index.html` (42.4 КБ)
+- `index.html` (42.2 КБ)
 
 ## demo-static/books/magnit-kniga-luchshiy-podarok
 
-- `index.html` (42.6 КБ)
+- `index.html` (42.4 КБ)
 
 ## demo-static/books/magnit-minsk
 
-- `index.html` (42.1 КБ)
+- `index.html` (42.0 КБ)
 
 ## demo-static/books/magnit-ramka-dlya-foto
 
-- `index.html` (42.4 КБ)
+- `index.html` (42.2 КБ)
 
 ## demo-static/books/nabor-gelevyh-ruchek
 
-- `index.html` (42.4 КБ)
+- `index.html` (42.3 КБ)
 
 ## demo-static/books/nabor-karandashey
 
-- `index.html` (42.5 КБ)
+- `index.html` (42.3 КБ)
 
 ## demo-static/books/nabor-otkrytok-minsk
 
-- `index.html` (42.3 КБ)
+- `index.html` (42.2 КБ)
 
 ## demo-static/books/ruchka-biblioteka
 
-- `index.html` (42.2 КБ)
+- `index.html` (42.1 КБ)
 
 ## demo-static/books/shopper-biblioteka
 
-- `index.html` (42.2 КБ)
+- `index.html` (42.0 КБ)
 
 ## demo-static/books/termokruzhka-chitay
 
-- `index.html` (42.5 КБ)
+- `index.html` (42.3 КБ)
 
 ## demo-static/books/zont-chitalnyy-zal
 
-- `index.html` (42.3 КБ)
+- `index.html` (42.1 КБ)
 
 ## demo-static/collections
 
-- `index.html` (42.1 КБ)
+- `index.html` (42.0 КБ)
 
 ## demo-static/collections/nabor-chitayu
 
-- `index.html` (37.8 КБ)
+- `index.html` (37.6 КБ)
 
 ## demo-static/collections/nabor-dlya-detey
 
-- `index.html` (37.9 КБ)
+- `index.html` (37.8 КБ)
 
 ## demo-static/collections/nabor-dlya-doma
 
-- `index.html` (37.9 КБ)
+- `index.html` (37.8 КБ)
 
 ## demo-static/collections/nabor-dlya-kolleg
 
-- `index.html` (38.1 КБ)
+- `index.html` (37.9 КБ)
 
 ## demo-static/collections/nabor-dlya-puteshestviy
 
-- `index.html` (38.1 КБ)
+- `index.html` (37.9 КБ)
 
 ## demo-static/collections/nabor-na-pamyat-o-minske
 
-- `index.html` (37.9 КБ)
+- `index.html` (37.8 КБ)
 
 ## demo-static/contacts
 
-- `index.html` (42.1 КБ)
+- `index.html` (41.9 КБ)
 
 ## demo-static/events
 
-- `index.html` (52.4 КБ)
+- `index.html` (52.3 КБ)
 
 ## demo-static/events/detskiy-klub-sovenok
 
-- `index.html` (40.9 КБ)
+- `index.html` (40.8 КБ)
 
 ## demo-static/events/ekskursiya-fond-redkih-knig
 
-- `index.html` (41.2 КБ)
+- `index.html` (41.0 КБ)
 
 ## demo-static/events/igroteka-nastolnyh-igr
 
-- `index.html` (41.1 КБ)
+- `index.html` (40.9 КБ)
 
 ## demo-static/events/lekciya-kak-chitat-sovremennuyu-prozu
 
-- `index.html` (41.3 КБ)
+- `index.html` (41.2 КБ)
 
 ## demo-static/events/master-klass-neyroseti
 
-- `index.html` (41.3 КБ)
+- `index.html` (41.1 КБ)
 
 ## demo-static/events/poeticheskiy-vecher-osen
 
-- `index.html` (41.0 КБ)
+- `index.html` (40.9 КБ)
 
 ## demo-static/feedback
 
-- `index.html` (42.0 КБ)
+- `index.html` (41.9 КБ)
 
 ## demo-static/news
 
-- `index.html` (54.0 КБ)
+- `index.html` (53.9 КБ)
 
 ## demo-static/news/biblionoch-2026-itogi
 
-- `index.html` (40.5 КБ)
+- `index.html` (40.4 КБ)
 
 ## demo-static/news/bronirovanie-peregovornyh
 
-- `index.html` (40.7 КБ)
+- `index.html` (40.6 КБ)
 
 ## demo-static/news/cifrovoy-chitalnyy-zal
 
-- `index.html` (40.8 КБ)
+- `index.html` (40.7 КБ)
 
 ## demo-static/news/detskaya-masterskaya-nabor
 
-- `index.html` (40.6 КБ)
+- `index.html` (40.5 КБ)
 
 ## demo-static/news/kak-zapisatsya-v-biblioteku
 
-- `index.html` (40.5 КБ)
+- `index.html` (40.4 КБ)
 
 ## demo-static/news/kovorking-novye-mesta
 
-- `index.html` (40.9 КБ)
+- `index.html` (40.7 КБ)
 
 ## demo-static/news/lektoriy-chitaem-vmeste-dekabr
 
-- `index.html` (41.1 КБ)
+- `index.html` (40.9 КБ)
 
 ## demo-static/news/novye-postupleniya-noyabr
 
-- `index.html` (40.9 КБ)
+- `index.html` (40.8 КБ)
 
 ## demo-static/news/podkast-mezhdu-strok-sezon-2
 
-- `index.html` (40.7 КБ)
+- `index.html` (40.6 КБ)
 
 ## demo-static/news/redkie-izdaniya-ocifrovany
 
-- `index.html` (40.6 КБ)
+- `index.html` (40.4 КБ)
 
 ## demo-static/personal
 
-- `index.html` (3.7 КБ)
+- `index.html` (3.5 КБ)
 
 ## demo-static/printing
 
-- `index.html` (99.6 КБ)
+- `index.html` (99.4 КБ)
 
 ## demo-static/printing/beydzhi
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/blanki-i-firmyennye-formy
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/bloknoty-i-ezhednevniki
 
-- `index.html` (38.5 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/breloki
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.0 КБ)
 
 ## demo-static/printing/broshyury-i-buklety
 
-- `index.html` (39.2 КБ)
+- `index.html` (39.0 КБ)
 
 ## demo-static/printing/chertezhi-i-plakaty
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/flazhki-i-vympely
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/fleshki-s-logo
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/foto-bolshogo-formata
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/foto-magnity
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/foto-na-akrile
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/fotoknigi
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/fotokollazhi
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.0 КБ)
 
 ## demo-static/printing/fotopechat
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.0 КБ)
 
 ## demo-static/printing/futbolki
 
-- `index.html` (39.1 КБ)
+- `index.html` (39.0 КБ)
 
 ## demo-static/printing/kalendari
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/konverty-s-logotipom
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/kruzhki
 
-- `index.html` (39.2 КБ)
+- `index.html` (39.1 КБ)
 
 ## demo-static/printing/magnity
 
-- `index.html` (38.1 КБ)
+- `index.html` (38.0 КБ)
 
 ## demo-static/printing/nakleyki-i-stikery
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/otkrytki-i-priglasheniya
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/papki-firmyennye
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/pazly-s-foto
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/pechat-dokumentov
 
-- `index.html` (39.3 КБ)
+- `index.html` (39.2 КБ)
 
 ## demo-static/printing/pechat-kvadratnyh-foto
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/pechat-na-holste
 
-- `index.html` (39.2 КБ)
+- `index.html` (39.1 КБ)
 
 ## demo-static/printing/pechat-na-paketah
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/pechat-panoramnyh-foto
 
-- `index.html` (38.5 КБ)
+- `index.html` (38.3 КБ)
 
 ## demo-static/printing/pechati-i-shtampy
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/pereplyot-i-laminirovanie
 
-- `index.html` (38.6 КБ)
+- `index.html` (38.5 КБ)
 
 ## demo-static/printing/prezentatsii
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/printing/ruchki-s-logo
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/shirokiy-format
 
-- `index.html` (39.1 КБ)
+- `index.html` (39.0 КБ)
 
 ## demo-static/printing/skanirovanie
 
-- `index.html` (39.4 КБ)
+- `index.html` (39.2 КБ)
 
 ## demo-static/printing/tsenniki-i-yarlyki
 
-- `index.html` (38.3 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/printing/vizitki
 
-- `index.html` (39.0 КБ)
+- `index.html` (38.9 КБ)
 
 ## demo-static/printing/znachki-i-piny
 
-- `index.html` (38.2 КБ)
+- `index.html` (38.1 КБ)
 
 ## demo-static/privacy
 
-- `index.html` (40.4 КБ)
+- `index.html` (40.2 КБ)
 
 ## demo-static/rules
 
-- `index.html` (39.6 КБ)
+- `index.html` (39.5 КБ)
 
 ## demo-static/search
 
-- `index.html` (38.4 КБ)
+- `index.html` (38.2 КБ)
 
 ## demo-static/services
 
-- `index.html` (74.2 КБ)
+- `index.html` (74.1 КБ)
 
 ## demo-static/services/cafe
 
-- `index.html` (55.3 КБ)
+- `index.html` (55.2 КБ)
 
 ## demo-static/services/concert-hall
 
-- `index.html` (55.6 КБ)
+- `index.html` (55.5 КБ)
 
 ## demo-static/services/coworking
 
-- `index.html` (56.1 КБ)
+- `index.html` (55.9 КБ)
 
 ## demo-static/services/gym
 
-- `index.html` (56.0 КБ)
+- `index.html` (55.9 КБ)
 
 ## demo-static/services/kids-zone
 
-- `index.html` (55.7 КБ)
+- `index.html` (55.5 КБ)
 
 ## demo-static/services/lecture-hall
 
-- `index.html` (55.5 КБ)
+- `index.html` (55.3 КБ)
 
 ## demo-static/services/observation-deck
 
-- `index.html` (56.0 КБ)
+- `index.html` (55.9 КБ)
 
 ## demo-static/services/sauna
 
-- `index.html` (55.9 КБ)
+- `index.html` (55.8 КБ)
 
 ## demo-static/sitemap
 
-- `index.html` (39.8 КБ)
+- `index.html` (39.6 КБ)
 
 ## demo-static/subscribe
 
-- `index.html` (39.2 КБ)
+- `index.html` (39.0 КБ)
 
 ## demo-static/terms
 
-- `index.html` (39.5 КБ)
+- `index.html` (39.4 КБ)
 
 ## demo-static/themes/elv/assets/css
 
@@ -580,11 +580,11 @@
 - `monetization.md` (22.2 КБ)
 - `october-integration.md` (13.8 КБ)
 - `plugins.md` (13.7 КБ)
-- `qa-checklist.md` (17.7 КБ)
+- `qa-checklist.md` (18.4 КБ)
 - `roadmap.md` (48.6 КБ)
 - `security-performance.md` (10.6 КБ)
 - `theme-universality.md` (10.7 КБ)
-- `vercel-demo.md` (9.0 КБ)
+- `vercel-demo.md` (9.4 КБ)
 
 ## docs/archive
 
@@ -845,7 +845,7 @@
 ## test
 
 - `README.md` (3.3 КБ)
-- `Для анализа.txt` (18.9 КБ)
+- `Для анализа.txt` (20.3 КБ)
 
 ## tests
 
@@ -972,7 +972,7 @@
 - `check-static-demo.mjs` (6.2 КБ)
 - `check-urls.mjs` (7.1 КБ)
 - `css-size.php` (1.1 КБ)
-- `export-static.php` (14.0 КБ)
+- `export-static.php` (13.9 КБ)
 - `import-preview-pages.mjs` (6.5 КБ)
 - `pages-publish.mjs` (8.2 КБ)
 - `purge-css.mjs` (10.6 КБ)

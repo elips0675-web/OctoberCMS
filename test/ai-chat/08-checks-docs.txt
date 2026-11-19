@@ -1,6 +1,6 @@
 # Гейты, статическая демо-копия и архитектура: что проверяется и как устроено
 
-Срез: 19.11.2026, коммит `99cee3b`.
+Срез: 19.11.2026, коммит `01492a3`.
 
 Пути — от корня репозитория; содержимое файлов не переписано.
 
@@ -2300,6 +2300,12 @@ $script = <<<'HTML'
     };
 
     document.addEventListener('submit', function (event) {
+        var form = event.target;
+
+        if (form && form.closest && form.closest('#elvChat')) {
+            return;
+        }
+
         event.preventDefault();
         event.stopImmediatePropagation();
         note('Формы отключены в статической демо-версии. Рабочая версия — на PHP-хостинге.');
@@ -2309,13 +2315,6 @@ $script = <<<'HTML'
         var node = event.target instanceof Element ? event.target : null;
 
         if (!node) {
-            return;
-        }
-
-        if (node.closest('[data-chat-open]')) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            note('Консультант доступен в полной версии на PHP-хостинге.');
             return;
         }
 
@@ -2752,6 +2751,11 @@ console.log(`✔ демо открывается: ${origin}/`);
 корневых ссылок: сайт проекта (`…github.io/OctoberCMS/`) сломал бы `/services/`,
 `/themes/…` и `/sw.js`, а user-site отдаётся из корня — переписывать ссылки и
 менять scope service worker не нужно.
+
+В снимке работают и консультант, и вся навигация: ответы чата — локальные
+правила в `themes/elv/assets/js/script.js` (`USE_REAL_AI = false`), бэкенд
+`/api/chat` в плагине не реализован. Отключены только формы, брони, заказы и
+подтверждение подписки — их перехватывает скрипт снимка.
 
 Когда Vercel начнёт отдавать `200`, демо останется на Pages как зеркало, а
 **Website** и canonical достаточно вернуть на `https://octobercms.vercel.app/`
