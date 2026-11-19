@@ -68,9 +68,10 @@ cron `schedule:run` включён (`elv:health-report` и `elv:slots-generate`)
 исполняется, поэтому продаётся статический снимок `demo-static/` (Stage 44,
 110 страниц, формы отключены).
 
-**Демо открывается: <https://elips0675-web.github.io/>** (Stage 45.7,
+**Демо открывается: <https://elips0675-web.github.io/>** (Stage 45.7–45.8,
 19.11.2026): `200` без входа и регистрации, поле **Website** репозитория
-переключено с `https://octobercms.vercel.app/` на этот адрес. Публикация и
+переключено с `https://octobercms.vercel.app/` на этот адрес, консультант в
+демо работает (ответы — локальные правила, сервер не нужен). Публикация и
 обновление — `node tools/pages-publish.mjs --publish` (нужен `GITHUB_TOKEN`):
 копия `demo-static/` в `.pages/`, домен заменён на адрес Pages (canonical,
 `og:url`, JSON-LD, `sitemap.xml`), `.nojekyll`, репозиторий

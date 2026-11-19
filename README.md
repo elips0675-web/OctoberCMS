@@ -25,7 +25,8 @@
 `sitemap.xml`, `robots.txt`, `rss.xml`, `blog/rss.xml`, `manifest.webmanifest`,
 `sw.js`, `offline.html`. Сборка — `php tools/export-static.php --origin=https://<домен>`
 с поднятого сервера, проверка — `node tools/check-static-demo.mjs --origin=https://<домен>`.
-Формы, брони и заказы в снимке отключены плашкой и скриптом.
+Формы, брони и заказы в снимке отключены плашкой и скриптом; консультант
+работает — ответы идут по локальным правилам в `script.js`, сервер ему не нужен.
 
 **Публичное демо сейчас:** <https://elips0675-web.github.io/> — открывается без
 входа и регистрации, там же поле **Website** этого репозитория. Содержимое

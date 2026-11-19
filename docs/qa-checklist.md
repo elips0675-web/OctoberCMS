@@ -135,8 +135,13 @@ node tools/check-clean-tree.mjs
       `themes/elv/assets/css/static-*.css`, в HTML остался `<link>`
       (без этого снимок весит 25 МБ вместо 13,6 МБ).
 - [ ] В каждой странице `#elv-demo-bar` и скрипт `ELV_STATIC_DEMO`: `submit`
-      перехвачен, service worker снимается, `/subscribe/confirm/` и
-      `/unsubscribe/` не открываются.
+      перехвачен (кроме формы чата `#elvChat`), service worker снимается,
+      `/subscribe/confirm/` и `/unsubscribe/` не открываются.
+- [ ] Консультант в снимке открывается и отвечает: клик по `[data-chat-open]`
+      не перехватывается, приветствие подставлено по разделу страницы, ответ
+      на «Часы работы» — локальными правилами (`USE_REAL_AI=false`), ссылки в
+      ответе корневые (`/services/`). Кнопка «Написать менеджеру» открывает
+      форму обратной связи, отправка — плашка «Формы отключены…».
 - [ ] `nonce` и CSRF приведены к `static-demo`; `127.0.0.1` и `localhost:8080`
       не встречаются ни в HTML, ни в `xml/txt/json/js`.
 - [ ] `node tools/check-static-demo.mjs --origin=…` — exit 0.
