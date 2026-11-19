@@ -7,6 +7,44 @@
 
 ---
 
+(Stage 45.7 — 19.11.2026) — **Демо открывается: <https://elips0675-web.github.io/>.**
+
+- `tools/pages-publish.mjs` — публикация снимка на GitHub Pages: копирует
+  `demo-static/` (303 файла, 13,6 МБ) в `.pages/`, заменяет
+  `https://octobercms.vercel.app` на `https://elips0675-web.github.io`
+  (1 891 замена в 115 файлах — canonical, `og:url`, JSON-LD, `sitemap.xml`,
+  `rss.xml`, `robots.txt`), кладёт `.nojekyll`. Без флага — только сборка и
+  гейт «ссылок на боевой домен не осталось»; с `--publish` создаёт репозиторий
+  `<owner>.github.io` (`POST /user/repos`), пушит `main` через git-credential
+  (identity передаётся через `-c user.name/-c user.email`, локального конфига в
+  `.pages` нет), включает Pages (`POST/PUT /repos/{o}/{r}/pages`) и ждёт `200`
+  на `/services/`.
+- Почему user-site, а не сайт проекта: ссылки в снимке корневые
+  (`/services/`, `/themes/…`, `/sw.js`), в подпапке `…github.io/OctoberCMS/`
+  они ломаются, а `elips0675-web.github.io` отдаётся из корня — переписывать
+  ссылки, `srcset`, манифест и scope service worker не нужно.
+- Проверено снаружи, без авторизации: `/`, `/services/`, `/services/sauna/`,
+  `/printing/vizitki/`, `/news/`, `/blog/`, `/sitemap.xml`, `/robots.txt`,
+  `/sw.js`, `/manifest.webmanifest`, CSS, `hero-1.webp`, `/offline.html` — `200`;
+  `/non-existent/` — `404` (свой `404.html`). В `/` canonical и `og:url` =
+  `https://elips0675-web.github.io/`, JSON-LD `@id` = `…/#organization`,
+  вхождений `octobercms.vercel.app` нет; в `sitemap.xml` 107 адресов и адрес
+  Pages в `<loc>`.
+- Поле **Website** репозитория переключено через
+  `PATCH /repos/elips0675-web/OctoberCMS` на `https://elips0675-web.github.io/`
+  (перепроверено `GET`). Описание репозитория дополнено ссылкой на демо.
+- `.gitignore:109` — `/.pages` (сборочная папка в `main` не едет).
+- `README.md:30-36` — раздел «Демо»: работающий адрес, чем публикуется и почему
+  отдельный репозиторий; 404 на Vercel остался как факт для второго зеркала.
+- `docs/vercel-demo.md:8-41` — новый раздел «Работающее демо сейчас — GitHub
+  Pages»: команда, что делает скрипт, почему user-site, как вернуться на Vercel.
+- `Что доделать.txt:67-110` (M17) — демо отмечено как открывающееся, добавлен
+  факт «Git-интеграция Vercel не активна: пуш в `main` и временная ветка
+  `master` деплоев не создали».
+- Не проверено: прогон `tools/pages-publish.mjs` на чистой машине без токена
+  (проверена только ветка `exit 2`), поведение service worker и PWA-установки
+  на живом HTTPS-домене Pages, индексация в поиске.
+
 (Stage 45.6 — 19.11.2026) — **Поле Website репозитория переключено с витрины на демо.**
 
 - GitHub API `PATCH /repos/elips0675-web/OctoberCMS` с

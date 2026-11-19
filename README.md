@@ -27,15 +27,22 @@
 с поднятого сервера, проверка — `node tools/check-static-demo.mjs --origin=https://<домен>`.
 Формы, брони и заказы в снимке отключены плашкой и скриптом.
 
-`vercel.json` задаёт `outputDirectory: demo-static`. Проект на Vercel создан
-(`vadims-projects-74cb21aa/octobercms`), и поле **Website** этого репозитория
-указывает на `https://octobercms.vercel.app/`, но 19.11.2026 адрес отдаёт
+**Публичное демо сейчас:** <https://elips0675-web.github.io/> — открывается без
+входа и регистрации, там же поле **Website** этого репозитория. Содержимое
+публикует `node tools/pages-publish.mjs --publish` (нужен `GITHUB_TOKEN`):
+скрипт копирует `demo-static/` в `.pages/`, меняет домен на адрес Pages, кладёт
+`.nojekyll`, создаёт репозиторий `<owner>.github.io`, пушит и включает Pages.
+Отдельный репозиторий нужен потому, что страницы ссылаются на корень
+(`/services/`, `/themes/…`, `/sw.js`), а сайт проекта
+(`…github.io/OctoberCMS/`) эти ссылки сломал бы.
+
+Демо на Vercel готово, но 19.11.2026 `https://octobercms.vercel.app/` отдаёт
 `404 DEPLOYMENT_NOT_FOUND`: у проекта нет продакшен-деплоя, а алиас ветки
-закрыт Vercel Authentication — снаружи это `302` на `vercel.com/sso-api`. Что
-нажать, чтобы демо открывалось без входа: `docs/vercel-demo.md` (Settings →
-Deployment Protection → Vercel Authentication → **Disabled**; Deployments →
-**Promote to Production**), либо автоматически —
-`node tools/vercel-demo.mjs` с `VERCEL_TOKEN` в окружении.
+закрыт Vercel Authentication — снаружи это `302` на `vercel.com/sso-api`
+(`vercel.json` → `outputDirectory: demo-static`). Что нажать, чтобы демо
+открывалось без входа: `docs/vercel-demo.md` (Settings → Deployment Protection →
+Vercel Authentication → **Disabled**; Deployments → **Promote to Production**),
+либо автоматически — `node tools/vercel-demo.mjs` с `VERCEL_TOKEN` в окружении.
 
 Витрина Elv Kit на October CMS (тема `elv-studio`) — https://elvstudio.vercel.app,
 открывается без входа и регистрации.

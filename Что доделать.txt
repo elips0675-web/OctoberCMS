@@ -66,31 +66,41 @@ cron `schedule:run` включён (`elv:health-report` и `elv:slots-generate`)
 
 Отдельно от хостинга сайта — **публичное демо шаблона**: PHP на Vercel не
 исполняется, поэтому продаётся статический снимок `demo-static/` (Stage 44,
-110 страниц, формы отключены). Проект уже создан (19.11.2026):
+110 страниц, формы отключены).
+
+**Демо открывается: <https://elips0675-web.github.io/>** (Stage 45.7,
+19.11.2026): `200` без входа и регистрации, поле **Website** репозитория
+переключено с `https://octobercms.vercel.app/` на этот адрес. Публикация и
+обновление — `node tools/pages-publish.mjs --publish` (нужен `GITHUB_TOKEN`):
+копия `demo-static/` в `.pages/`, домен заменён на адрес Pages (canonical,
+`og:url`, JSON-LD, `sitemap.xml`), `.nojekyll`, репозиторий
+`elips0675-web/elips0675-web.github.io` (ветка `main`), Pages включён. Отдельный
+user-site репозиторий нужен из-за корневых ссылок (`/services/`, `/themes/…`,
+`/sw.js`): сайт проекта из подпапки (`…github.io/OctoberCMS/`) их ломает, а
+user-site отдаётся из корня.
+
+**Vercel — второе зеркало, пока не работает.** Проект создан 19.11.2026:
 `vercel.com/vadims-projects-74cb21aa/octobercms`, репозиторий подключён,
-`vercel.json` задаёт `outputDirectory: demo-static`, а поле **Website**
-репозитория на GitHub указывает на `https://octobercms.vercel.app/` (было —
-витрина `https://elvstudio.vercel.app`).
-
-**Демо закрыто входом через Vercel** (проверено снаружи, без авторизации
-19.11.2026): алиас ветки `octobercms-git-main-vadims-projects-74cb21aa.vercel.app`
-отвечает `302` на `vercel.com/sso-api` — это Deployment Protection (Vercel
-Authentication); домены `octobercms.vercel.app` и
+`vercel.json` задаёт `outputDirectory: demo-static`. Но демо закрыто входом
+(проверено снаружи, без авторизации 19.11.2026): алиас ветки
+`octobercms-git-main-vadims-projects-74cb21aa.vercel.app` отвечает `302` на
+`vercel.com/sso-api` — это Deployment Protection (Vercel Authentication);
+домены `octobercms.vercel.app` и
 `octobercms-vadims-projects-74cb21aa.vercel.app` — `404 DEPLOYMENT_NOT_FOUND`,
-то есть деплой не повышен до Production. Оба переключателя живут в настройках
-проекта, а не в репозитории: **Settings → Deployment Protection → Vercel
-Authentication → Disabled** и **Deployments → ⋯ → Promote to Production**.
-Пошагово и проверка — `docs/vercel-demo.md`; те же шаги одной командой —
-`node tools/vercel-demo.mjs` (нужен `VERCEL_TOKEN`, без него выходит с кодом 2
-и ничего не меняет).
+то есть деплой не повышен до Production. Git-интеграция тоже не активна: пуш в
+`main` и временная ветка `master` новых деплоев не создали (ветка удалена).
+Оба переключателя живут в настройках проекта, а не в репозитории:
+**Settings → Deployment Protection → Vercel Authentication → Disabled** и
+**Deployments → ⋯ → Promote to Production**. Пошагово и проверка —
+`docs/vercel-demo.md`; те же шаги одной командой — `node tools/vercel-demo.mjs`
+(нужен `VERCEL_TOKEN`, без него выходит с кодом 2 и ничего не меняет).
 
-Приёмка демо: адрес открывается без входа (`curl` → `200`, заголовка
-`x-vercel-error` нет), на каждой странице плашка «Формы
-отключены…», canonical указывает на домен демо (пересборка
-`php tools/export-static.php --origin=https://<домен>` + `node
-tools/check-static-demo.mjs --origin=…`), ссылка вписана в `README.md` и в
-GitHub About — About уже переключён на `https://octobercms.vercel.app/`
-(19.11.2026), осталось, чтобы этот адрес открывался.
+Приёмка демо (на Pages): адрес открывается без входа (`curl` → `200`), на каждой
+странице плашка «Формы отключены…», canonical и `og:url` указывают на домен
+демо, `sitemap.xml` — 107 адресов, ссылка вписана в `README.md` и в GitHub
+About. При переезде на Vercel: `php tools/export-static.php --origin=https://
+<домен>` → `node tools/check-static-demo.mjs --origin=…` → вернуть **Website** и
+canonical на `https://octobercms.vercel.app/`.
 
 ### P0-6. Демо-контакты, соцсети и реквизиты
 

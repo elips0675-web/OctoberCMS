@@ -5,6 +5,32 @@
 Проект уже создан: `https://vercel.com/vadims-projects-74cb21aa/octobercms`,
 репозиторий подключён — `https://github.com/elips0675-web/OctoberCMS`.
 
+## Работающее демо сейчас — GitHub Pages
+
+Пока у Vercel нет продакшен-деплоя, публичное демо живёт здесь:
+<https://elips0675-web.github.io/> — отдаёт `200` без входа, поле **Website**
+репозитория указывает на него. Это тот же снимок `demo-static/`, только домен
+заменён на адрес Pages (canonical, `og:url`, JSON-LD, `sitemap.xml`, `rss.xml`).
+
+Публикация и обновление — `node tools/pages-publish.mjs --publish` (нужен
+`GITHUB_TOKEN` с правом создавать репозитории аккаунта):
+
+- копирует `demo-static/` в `.pages/` (папка в `.gitignore`, в `main` не едет);
+- меняет `https://octobercms.vercel.app` → `https://elips0675-web.github.io`;
+- кладёт `.nojekyll`, создаёт или обновляет репозиторий
+  `elips0675-web.github.io`, пушит в `main`, включает Pages;
+- ждёт `200` на `/services/` (до 5 минут).
+
+Без флага скрипт только собирает `.pages/` и падает, если осталась хоть одна
+ссылка на боевой домен. Отдельный репозиторий `<owner>.github.io` выбран из-за
+корневых ссылок: сайт проекта (`…github.io/OctoberCMS/`) сломал бы `/services/`,
+`/themes/…` и `/sw.js`, а user-site отдаётся из корня — переписывать ссылки и
+менять scope service worker не нужно.
+
+Когда Vercel начнёт отдавать `200`, демо останется на Pages как зеркало, а
+**Website** и canonical достаточно вернуть на `https://octobercms.vercel.app/`
+(пересборка с `--origin` в `tools/export-static.php`).
+
 ## Почему просит войти через Google
 
 Проверено 19.11.2026 снаружи, без авторизации:

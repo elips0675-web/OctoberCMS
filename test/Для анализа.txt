@@ -3,7 +3,7 @@
 > **Что это за файл.** Самодостаточный срез проекта для AI-аудита в браузере
 > (DeepSeek, Qwen и т. п.): что за проект, на чём сделан, что куплено/взято
 > из ядра, где кастомный код, чем проверено, что осталось. Числа и пути
-> перепроверены на HEAD 19.11.2026 (Stage 45.2, коммит `3014988`;
+> перепроверены на HEAD 19.11.2026 (Stage 45.7;
 > актуальный — `git log --oneline -1`); числа тестов и гейтов — прогон Stage 45.
 >
 > **Как пользоваться.** Загрузить этот файл в чат целиком и задать вопросы
@@ -103,16 +103,28 @@
 `screenshot.png` 1200×630, отсутствие абсолютных путей проверяет
 `node tools/check-package.mjs`.
 
-Публичное демо (Stage 44): PHP на Vercel не исполняется, поэтому ссылка для
+Публичное демо (Stage 44–45.7): PHP на Vercel не исполняется, поэтому ссылка для
 покупателя — статический снимок `demo-static/` (110 страниц + 404 + sitemap,
 robots, RSS, PWA, 13,6 МБ). Сборка — `php tools/export-static.php --origin=…`
-с живого `serve`, гейт — `node tools/check-static-demo.mjs`, хостинг —
-`vercel.json` (`outputDirectory: demo-static`). Формы, брони и заказы в снимке
-отключены плашкой и скриптом. Проект на Vercel создан
-(`vadims-projects-74cb21aa/octobercms`), но **демо закрыто входом**: алиас
-ветки отвечает `302` на `vercel.com/sso-api` (Deployment Protection), а домены
-проекта — `404 DEPLOYMENT_NOT_FOUND` (деплой не повышен до Production). Лечится
-двумя переключателями в настройках проекта, не в коде: `docs/vercel-demo.md`.
+с живого `serve`, гейт — `node tools/check-static-demo.mjs`. Формы, брони и
+заказы в снимке отключены плашкой и скриптом.
+
+**Демо открывается: <https://elips0675-web.github.io/>** (`200` без входа).
+Публикация — `node tools/pages-publish.mjs --publish`: копия снимка в `.pages/`,
+подмена домена (canonical, `og:url`, JSON-LD, sitemap, RSS, robots), `.nojekyll`,
+репозиторий `elips0675-web/elips0675-web.github.io` и включённый Pages. Отдельный
+user-site репозиторий взят из-за корневых ссылок снимка (`/services/`,
+`/themes/…`, `/sw.js`): сайт проекта из подпапки их ломает, user-site отдаётся из
+корня, поэтому `srcset`, манифест и scope service worker не переписываются.
+Поле **Website** репозитория указывает на этот адрес.
+
+Vercel остаётся вторым зеркалом: проект `vadims-projects-74cb21aa/octobercms`
+создан, `vercel.json` задаёт `outputDirectory: demo-static`, но демо закрыто
+входом — алиас ветки отвечает `302` на `vercel.com/sso-api` (Deployment
+Protection), домены проекта — `404 DEPLOYMENT_NOT_FOUND` (деплой не повышен до
+Production), пуш в `main` деплоев не создаёт (Git-интеграция не активна).
+Лечится двумя переключателями в настройках проекта, не в коде:
+`docs/vercel-demo.md`.
 
 ## 5. Контент и данные
 
@@ -150,7 +162,7 @@ node tools/check-clean-tree.mjs                            # дерево чис
 
 Живые гейты требуют запущенный сервер на `:8080`.
 
-## 7. Что проверено на HEAD (19.11.2026, Stage 45.2)
+## 7. Что проверено на HEAD (19.11.2026, Stage 45.7)
 
 - Тесты: 305/305 зелёные, 1086 проверок, 0 падений (~4 минуты).
 - Все живые гейты выше — exit 0; `check-package` дополнительно проверен
@@ -158,6 +170,13 @@ node tools/check-clean-tree.mjs                            # дерево чис
 - Статика (Stage 44–45): `check-static-demo` — 113 страниц, 5 905 внутренних
   ссылок, 1 104 ассета, 0 висячих, локальных адресов нет; демо пересобирается
   после каждой правки темы.
+- Демо на GitHub Pages (снаружи, без авторизации): `/`, `/services/`,
+  `/services/sauna/`, `/printing/vizitki/`, `/news/`, `/blog/`, `/sitemap.xml`,
+  `/robots.txt`, `/sw.js`, `/manifest.webmanifest`, CSS, `hero-1.webp`,
+  `/offline.html` — `200`; `/non-existent/` — `404` со своим `404.html`.
+  canonical и `og:url` в `/` — `https://elips0675-web.github.io/`, JSON-LD `@id`
+  — `…/#organization`, `octobercms.vercel.app` в HTML нет, в `sitemap.xml`
+  107 адресов с домена Pages.
 - `composer validate` — зелёный у темы и у плагина.
 - Производительность (Lighthouse 12.8.2, симуляция Slow 4G + 4× CPU): `/` и
   `/services/` — performance **100** (mobile и desktop), LCP 1,3 с / 0,7 с,

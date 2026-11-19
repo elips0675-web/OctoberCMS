@@ -49,8 +49,8 @@
 | Файл | Роль |
 |---|---|
 | `qa-checklist.md` | приёмка этапов: 110 URL, Lighthouse, тесты, гонка слота, контракты API |
-| `../demo-static/` | статическая демо-копия сайта для Vercel: 110 страниц + `404.html`, sitemap, robots, RSS, PWA; сборка — `tools/export-static.php`, гейт — `tools/check-static-demo.mjs`, конфиг — `../vercel.json` |
-| `vercel-demo.md` | публичное демо на Vercel: почему просит вход, какие два переключателя снять (Deployment Protection, Promote to Production), проверка `curl`, пересборка под домен |
+| `../demo-static/` | статическая демо-копия сайта для Vercel и GitHub Pages: 110 страниц + `404.html`, sitemap, robots, RSS, PWA; сборка — `tools/export-static.php`, гейт — `tools/check-static-demo.mjs`, конфиг — `../vercel.json`, публикация на Pages — `../tools/pages-publish.mjs` |
+| `vercel-demo.md` | публичное демо: работающая копия на GitHub Pages (`../tools/pages-publish.mjs`), а также Vercel — почему просит вход, какие два переключателя снять (Deployment Protection, Promote to Production), проверка `curl`, пересборка под домен |
 | `roadmap.md` | внешняя оценка: что принято, отложено и отклонено, и где оценка разошлась с кодом |
 
 ### Архив

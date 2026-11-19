@@ -121,7 +121,7 @@ node tools/check-clean-tree.mjs
       внешняя проба на `/health` заведена (владелец, M17).
 - [ ] `node tools/check-health.mjs` — exit 0.
 
-## B6. Статическая демо-копия для Vercel (этап 44)
+## B6. Статическая демо-копия (Vercel и GitHub Pages, этапы 44–45.7)
 
 Сайт исполняется на PHP, поэтому публичное демо — снимок `demo-static/`,
 собранный с живого `serve`. Пересобирать после любой правки темы: иначе демо
@@ -146,8 +146,15 @@ node tools/check-clean-tree.mjs
       `tests/`, `docs/`.
 - [ ] Глазами на локальной статике: `php -S 127.0.0.1:8092 -t demo-static` —
       стили, картинки, сообщение «Формы отключены…» при отправке.
-- [ ] Деплой делает владелец (импорт репозитория в Vercel): до импорта публичной
-      ссылки нет, а canonical указывает на `--origin`, а не на витрину.
+- [ ] GitHub Pages: `node tools/pages-publish.mjs` — `.pages/` собрана (303 файла,
+      13,6 МБ), `.nojekyll` на месте, ссылок на боевой домен нет; с
+      `--publish` и `GITHUB_TOKEN` репозиторий `elips0675-web.github.io`
+      обновлён, `https://elips0675-web.github.io/services/` отвечает `200`,
+      canonical и `og:url` — домен Pages, в `sitemap.xml` 107 адресов.
+      Отдельный user-site репозиторий обязателен: ссылки в снимке корневые.
+- [ ] Vercel (когда владелец снимет защиту): импорт репозитория, `200` на
+      `/`, `/services/`, `/services/sauna/` без `x-vercel-error`; после этого
+      вернуть **Website** и canonical на домен Vercel.
 
 ## C. Lighthouse (этап 8)
 
