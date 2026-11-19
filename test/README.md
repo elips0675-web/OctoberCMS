@@ -20,7 +20,7 @@
    (`plugins/elv/site/classes/Seo.php` и т. п.); этот файл ей отдельно
    и передать.
 4. Если модель должна читать код, а не выжимку — загрузить
-   `ai-chat/ALL-IN-ONE.txt` (380 КБ) или отдельные срезы: `05-content.txt`,
+   `ai-chat/ALL-IN-ONE.txt` (410 КБ) или отдельные срезы: `05-content.txt`,
    `06-forms.txt`, `07-seo-pwa.txt`. Состав и примеры запросов —
    `ai-chat/README.md`.
 
