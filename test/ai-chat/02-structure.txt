@@ -1,6 +1,6 @@
 # Структура репозитория October CMS (шаблон `elv` + плагин `Elv\Site`)
 
-Срез: 19.11.2026, коммит `723428b`.
+Срез: 19.11.2026, коммит `b45f2bd`.
 
 Отслеживаемые файлы. Не включены: `vendor/`, ядро `modules/`, `storage/`,
 `docs/html/` (черновики владельца), `.env`, дампы БД, `composer.lock`.
@@ -584,7 +584,7 @@
 - `roadmap.md` (48.6 КБ)
 - `security-performance.md` (10.6 КБ)
 - `theme-universality.md` (10.7 КБ)
-- `vercel-demo.md` (6.2 КБ)
+- `vercel-demo.md` (7.1 КБ)
 
 ## docs/archive
 
