@@ -125,6 +125,12 @@ Middleware подключается в \`Plugin::boot()\` в порядке:
   иначе nginx обнуляет верхнеуровневые).
 - **PWA.** \`manifest.webmanifest\` (4 иконки, 3 shortcut), \`sw.js\` версии
   \`7a9ac0cb\`, офлайн-страница, регистрация на главной.
+- **Публичное демо.** Статический снимок \`demo-static/\` (303 файла, 13,6 МБ,
+  113 страниц, формы отключены плашкой) открывается на
+  https://elips0675-web.github.io/ — без входа; публикация и обновление —
+  \`tools/pages-publish.mjs\` (подмена домена в canonical/JSON-LD/sitemap,
+  \`.nojekyll\`, user-site репозиторий). Vercel-зеркало настроено
+  (\`vercel.json\`), но ждёт снятия Deployment Protection владельцем.
 - **Редиректы.** Сначала карта старых адресов 1С-Битрикс (\`LegacyRedirect\`),
   затем правила редактора (\`ManagedRedirect\`): 301/302/307/308, перенос
   параметров, кэш 600 с, инвалидация на \`saved\`/\`deleted\`, счётчик переходов.
@@ -364,6 +370,7 @@ sizes.push(slice("08-checks-docs.txt", "Гейты, статическая де�
   "tools/check-package.mjs",
   "tools/check-static-demo.mjs",
   "tools/export-static.php",
+  "tools/pages-publish.mjs",
   "vercel.json",
   "docs/vercel-demo.md",
   "docs/architecture.md",
@@ -418,7 +425,7 @@ const manifest = `# \`test/ai-chat\` — снимок кода October CMS дл�
 | \`05-content.txt\` | \`Content.php\`, \`PageBuilder.php\`, \`Labels.php\`, \`FormFields.php\`, \`Media.php\`, \`Rss.php\`, blueprints блога и \`page\`, страницы блога и конструктора |
 | \`06-forms.txt\` | \`BookingService\`, общий \`FormController\`, четыре контроллера форм, шесть моделей, письма и их шаблоны |
 | \`07-seo-pwa.txt\` | \`Seo.php\`, \`SeoAnalyzer.php\`, \`Sitemap.php\`, \`Pwa.php\`, контроллеры SEO/PWA, редиректы, layout, \`sw.js\`, манифест, офлайн-страница |
-| \`08-checks-docs.txt\` | девять гейтов \`tools/check-*.mjs\`, статический экспорт \`tools/export-static.php\` + \`vercel.json\` для демо на Vercel, \`docs/architecture.md\` |
+| \`08-checks-docs.txt\` | девять гейтов \`tools/check-*.mjs\`, статический экспорт \`tools/export-static.php\` + \`vercel.json\`, публикация демо на GitHub Pages (\`tools/pages-publish.mjs\`), \`docs/architecture.md\` |
 | \`ALL-IN-ONE.txt\` | всё перечисленное одним файлом |
 | \`README.md\` | этот манифест |
 | \`build.mjs\` | сборка срезов из рабочего дерева (\`node test/ai-chat/build.mjs\`) |
